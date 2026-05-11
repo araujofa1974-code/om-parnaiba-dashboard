@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>O&M — Complexo Parnaíba</title>
+<style>
+:root {
+  --navy:#0b1e3d; --blue:#1a5eb8; --blue-light:#2e7dd1;
+  --teal:#0d8a7a; --accent:#f4a024; --accent-red:#e04444; --accent-green:#22a66a;
+  --bg:#eef1f8; --card:#ffffff; --border:#e0e5f0;
+  --text:#1a2340; --text-secondary:#5a6482; --text-light:#8a94ad;
+  --nav-h:60px; --header-h:62px; --tabs-h:46px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);padding-bottom:calc(var(--nav-h) + 12px);-webkit-font-smoothing:antialiased}
+
+/* ── UPLOAD ── */
+#upload{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px 24px;background:var(--navy)}
+#upload h2{font-size:22px;font-weight:300;color:#fff;text-align:center;line-height:1.4}
+#upload h2 b{font-weight:800;color:#f4a024}
+#upload p{color:rgba(255,255,255,.45);text-align:center;font-size:13px;line-height:1.6}
+.btn-upload{background:var(--blue-light);color:#fff;border:none;padding:16px 32px;border-radius:12px;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(26,94,184,.4)}
+.btn-upload:active{background:var(--blue)}
+#upload input[type=file]{display:none}
+
+/* ── APP ── */
+#app{display:none}
+
+/* ── HEADER ── */
+.header{position:sticky;top:0;z-index:100;background:var(--navy);display:flex;align-items:stretch;height:var(--header-h);box-shadow:0 2px 16px rgba(11,30,61,.35)}
+.header-stripe{width:4px;background:var(--accent);flex-shrink:0}
+.header-content{display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex:1;gap:10px}
+.header-left{display:flex;align-items:center;gap:10px;min-width:0}
+.eneva-logo{height:26px;width:auto;flex-shrink:0}
+.header-divider{width:1px;height:22px;background:rgba(255,255,255,.2);flex-shrink:0}
+.header-title{min-width:0}
+.header-title h1{font-size:13px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
+.header-title p{font-size:10px;color:rgba(255,255,255,.45);margin-top:1px}
+.badge-live{display:inline-flex;align-items:center;gap:5px;background:rgba(34,166,106,.18);border:1px solid rgba(34,166,106,.35);color:#4fd99a;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.badge-live::before{content:'';width:6px;height:6px;background:#4fd99a;border-radius:50%;animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+@keyframes spin{to{transform:rotate(360deg)}}
+label.btn-reload{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap}
+
+/* ── DATE BAR ── */
+.date-bar{background:#0e2347;padding:5px 14px;display:flex;gap:18px;overflow-x:auto;scrollbar-width:none}
+.date-bar::-webkit-scrollbar{display:none}
+.date-item .label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);font-weight:600}
+.date-item .value{font-size:11px;font-weight:700;color:rgba(255,255,255,.82)}
+
+/* ── TABS ── */
+.tabs-bar{position:sticky;top:var(--header-h);z-index:90;background:var(--card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;box-shadow:0 2px 8px rgba(11,30,61,.07)}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:0 15px;height:var(--tabs-h);border:none;background:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;color:var(--text-light);position:relative;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.tab-btn .ico{font-size:14px}
+.tab-btn.active{color:var(--blue);font-weight:600}
+.tab-btn.active::after{content:'';position:absolute;bottom:0;left:14px;right:14px;height:2px;background:var(--blue);border-radius:2px 2px 0 0}
+
+/* ── MAIN ── */
+.main{padding:14px 11px;display:flex;flex-direction:column;gap:14px}
+.section-page{display:none}
+.section-page.active{display:block}
+
+/* ── SECTION LABEL ── */
+.sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-light);display:flex;align-items:center;gap:8px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.kpi-card{background:var(--card);border-radius:13px;padding:13px 13px 11px;border:1px solid var(--border);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.c-blue::before{background:#2e7dd1}
+.kpi-card.c-teal::before{background:var(--teal)}
+.kpi-card.c-green::before{background:var(--accent-green)}
+.kpi-card.c-orange::before{background:var(--accent)}
+.kpi-card.c-red::before{background:var(--accent-red)}
+.kpi-card.wide{grid-column:span 2}
+.kpi-ico{font-size:20px;margin-bottom:5px;display:block}
+.kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);margin-bottom:3px}
+.kpi-val{font-size:27px;font-weight:800;color:var(--navy);line-height:1}
+.kpi-unit{font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:2px}
+.kpi-sub{font-size:10px;color:var(--text-light);margin-top:4px}
+
+/* ── CARD ── */
+.card{background:var(--card);border-radius:13px;border:1px solid var(--border);overflow:hidden}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;border-bottom:1px solid var(--border)}
+.card-hdr-l{display:flex;align-items:center;gap:7px}
+.card-hdr-ico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.ico-blue{background:#e8f1fc} .ico-teal{background:#e0f5f2} .ico-orange{background:#fff4e0} .ico-red{background:#feecec}
+.card-ttl{font-size:13px;font-weight:700;color:var(--navy)}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.badge.b-blue{background:#e8f1fc;color:var(--blue)}
+.badge.b-green{background:#e0f8ed;color:var(--teal)}
+.badge.b-warn{background:#fff4e0;color:#c07000}
+.badge.b-red{background:#feecec;color:var(--accent-red)}
+
+/* ── COLLAPSIBLE ── */
+.coll-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 13px;cursor:pointer;border-bottom:1px solid transparent;user-select:none}
+.coll-hdr.open{border-bottom-color:var(--border)}
+.coll-l{display:flex;align-items:center;gap:7px}
+.chevron{width:18px;height:18px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-light);transition:transform .25s;flex-shrink:0}
+.coll-hdr.open .chevron{transform:rotate(180deg)}
+.coll-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.coll-body.open{max-height:2000px}
+
+/* ── AVAIL BARS ── */
+.avail-list{padding:11px 13px;display:flex;flex-direction:column;gap:11px}
+.avail-head{display:flex;justify-content:space-between;margin-bottom:4px}
+.avail-name{font-size:13px;font-weight:500}
+.avail-pct{font-size:13px;font-weight:700}
+.avail-pct.good{color:var(--accent-green)} .avail-pct.warn{color:var(--accent)} .avail-pct.bad{color:var(--accent-red)}
+.avail-bg{height:8px;background:#edf0f7;border-radius:10px;overflow:hidden}
+.avail-fill{height:100%;border-radius:10px}
+.avail-fill.good{background:var(--accent-green)} .avail-fill.warn{background:var(--accent)} .avail-fill.bad{background:var(--accent-red)}
+
+/* ── UNIT SCROLL ── */
+.unit-scroll{display:flex;gap:7px;overflow-x:auto;padding:11px 13px;scrollbar-width:none}
+.unit-scroll::-webkit-scrollbar{display:none}
+.uc{flex-shrink:0;width:74px;border-radius:10px;padding:9px 7px;text-align:center;border:1px solid transparent}
+.uc.on{background:#e8f8f1;border-color:#a3e0c4}
+.uc.fdd{background:#fff6e5;border-color:#ffd89a}
+.uc.off{background:#fef0f0;border-color:#f5bebe}
+.u-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-bottom:5px}
+.uc.on .u-dot{background:var(--accent-green)} .uc.fdd .u-dot{background:var(--accent)} .uc.off .u-dot{background:var(--accent-red)}
+.u-name{font-size:11px;font-weight:700;color:var(--navy);display:block}
+.u-disp{font-size:9px;color:var(--text-light);display:block;margin-top:2px}
+.u-mw{font-size:11px;font-weight:600;display:block;margin-top:4px}
+.uc.on .u-mw{color:var(--teal)} .uc.fdd .u-mw{color:var(--accent)} .uc.off .u-mw{color:var(--accent-red)}
+.unit-legend{display:flex;gap:10px;padding:5px 13px 11px;border-top:1px solid var(--border);flex-wrap:wrap}
+.leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-secondary)}
+.leg-dot{width:7px;height:7px;border-radius:50%}
+
+/* ── CHART ── */
+.chart-wrap{padding:11px 13px 8px}
+canvas.bar-chart{width:100%;display:block}
+
+/* ── OCC ── */
+.occ-item{display:flex;gap:9px;align-items:flex-start;padding:10px 13px;border-bottom:1px solid var(--border)}
+.occ-item:last-child{border-bottom:none}
+.occ-tag{flex-shrink:0;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;letter-spacing:.3px;margin-top:2px}
+.occ-tag.op{background:#e8f8f1;color:var(--teal)} .occ-tag.mnt{background:#fff4e5;color:#c07000}
+.occ-tag.pdp{background:#edf3fb;color:var(--blue)} .occ-tag.ok{background:#f3f5f9;color:var(--text-secondary)}
+.occ-plant{font-size:9px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:1px;text-transform:uppercase;letter-spacing:.4px}
+.occ-text{font-size:12px;color:var(--text);line-height:1.45}
+
+/* ── WATER ── */
+.water-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:11px 13px}
+.wi{background:#f7f9fc;border-radius:9px;padding:10px 11px;border:1px solid var(--border)}
+.wi.alert{background:#fef0f0;border-color:#f5bebe}
+.w-name{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:4px;display:block}
+.wi.alert .w-name{color:var(--accent-red)}
+.w-val{font-size:17px;font-weight:800;color:var(--navy)}
+.wi.alert .w-val{color:var(--accent-red)}
+.w-unit{font-size:10px;color:var(--text-light);font-weight:400}
+
+/* ── TANKS ── */
+.tank-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:7px 13px 13px}
+.ti{text-align:center}
+.ti-lbl{font-size:8px;color:var(--text-light);font-weight:600;text-transform:uppercase;margin-bottom:3px}
+.ti-bar{height:42px;background:#edf0f7;border-radius:5px;overflow:hidden;display:flex;align-items:flex-end}
+.ti-fill{width:100%;border-radius:5px}
+.ti-pct{font-size:11px;font-weight:700;margin-top:3px}
+.ti-pct.good{color:var(--accent-green)} .ti-pct.warn{color:var(--accent)} .ti-pct.bad{color:var(--accent-red)}
+
+/* ── DEACT TABLE ── */
+.deact-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.deact-table{width:100%;border-collapse:collapse;font-size:12px;min-width:430px}
+.deact-table th{text-align:left;padding:7px 9px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);background:#f7f9fc;border-bottom:1px solid var(--border);white-space:nowrap}
+.deact-table td{padding:8px 9px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.deact-table tr:last-child td{border-bottom:none}
+.sb{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px}
+.sb.impl{background:#e8f8f1;color:var(--teal)}
+.sb.await{background:#fff4e5;color:#c07000}
+.sb.aprov{background:#e8f1fc;color:var(--blue)}
+.db{font-size:11px;font-weight:700}
+.db.old{color:var(--accent-red)} .db.recent{color:var(--accent)} .db.new{color:var(--accent-green)}
+
+/* ── SUMMARY ── */
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.si{background:var(--card);border-radius:11px;border:1px solid var(--border);padding:11px 8px;text-align:center}
+.sn{font-size:22px;font-weight:800;display:block}
+.sn.green{color:var(--accent-green)} .sn.red{color:var(--accent-red)} .sn.orange{color:var(--accent)}
+.sl{font-size:10px;color:var(--text-secondary);font-weight:500;margin-top:2px}
+
+/* ── ALERT CARD ── */
+.alert-card{background:#fff9ee;border:1px solid #ffd280;border-radius:11px;padding:11px 13px;display:flex;gap:9px;align-items:flex-start}
+.alert-card.critical{background:#fff0f0;border-color:#f5bebe}
+.alert-ico{font-size:17px;flex-shrink:0;margin-top:1px}
+.alert-ttl{font-size:13px;font-weight:700;color:#7a4800}
+.alert-card.critical .alert-ttl{color:#7f1d1d}
+.alert-body{font-size:11px;color:#9a5e00;margin-top:2px;line-height:1.45}
+.alert-card.critical .alert-body{color:#991b1b}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--card);border-top:1px solid var(--border);display:flex;height:var(--nav-h);box-shadow:0 -4px 20px rgba(11,30,61,.08)}
+.nav-btn{flex:1;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;font-family:inherit;font-size:10px;font-weight:500;color:var(--text-light)}
+.nav-btn .n-ico{font-size:20px;line-height:1}
+.nav-btn.active{color:var(--blue)}
+.nav-btn:active{opacity:.7}
+</style>
+</head>
+<body>
+
+<!-- UPLOAD -->
+<div id="upload">
+  <img src="data:image/png;base64,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" alt="Eneva" style="height:34px;filter:brightness(0) invert(1);opacity:.9">
+  <h2>Complexo Parnaíba<br><b>Resumo Gerencial</b></h2>
+  <p id="load-msg" style="color:rgba(255,255,255,.6);font-size:13px">Buscando dados do Drive...</p>
+  <div id="load-spinner" style="width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#f4a024;border-radius:50%;animation:spin .8s linear infinite"></div>
+  <p id="load-err" style="display:none;color:#ff8a8a;font-size:12px;text-align:center;max-width:280px">
+    ❌ Erro ao carregar dados.<br>
+    <span style="color:rgba(255,255,255,.5)">Verifique a conexão e tente novamente.</span>
+  </p>
+  <button id="btn-retry" onclick="carregarDoDrive()" style="display:none;margin-top:8px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">🔄 Tentar novamente</button>
+  <input type="file" id="file-in" accept=".json" style="display:none">
+  <p style="font-size:11px;margin-top:16px;color:rgba(255,255,255,.3)">ENEVA — O&M Dashboard</p>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-stripe"></div>
+    <div class="header-content">
+      <div class="header-left">
+        <img class="eneva-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA0sAAAM/CAYAAAAA90mhAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAmi0lEQVR4nO3dzXbjOq4GUPmsev9Xdg8q7nIcOZZl/gDE3pO77qBPKIqE8IlKatsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGCw6/V6nT2GFVy/zB4HAP1dZg8AgD6eNfSXy0XtP8mcAtTyZ/YAAGjDacc8j3MvPAGsQTEHSOqTcKSZf5/5BqhH8QZIpOXpkQb+PeYeoB7FGiCwnp/WadiPcx8AalKgAQIZ/XtHGvXXZvwumPsCEMN/swcAwF/+QAM31gJADMISQGGa8t+ZH4DahCWA4gSCfeYFAGEJIACNOQDEIywBIKw9MB8AbJuwBAAAsEtYAmDbNqcpN+YBgBthCYD/qx4Uql8/AN8JSwAAADuEJQC+qXq6UvW6AXhOWAIAANghLAHwQ7VTlmrXC8AxwhIAu6oEiCrXCcD7hCUAAIAdwhIAT61+6rL69QHwGWEJgF8JFABUJSwBUJIQCMArwhIAL60WLFa7HgD6EJYAAAB2CEsAHLLKacwq1wFAf8ISAADADmEJgMOyn8pkHz8AYwlLALwla+DIOm4A5hGWAAAAdghLALwt2ylNtvECEIOwBMApAggAqxOWAFiaUAfAWcISAKdFDyLRxwdAbMISAADADmEJgKOinN5EGQcA+QlLALwla2DIOm4A5hGWAAAAdghLALxttVOW1cYLQAzCEgCnCCAAVCUsAQAA7BCWAAAAdghLAAjn3p/ZAwBgDmEJgBCiNedW8QBQibAEAADATsISAM1EOYWJ8v8BkI+wBECIUAEA7CUsAQAA7BCWAAAAdghLAAjn3p/ZAwBgDmEJgBCiNedW8QBQibAEAADATsISAM1EOYWJ8v8BkI+wBECIUAEA7CUsAQAA7BCWAAAAdghLAAjn3p/ZAwBgDmEJgBCiNedW8QBQibAEAADATsISAM1EOYWJ8v8BkI+wBECIUAEA7CUsAQAA7BCWAAAAdghLAAjn3p/ZAwBgDmEJgBCiNedW8QBQibAEAADATsISAM1EOYWJ8v8BkI+wBECIUAEA7CUsAQAA7BCWAAAAdv8DdZZl1S1FoVsAAAAASUVORK5CYII=" alt="Eneva">
+        <div class="header-divider"></div>
+        <div class="header-title">
+          <h1>Complexo Parnaíba</h1>
+          <p id="h-subtitle">Reunião O&amp;M · D-1</p>
+        </div>
+      </div>
+      <label class="btn-reload" title="Novo JSON">📂<input type="file" id="file-reload" accept=".json" style="display:none"></label>
+    </div>
+  </div>
+
+  <!-- DATE BAR -->
+  <div class="date-bar" id="date-bar">
+    <div class="date-item"><div class="label">Semana</div><div class="value" id="db-semana">—</div></div>
+    <div class="date-item"><div class="label">D-1</div><div class="value" id="db-diaobs">—</div></div>
+    <div class="date-item"><div class="label">Temp. Amb.</div><div class="value" id="db-temp">—</div></div>
+    <div class="date-item"><div class="label">Dados em</div><div class="value" id="db-ts">—</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs-bar" id="tabsBar">
+    <button class="tab-btn active" onclick="showTab('visao',this)"><span class="ico">📊</span> Visão Geral</button>
+    <button class="tab-btn" onclick="showTab('geracao',this)"><span class="ico">⚡</span> Geração</button>
+    <button class="tab-btn" onclick="showTab('ocorrencias',this)"><span class="ico">📋</span> Ocorrências</button>
+    <button class="tab-btn" onclick="showTab('agua',this)"><span class="ico">💧</span> Água</button>
+    <button class="tab-btn" onclick="showTab('dts',this)"><span class="ico">⚠️</span> DTs</button>
+  </div>
+
+  <div class="section-page active" id="tab-visao"><div class="main" id="main-visao"></div></div>
+  <div class="section-page" id="tab-geracao"><div class="main" id="main-geracao"></div></div>
+  <div class="section-page" id="tab-ocorrencias"><div class="main" id="main-ocorrencias"></div></div>
+  <div class="section-page" id="tab-agua"><div class="main" id="main-agua"></div></div>
+  <div class="section-page" id="tab-dts"><div class="main" id="main-dts"></div></div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-visao" onclick="showTab('visao',null,this)"><span class="n-ico">📊</span><span>Visão</span></button>
+    <button class="nav-btn" id="nav-geracao" onclick="showTab('geracao',null,this)"><span class="n-ico">⚡</span><span>Geração</span></button>
+    <button class="nav-btn" id="nav-ocorrencias" onclick="showTab('ocorrencias',null,this)"><span class="n-ico">📋</span><span>Ocorr.</span></button>
+    <button class="nav-btn" id="nav-agua" onclick="showTab('agua',null,this)"><span class="n-ico">💧</span><span>Água</span></button>
+    <button class="nav-btn" id="nav-dts" onclick="showTab('dts',null,this)"><span class="n-ico">⚠️</span><span>DTs</span></button>
+  </div>
+
+</div>
+
+<script>
+/* ── CONSTANTES ── */
+const UGS=[
+  {id:'tg31',l:'TG31',pl:'piv'},{id:'tg32',l:'TG32',pl:'piv'},{id:'tg21',l:'TG21',pl:'piv'},
+  {id:'tg22',l:'TG22',pl:'piv'},{id:'tv28',l:'TV28',pl:'piv'},
+  {id:'tg51',l:'TG51',pl:'pii'},{id:'tg52',l:'TG52',pl:'pii'},{id:'tv58',l:'TV58',pl:'pii'},
+  {id:'tv18',l:'TV18',pl:'piii'},{id:'tg12',l:'TG12',pl:'piii'},{id:'ug10',l:'UG10',pl:'piii'},
+  {id:'bag11',l:'BAG11',pl:'p4'},{id:'bag21',l:'BAG21',pl:'p4'},{id:'bag31',l:'BAG31',pl:'p4'},
+];
+const PLANTS=[
+  {key:'piv',label:'Parnaíba I/V'},{key:'pii',label:'Parnaíba II'},
+  {key:'piii',label:'Parnaíba III/VI'},{key:'p4',label:'Parnaíba IV'},
+];
+const TANKS=[
+  {id:'s7_tq_ab',l:'Água Bruta'},{id:'s7_tq_pot',l:'Potável'},
+  {id:'s7_tq_cl_pii1',l:'Clarif.PII#1'},{id:'s7_tq_cl_pii2',l:'Clarif.PII#2'},
+  {id:'s7_tq_cl_pv',l:'Clarif.PV'},
+  {id:'s7_tq_sv_pi',l:'Serv.PI'},{id:'s7_tq_sv_pii',l:'Serv.PII'},
+  {id:'s7_tq_sv_pv',l:'Serv.PV'},{id:'s7_tq_sv_pvi',l:'Serv.PVI'},
+  {id:'s7_tq_dm_pi',l:'Desmin.PI'},{id:'s7_tq_dm_pii',l:'Desmin.PII'},
+  {id:'s7_tq_dm_pv1',l:'Desmin.PV1'},{id:'s7_tq_dm_pvi',l:'Desmin.PVI'},
+  {id:'s7_tq_dm_pv2',l:'Desmin.PV2'},
+];
+const S7PROD=[
+  {id:'s7_cap_rio',l:'Captação Rio Mearim'},
+  {id:'s7_cap_poc',l:'Poços Artesianos'},
+  {id:'s7_clar',l:'Clarificação'},
+  {id:'s7_desmin_piv',l:'Desmin. Par. I/V'},
+  {id:'s7_desmin_pii',l:'Desmin. Par. II'},
+  {id:'s7_desmin_piii',l:'Desmin. Par. III'},
+];
+const S7CONS=[
+  {id:'s7_tr_piv',l:'Torre P-I/V'},{id:'s7_tr_pii',l:'Torre P-II'},{id:'s7_tr_pvi',l:'Torre P-VI'},
+  {id:'s7_cd_piv',l:'Condensado P-I/V'},{id:'s7_cd_pii',l:'Condensado P-II'},{id:'s7_cd_piii',l:'Condensado P-III'},
+];
+
+/* ── HELPERS ── */
+const N=v=>parseFloat((v||'0').toString().replace(/\./g,'').replace(',','.'))||0;
+const P=v=>N((v||'0').toString().replace('%',''));
+const G=(j,k,p)=>{const v=j['#'+k]??j[k];return(v!==undefined&&v!=='')?v:(p&&j[p]!==undefined?j[p]:'');};
+const fmtN=(n,d=1)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtDateFull=v=>{
+  if(!v)return'—';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const[y,m,d]=v.split('-');return`${d}/${m}/${y}`;}
+  return v;
+};
+const pCls=p=>p>=95?'good':p>=80?'warn':'bad';
+
+/* ── STATE ── */
+let D=null, chartDone=false;
+
+/* ── EXTRACT ── */
+// Chaves posicionais de fallback para JSONs salvos por versões antigas do formulário (sem id nos campos)
+const _POS_COND = i=>`@cs_1>DIV:0>DIV:1>TABLE:0>TBODY:0>TR:0>TD:${i}>SELECT:0`;
+const _POS_MWH  = i=>`@cs_1>DIV:0>DIV:1>TABLE:0>TBODY:0>TR:1>TD:${i}>INPUT:0`;
+const _POS_AVFIS= i=>`@cs_3>DIV:0>DIV:1>DIV:3>INPUT:${i}`;
+const _POS_AVONS= [0,1,2,3,4,6].map(d=>`@cs_3>DIV:0>DIV:1>DIV:7>DIV:${d}>INPUT:0`);
+const _POS_S7={
+  s7_cap_rio:'TR:1>TD:2',s7_cap_poc:'TR:2>TD:1',s7_clar:'TR:3>TD:2',
+  s7_desmin_piv:'TR:4>TD:2',s7_desmin_pii:'TR:5>TD:1',s7_desmin_piii:'TR:6>TD:1',
+  s7_tr_piv:'TR:8>TD:3',s7_tr_pii:'TR:9>TD:2',s7_tr_pvi:'TR:10>TD:2',
+  s7_cd_piv:'TR:11>TD:3',s7_cd_pii:'TR:12>TD:2',s7_cd_piii:'TR:13>TD:2',
+  s7_tq_ab:'TR:15>TD:3',s7_tq_pot:'TR:16>TD:3',
+  s7_tq_cl_pii1:'TR:17>TD:3',s7_tq_cl_pii2:'TR:18>TD:2',s7_tq_cl_pv:'TR:19>TD:2',
+  s7_tq_sv_pi:'TR:20>TD:3',s7_tq_sv_pii:'TR:21>TD:2',s7_tq_sv_pv:'TR:22>TD:2',s7_tq_sv_pvi:'TR:23>TD:2',
+  s7_tq_dm_pi:'TR:24>TD:3',s7_tq_dm_pii:'TR:25>TD:2',s7_tq_dm_pv1:'TR:26>TD:2',s7_tq_dm_pvi:'TR:27>TD:2',s7_tq_dm_pv2:'TR:28>TD:2'
+};
+const _S7pk=id=>_POS_S7[id]?`@cs_6>DIV:0>DIV:1>TABLE:0>TBODY:0>${_POS_S7[id]}>INPUT:0`:'';
+function extract(j){
+  const ugs=UGS.map((u,i)=>({...u,
+    mwh:N(G(j,'mwh_'+u.id,_POS_MWH(i))),
+    cond:G(j,'cond_'+u.id,_POS_COND(i))||'EDE',
+    avfis:P(G(j,'avfis_'+u.id,_POS_AVFIS(i)))
+  }));
+  const plants=PLANTS.map(p=>({...p,real:N(G(j,'real_'+p.key)),prog:N(G(j,'prog_'+p.key)),ugs:ugs.filter(u=>u.pl===p.key),desp:(j['__ms__ms_'+p.key]||'').split(',').map(s=>s.trim()).filter(Boolean)}));
+  const avons={
+    pi:  P(G(j,'avons_pi',  _POS_AVONS[0])),
+    pii: P(G(j,'avons_pii', _POS_AVONS[1])),
+    piii:P(G(j,'avons_piii',_POS_AVONS[2])),
+    piv: P(G(j,'avons_piv', _POS_AVONS[3])),
+    pv:  P(G(j,'avons_pv',  _POS_AVONS[4])),
+    acum:P(G(j,'avons_acum',_POS_AVONS[5]))
+  };
+  let s2={};try{s2=JSON.parse(j['__s2__']||'{}');}catch(e){}
+  let s6=[];try{s6=JSON.parse(j['__s6__']||'[]');}catch(e){}
+  let s8=[];try{s8=JSON.parse(j['__s8__']||'[]');}catch(e){}
+  const s7prod=S7PROD.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
+  const s7cons=S7CONS.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
+  const tanks=TANKS.map(t=>({...t,val:N(G(j,t.id,_S7pk(t.id)))}));
+  return{
+    date:fmtDateFull(G(j,'datReu')),diaObs:fmtDateFull(G(j,'diaObs')),semana:G(j,'semOp'),
+    temp:N(G(j,'tempAmb')),totalMwh:N(G(j,'totalMwh')),totalProg:N(G(j,'totalProg')),
+    consumoGN:N(G(j,'consumoGN')),progGN:N(G(j,'progGN')),
+    ugs,plants,avons,s2,s6,s8,s7prod,s7cons,tanks,ts:j['__ts__']||''
+  };
+}
+
+/* ── GAUGE ONS ── */
+function gaugeONS(v,lbl){
+  const r=36,cx=50,cy=50;
+  const cls=v>0?pCls(v):'';
+  const clr=cls==='good'?'#22a66a':cls==='warn'?'#f4a024':cls==='bad'?'#e04444':'#8a94ad';
+  function pt(pct,radius){const a=(180-pct*1.8)*Math.PI/180;return[cx+radius*Math.cos(a),cy-radius*Math.sin(a)];}
+  const [xv,yv]=pt(Math.min(v,99.9),r);
+  const [nx,ny]=pt(v>0?Math.min(v,99.9):0,r-12);
+  const [mi,mii]=pt(95,r-4);
+  const [mo,moo]=pt(95,r+7);
+  const bgPath=`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
+  const vPath=v>0?`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${xv.toFixed(1)} ${yv.toFixed(1)}`:'';
+  return`<div style="text-align:center;flex:1;min-width:52px;max-width:80px">
+    <svg viewBox="0 0 100 66" width="100%" style="display:block;margin:0 auto;overflow:visible">
+      <path d="${bgPath}" fill="none" stroke="#d0d8e8" stroke-width="7" stroke-linecap="round"/>
+      ${vPath?`<path d="${vPath}" fill="none" stroke="${clr}" stroke-width="7" stroke-linecap="round"/>`:''}
+      <line x1="${mi.toFixed(1)}" y1="${mii.toFixed(1)}" x2="${mo.toFixed(1)}" y2="${moo.toFixed(1)}" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${clr}" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="3.5" fill="${clr}"/>
+      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" font-weight="800" fill="${clr}" font-family="system-ui,sans-serif">${v>0?fmtN(v,1)+'%':'—'}</text>
+    </svg>
+    <div style="font-size:10px;font-weight:700;color:var(--text-secondary);margin-top:1px;letter-spacing:.4px">${lbl}</div>
+  </div>`;
+}
+
+/* ── BUILD: VISÃO GERAL ── */
+function buildVisao(d){
+  const pct=d.totalProg>0?d.totalMwh/d.totalProg*100:null;
+  const pctTxt=pct!=null?fmtN(pct,1)+'%':'—';
+  const pctSub=pct!=null?`vs prog: ${fmtN(d.totalProg,0)} MWh`:'—';
+  const pctCls=pct!=null?pCls(pct):'';
+  const pctColor=pctCls==='good'?'var(--accent-green)':pctCls==='warn'?'var(--accent)':'var(--accent-red)';
+  const gnPct=d.progGN>0?d.consumoGN/d.progGN*100:null;
+  const gnPctTxt=gnPct!=null?fmtN(gnPct,1)+'%':'';
+  const gnColor=gnPct!=null?(pCls(gnPct)==='good'?'var(--accent-green)':pCls(gnPct)==='warn'?'var(--accent)':'var(--accent-red)'):'';
+  const pend=d.s8.filter(r=>r[1]==='Aguardando revalidação'||r[1]==='Aprovar revalidação').length;
+  const agua=d.s8.filter(r=>r[1]==='Aguardando revalidação').length;
+  const apr=d.s8.filter(r=>r[1]==='Aprovar revalidação').length;
+
+  const onsItems=[
+    {l:'PI',v:d.avons.pi},{l:'PII',v:d.avons.pii},{l:'PIII/VI',v:d.avons.piii},
+    {l:'PIV',v:d.avons.piv},{l:'PV',v:d.avons.pv}
+  ];
+  const onsHtml=`<div style="display:flex;justify-content:space-around;align-items:flex-end;padding:8px 4px 2px">${onsItems.map(o=>gaugeONS(o.v,o.l)).join('')}</div>`;
+  const onsMeta='<div style="font-size:10px;color:var(--text-light);text-align:right;padding:0 8px 6px">| meta: 95%</div>';
+
+  return`
+    <div class="sec-lbl">Indicadores — D-1</div>
+    <div class="kpi-grid">
+      <div class="kpi-card c-blue">
+        <span class="kpi-ico">⚡</span>
+        <div class="kpi-lbl">Geração Diária</div>
+        <div class="kpi-val">${fmtN(d.totalMwh,0)}<span class="kpi-unit">MWh</span>${pct!=null?`<span style="font-size:16px;font-weight:800;color:${pct>=98?'var(--accent-green)':'var(--accent-red)'};margin-left:8px">${pct>=98?'▲':'▼'} ${pctTxt}</span>`:''}</div>
+        <div class="kpi-sub">Prog: ${d.totalProg>0?fmtN(d.totalProg,0)+' MWh':'—'}</div>
+      </div>
+      <div class="kpi-card c-teal">
+        <span class="kpi-ico">🔥</span>
+        <div class="kpi-lbl">Gás Natural</div>
+        <div class="kpi-val">${d.consumoGN?fmtN(d.consumoGN,0):'—'}<span class="kpi-unit">Nm³/d</span>${gnPct!=null?`<span style="font-size:16px;font-weight:800;color:${Math.abs(gnPct-100)<=5?'var(--accent-green)':'var(--accent-red)'};margin-left:8px">${Math.abs(gnPct-100)<=5?'▲':'▼'} ${gnPctTxt}</span>`:''}</div>
+        <div class="kpi-sub">Prog: ${d.progGN?fmtN(d.progGN,0)+' Nm³/d':'—'}</div>
+      </div>
+      <div class="kpi-card c-green">
+        <span class="kpi-ico">📈</span>
+        <div class="kpi-lbl">Disp. ONS Acum.</div>
+        <div class="kpi-val" style="color:${d.avons.acum?'var(--accent-green)':''}">${d.avons.acum?fmtN(d.avons.acum,1):'—'}<span class="kpi-unit">%</span></div>
+        <div class="kpi-sub">Complexo M-1</div>
+      </div>
+      <div class="kpi-card c-orange">
+        <span class="kpi-ico">🌡</span>
+        <div class="kpi-lbl">Temp. Ambiente</div>
+        <div class="kpi-val">${d.temp?fmtN(d.temp,1):'—'}<span class="kpi-unit">°C</span></div>
+        <div class="kpi-sub">Média D-1</div>
+      </div>
+      <div class="kpi-card c-red wide">
+        <span class="kpi-ico" style="color:var(--accent-red)">⏻</span>
+        <div class="kpi-lbl">Desativações Temporárias Abertas</div>
+        <div class="kpi-val">${d.s8.length}<span class="kpi-unit"> DTs</span>${pend>0?`<span style="font-size:13px;font-weight:700;color:var(--accent-red);margin-left:6px">&nbsp;·&nbsp; ${pend} aguardando revalidação</span>`:''}</div>
+        ${pend>0?`<div style="margin-top:6px;border-top:1px solid rgba(224,68,68,.25);padding-top:6px">${d.s8.filter(r=>r[1]==='Aguardando revalidação'||r[1]==='Aprovar revalidação').map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--accent-red);padding:2px 0;gap:8px"><span style="font-family:monospace;font-weight:700;white-space:nowrap">${r[0]||'—'}</span><span style="text-align:right;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r[5]||'—'}</span></div>`).join('')}</div>`:''}
+      </div>
+    </div>
+    <div class="sec-lbl">Disp. Mensal (M-1)</div>
+    <div class="card"><div class="avail-list">${onsHtml}</div>${onsMeta}</div>`;
+}
+
+/* ── GAUGE GERAÇÃO ── */
+function gaugeGer(p){
+  const MAX=100,r=36,cx=50,cy=50;
+  const pct=p.prog>0?p.real/p.prog*100:0;
+  const devMwh=p.prog-p.real;
+  const devPct=p.prog>0?devMwh/p.prog*100:0;
+  const alert=p.prog>0&&devMwh>5;
+  const withinTol=p.prog>0&&devMwh>=0&&devMwh<=5;
+  const effPct=Math.min(withinTol?100:pct,100);
+  function pt(val,rad){const a=(180-val/MAX*180)*Math.PI/180;return[cx+rad*Math.cos(a),cy-rad*Math.sin(a)];}
+  const[x98,y98]=pt(98,r);
+  const[nx,ny]=pt(effPct>0?Math.min(effPct,99.99):0,r-12);
+  const clr=p.prog<=0?'#8a94ad':(effPct>=98)?'#22a66a':'#e04444';
+  const sl={piv:'PI/V',pii:'PII',piii:'PIII/VI',p4:'PIV'}[p.key]||p.key;
+  return`<div style="text-align:center;flex:1;min-width:60px;max-width:90px">
+    <div style="font-size:15px;font-weight:800;color:${clr};line-height:1.2">${p.prog>0?fmtN(effPct,1)+'%':'—'}</div>
+    <svg viewBox="0 0 100 56" width="100%" style="display:block;margin:0 auto;overflow:visible">
+      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${x98.toFixed(1)} ${y98.toFixed(1)}" fill="none" stroke="#fca5a5" stroke-width="7" stroke-linecap="round"/>
+      <path d="M ${x98.toFixed(1)} ${y98.toFixed(1)} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#86efac" stroke-width="7" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="3.5" fill="#94a3b8"/>
+    </svg>
+    <div style="font-size:10px;font-weight:700;color:var(--text-secondary);margin-top:1px;letter-spacing:.4px">${sl}</div>
+    ${p.desp.length?`<div style="font-size:8px;color:var(--text-light);margin-top:1px;letter-spacing:.3px">${p.desp.join(' · ')}</div>`:''}
+    <div style="font-size:8px;color:var(--text-light);margin-top:2px;display:flex;justify-content:center;align-items:center;gap:3px;white-space:nowrap">
+      <span>GER ${fmtN(p.real,1)}MWh</span>
+      <span style="width:1px;height:9px;background:#94a3b8;display:inline-block;flex-shrink:0"></span>
+      <span>PRG ${p.prog>0?fmtN(p.prog,1)+'MWh':'—'}</span>
+    </div>
+    ${alert?`<div style="font-size:11px;font-weight:800;color:var(--accent-red);margin-top:1px">▼ ${fmtN(devPct,1)}%</div>`:''}
+  </div>`;
+}
+
+/* ── BUILD: GERAÇÃO ── */
+function buildGeracao(d){
+  const complexHtml=`<div style="display:flex;justify-content:space-around;align-items:flex-start;padding:8px 4px 6px">${d.plants.map(p=>gaugeGer(p)).join('')}</div>
+    <div style="font-size:10px;color:var(--text-light);text-align:right;padding:0 8px 4px">| meta: 98%</div>`;
+
+  const unitHtml=d.ugs.map(u=>{
+    const cls=u.cond==='EDE'?'on':u.cond==='FDD'?'fdd':'off';
+    return`<div class="uc ${cls}"><span class="u-dot"></span><span class="u-name">${u.l}</span><span class="u-disp">${u.cond}</span><span class="u-mw">${u.avfis>0?fmtN(u.avfis,1)+'%':'—'}</span></div>`;
+  }).join('');
+
+  return`
+    <div class="sec-lbl">Geração por Usinas — D-1</div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-hdr-l"><div class="card-hdr-ico ico-blue">⚡</div><span class="card-ttl">Atendimento ao Despacho</span></div>
+      </div>
+      <div class="avail-list">${complexHtml}</div>
+    </div>
+    <div class="sec-lbl">Geração por Unidade — D-1</div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-hdr-l"><div class="card-hdr-ico ico-blue">⚡</div><span class="card-ttl">Energia D-1 por UG</span></div>
+        <span class="badge b-blue">MWh</span>
+      </div>
+      <div class="chart-wrap"><canvas class="bar-chart" id="genChart" height="180"></canvas></div>
+    </div>
+    <div class="sec-lbl">Status das Unidades</div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-hdr-l"><div class="card-hdr-ico ico-teal">🏭</div><span class="card-ttl">Disponibilidade Física 24h</span></div></div>
+      <div class="unit-scroll">${unitHtml}</div>
+      <div class="unit-legend">
+        <div class="leg-i"><div class="leg-dot" style="background:var(--accent-green)"></div>EDE — Em Despacho</div>
+        <div class="leg-i"><div class="leg-dot" style="background:var(--accent)"></div>FDD — Fora de Despacho</div>
+        <div class="leg-i"><div class="leg-dot" style="background:var(--accent-red)"></div>IND — Indisponível</div>
+      </div>
+    </div>`;
+}
+
+/* ── BUILD: OCORRÊNCIAS ── */
+function buildOcorrencias(d){
+  const ocPlants=[
+    {key:'u_piv',label:'Parnaíba I / V',ico:'🏭',icoCls:'ico-blue'},
+    {key:'u_pii',label:'Parnaíba II',ico:'⚙️',icoCls:'ico-orange'},
+    {key:'u_piii',label:'Parnaíba III / VI',ico:'✅',icoCls:'ico-teal'},
+    {key:'u_p4',label:'Parnaíba IV',ico:'🏗️',icoCls:'ico-teal'},
+  ];
+  const cards=ocPlants.map(p=>{
+    const rows=(d.s2[p.key]||[]).filter(t=>t&&t.trim());
+    const hasOc=rows.length>0;
+    const badgeTxt=hasOc?rows.length+' ocorrência'+(rows.length>1?'s':''):'Normal';
+    const badgeCls=hasOc?'b-warn':'b-green';
+    const items=rows.length
+      ?rows.map(t=>`<div class="occ-item"><span class="occ-tag op">OC</span><div><span class="occ-text">${t}</span></div></div>`).join('')
+      :`<div class="occ-item"><span class="occ-tag ok">OK</span><div><span class="occ-text">Sem ocorrências relevantes</span></div></div>`;
+    return`<div class="card">
+      <div class="coll-hdr ${hasOc?'open':''}" onclick="toggleColl(this)">
+        <div class="coll-l"><div class="card-hdr-ico ${p.icoCls}" style="width:27px;height:27px;border-radius:7px;font-size:13px;flex-shrink:0">${p.ico}</div><span class="card-ttl">${p.label}</span></div>
+        <div style="display:flex;align-items:center;gap:7px"><span class="badge ${badgeCls}">${badgeTxt}</span><div class="chevron">▼</div></div>
+      </div>
+      <div class="coll-body ${hasOc?'open':''}"><div class="occ-list">${items}</div></div>
+    </div>`;
+  }).join('');
+
+  const crits=d.s6.filter(r=>parseInt(r[2])<=2).sort((a,b)=>(parseInt(a[2])||5)-(parseInt(b[2])||5));
+  const cmmsHtml=crits.length?`
+    <div class="sec-lbl">Observações CMMS — Alta Criticidade</div>
+    ${crits.map(r=>{
+      const c=parseInt(r[2])||1;
+      return`<div class="alert-card ${c===1?'critical':''}">
+        <div class="alert-ico">${c===1?'🚨':'⚠️'}</div>
+        <div><div class="alert-ttl">Crit. ${c} — Nota ${r[0]||'—'}</div>
+        <div class="alert-body">${r[3]||'—'} · Local: ${r[4]||'—'} · Status: <strong>${r[5]||'—'}</strong></div></div>
+      </div>`;
+    }).join('')}`:'';
+
+  return`<div class="sec-lbl">Ocorrências Relevantes</div>${cards}${cmmsHtml}`;
+}
+
+/* ── BUILD: ÁGUA ── */
+function buildAgua(d){
+  const prodHtml=d.s7prod.map(p=>`<div class="wi${p.val===0?' alert':''}"><span class="w-name">${p.l}</span><span class="w-val">${p.val>0?fmtN(p.val,1):'0'}<span class="w-unit"> m³/h</span></span></div>`).join('');
+  const consHtml=d.s7cons.map(p=>`<div class="wi${p.val===0?' alert':''}"><span class="w-name">${p.l}</span><span class="w-val">${p.val>0?fmtN(p.val,1):'—'}<span class="w-unit"> m³/h</span></span></div>`).join('');
+  const tqHtml=d.tanks.map(t=>{
+    const v=t.val;const cls=v>=50?'good':v>=20?'warn':'bad';
+    const clr=v>=50?'var(--teal)':v>=20?'var(--accent)':'var(--accent-red)';
+    return`<div class="ti"><div class="ti-lbl">${t.l}</div><div class="ti-bar"><div class="ti-fill" style="height:${v>0?v:0}%;background:${clr}"></div></div><div class="ti-pct ${cls}">${v>0?fmtN(v,1)+'%':'—'}</div></div>`;
+  }).join('');
+  return`
+    <div class="sec-lbl">Produção de Água (m³/h)</div>
+    <div class="card"><div class="water-grid">${prodHtml}</div></div>
+    <div class="sec-lbl">Torres e Condensado (m³/h)</div>
+    <div class="card"><div class="water-grid">${consHtml}</div></div>
+    <div class="sec-lbl">Níveis dos Tanques às 01:00h</div>
+    <div class="card"><div class="tank-grid">${tqHtml}</div></div>`;
+}
+
+/* ── BUILD: DTs ── */
+function buildDTs(d){
+  const total=d.s8.length;
+  const agua=d.s8.filter(r=>r[1]==='Aguardando revalidação').length;
+  const apr=d.s8.filter(r=>r[1]==='Aprovar revalidação').length;
+  const impl=d.s8.filter(r=>r[1]==='Implementada').length;
+  const sorted=[...d.s8].sort((a,b)=>{
+    const o={'Aguardando revalidação':0,'Aprovar revalidação':1,'Implementada':2};
+    return(o[a[1]]??3)-(o[b[1]]??3);
+  });
+  function sbCls(st){
+    if(st==='Implementada')return'sb impl';
+    if(st==='Aguardando revalidação')return'sb await';
+    if(st==='Aprovar revalidação')return'sb aprov';
+    return'sb';
+  }
+  function sbTxt(st){
+    if(st==='Implementada')return'Impl.';
+    if(st==='Aguardando revalidação')return'Ag.rev.';
+    if(st==='Aprovar revalidação')return'Aprovar';
+    return st||'—';
+  }
+  function dbCls(dias){const d=parseInt(dias)||0;return d>180?'db old':d>30?'db recent':'db new';}
+  const rows=sorted.map(r=>`<tr>
+    <td style="font-family:monospace;font-size:10px;white-space:nowrap">${r[4]||'—'}</td>
+    <td style="font-size:10px;white-space:nowrap">${r[0]||'—'}</td>
+    <td>${r[3]||'—'}${r[2]?`<br><span style="font-size:9px;color:var(--text-light);font-family:monospace">${r[2]}</span>`:''}</td>
+    <td><span class="${sbCls(r[1])}">${sbTxt(r[1])}</span></td>
+    <td><span class="${dbCls(r[8])}">${parseInt(r[8])||'—'}</span></td>
+  </tr>`).join('');
+  const emptyRow=`<tr><td colspan="5" style="padding:14px;text-align:center;color:var(--text-light);font-style:italic">Sem desativações registradas</td></tr>`;
+  return`
+    <div class="sec-lbl">Desativações Temporárias</div>
+    <div class="summary-row">
+      <div class="si"><span class="sn orange">${total}</span><div class="sl">Total</div></div>
+      <div class="si"><span class="sn red">${agua+apr}</span><div class="sl">Ag. revalidação</div></div>
+      <div class="si"><span class="sn green">${impl}</span><div class="sl">Implementadas</div></div>
+    </div>
+    <div class="card">
+      <div class="deact-scroll">
+        <table class="deact-table">
+          <thead><tr><th>Ordem</th><th>ID</th><th>Equipamento</th><th>Status</th><th>Dias</th></tr></thead>
+          <tbody>${rows||emptyRow}</tbody>
+        </table>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-light);text-align:center;padding:2px 0">← Deslize para ver mais colunas →</div>`;
+}
+
+/* ── RENDER ── */
+function render(d){
+  D=d; chartDone=false;
+  document.getElementById('upload').style.display='none';
+  document.getElementById('app').style.display='block';
+  // Header
+  const dateStr=d.diaObs&&d.diaObs!=='—'?d.diaObs:d.date;
+  document.getElementById('h-subtitle').textContent='D-1: '+(dateStr||'—');
+  // Date bar
+  document.getElementById('db-semana').textContent=d.semana||'—';
+  document.getElementById('db-diaobs').textContent=dateStr||'—';
+  document.getElementById('db-temp').textContent=d.temp?fmtN(d.temp,1)+'°C':'—';
+  document.getElementById('db-ts').textContent=d.ts?new Date(d.ts).toLocaleString('pt-BR',{timeStyle:'short'}):'—';
+  // Tabs
+  document.getElementById('main-visao').innerHTML=buildVisao(d);
+  document.getElementById('main-geracao').innerHTML=buildGeracao(d);
+  document.getElementById('main-ocorrencias').innerHTML=buildOcorrencias(d);
+  document.getElementById('main-agua').innerHTML=buildAgua(d);
+  document.getElementById('main-dts').innerHTML=buildDTs(d);
+}
+
+/* ── CHART (canvas puro) ── */
+function initChart(){
+  if(chartDone||!D)return;
+  const canvas=document.getElementById('genChart');
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1;
+  const w=canvas.offsetWidth||canvas.parentElement?.offsetWidth-26||340;
+  const h=180;
+  canvas.width=w*dpr; canvas.height=h*dpr; canvas.style.height=h+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  chartDone=true;
+
+  const ugs=D.ugs;
+  const vals=ugs.map(u=>u.mwh);
+  const maxVal=Math.max(...vals,1);
+  const maxRound=Math.ceil(maxVal/200)*200||200;
+  const colors=ugs.map(u=>u.cond==='EDE'?'#0d8a7a':u.cond==='FDD'?'#f4a024':'#e04444');
+  const pad={top:22,right:6,bottom:34,left:44};
+  const chartW=w-pad.left-pad.right;
+  const chartH=h-pad.top-pad.bottom;
+  const barW=chartW/ugs.length;
+  const gap=barW*0.28;
+
+  // Gridlines
+  const steps=4;
+  ctx.font=`9px -apple-system,sans-serif`;
+  for(let i=0;i<=steps;i++){
+    const g=maxRound/steps*i;
+    const y=pad.top+chartH-(g/maxRound)*chartH;
+    ctx.strokeStyle='#edf0f7'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+chartW,y); ctx.stroke();
+    ctx.fillStyle='#8a94ad'; ctx.textAlign='right';
+    ctx.fillText(g>=1000?(g/1000).toFixed(1)+'k':Math.round(g),pad.left-4,y+3);
+  }
+
+  // Bars
+  ugs.forEach((u,i)=>{
+    const v=vals[i];
+    const x=pad.left+i*barW+gap/2;
+    const bw=barW-gap;
+    const r=Math.min(4,bw/2);
+    if(v>0){
+      const barH=(v/maxRound)*chartH;
+      const y=pad.top+chartH-barH;
+      ctx.fillStyle=colors[i];
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.lineTo(x+bw-r,y);
+      ctx.quadraticCurveTo(x+bw,y,x+bw,y+r);
+      ctx.lineTo(x+bw,y+barH); ctx.lineTo(x,y+barH); ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y); ctx.fill();
+      const lbl=v>=1000?(v/1000).toFixed(1)+'k':fmtN(v,1);
+      if(barH>14){
+        ctx.fillStyle='#1a2340'; ctx.textAlign='center';
+        ctx.font='bold 8px -apple-system,sans-serif';
+        ctx.fillText(lbl,x+bw/2,y-3);
+      }
+    } else {
+      ctx.fillStyle='#e8ecf4';
+      ctx.fillRect(x,pad.top+chartH-3,bw,3);
+    }
+    ctx.fillStyle='#5a6482'; ctx.font='bold 8px -apple-system,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(u.l,x+bw/2,h-18);
+    const vlbl=v>0?(v>=1000?(v/1000).toFixed(1)+'k':fmtN(v,1)):'0';
+    ctx.fillStyle=v>0?colors[i]:'#b0b8cc'; ctx.font='bold 7px -apple-system,sans-serif';
+    ctx.fillText(vlbl,x+bw/2,h-8);
+  });
+}
+
+/* ── TABS ── */
+function showTab(id,tabBtn,navBtn){
+  document.querySelectorAll('.section-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(navBtn)navBtn.classList.add('active');
+  const navEl=document.getElementById('nav-'+id);
+  if(navEl)navEl.classList.add('active');
+  if(tabBtn){tabBtn.classList.add('active');tabBtn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}
+  else{const map={visao:0,geracao:1,ocorrencias:2,agua:3,dts:4};const tabs=document.querySelectorAll('.tab-btn');if(tabs[map[id]]){tabs[map[id]].classList.add('active');tabs[map[id]].scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});}}
+  if(id==='geracao') requestAnimationFrame(initChart);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ── COLLAPSIBLE ── */
+function toggleColl(hdr){hdr.classList.toggle('open');hdr.nextElementSibling.classList.toggle('open');}
+
+/* ── FILE LOAD ── */
+// ── ID do arquivo JSON no Google Drive ──
+const DRIVE_FILE_ID = '1npX9qoJeqHkozPg9YbCJwCHveahqKjT4';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWQ_ujIiv1OYIDrGoYz_R1mQPCl-tNuRW5ZZxcpJqjkJ6T3Xzpp7E0w553PWTRweaq/exec';
+
+function carregarDoDrive(){
+  const msg = document.getElementById('load-msg');
+  const spinner = document.getElementById('load-spinner');
+  const errEl = document.getElementById('load-err');
+  const btnRetry = document.getElementById('btn-retry');
+  if(msg) msg.style.display='block';
+  if(spinner) spinner.style.display='block';
+  if(errEl) errEl.style.display='none';
+  if(btnRetry) btnRetry.style.display='none';
+
+  // Tenta via Apps Script GET (retorna fileId + url atual)
+  fetch(APPS_SCRIPT_URL + '?t=' + Date.now())
+    .then(r=>r.json())
+    .then(info=>{
+      if(!info.ok) throw new Error(info.erro||'Arquivo não encontrado');
+      // Busca o conteúdo do JSON via URL de download direto
+      return fetch('https://drive.google.com/uc?export=download&id=' + info.fileId + '&t=' + Date.now());
+    })
+    .then(r=>r.json())
+    .then(json=>{
+      render(extract(json));
+    })
+    .catch(()=>{
+      // Fallback: tenta direto pelo ID fixo via proxy CORS
+      fetch('https://drive.google.com/uc?export=download&id=' + DRIVE_FILE_ID + '&t=' + Date.now())
+        .then(r=>r.json())
+        .then(json=>render(extract(json)))
+        .catch(err=>{
+          if(spinner) spinner.style.display='none';
+          if(msg) msg.style.display='none';
+          if(errEl) errEl.style.display='block';
+          if(btnRetry) btnRetry.style.display='block';
+        });
+    });
+}
+
+function loadFile(f){
+  if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{try{render(extract(JSON.parse(e.target.result)));}catch(err){alert('Erro ao carregar: '+err.message);}};
+  r.readAsText(f,'utf-8');
+}
+document.getElementById('file-in').onchange=e=>loadFile(e.target.files[0]);
+document.getElementById('file-reload').onchange=e=>loadFile(e.target.files[0]);
+
+// Carrega automaticamente ao abrir
+carregarDoDrive();
+</script>
+</body>
+</html>
