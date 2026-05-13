@@ -391,26 +391,23 @@ function extract(j){
 
 /* ── GAUGE ONS ── */
 function gaugeONS(v,lbl){
-  const r=36,cx=50,cy=50;
+  const r=38,cx=50,cy=50;
   const cls=v>0?pCls(v):'';
   const clr=cls==='good'?'#22a66a':cls==='warn'?'#f4a024':cls==='bad'?'#e04444':'#8a94ad';
+  const bgClr=cls==='good'?'#d1f5e2':cls==='warn'?'#fde8b4':cls==='bad'?'#fee2e2':'#e5eaf4';
   function pt(pct,radius){const a=(180-pct*1.8)*Math.PI/180;return[cx+radius*Math.cos(a),cy-radius*Math.sin(a)];}
   const [xv,yv]=pt(Math.min(v,99.9),r);
-  const [nx,ny]=pt(v>0?Math.min(v,99.9):0,r-12);
-  const [mi,mii]=pt(95,r-4);
-  const [mo,moo]=pt(95,r+7);
+  const [m1x,m1y]=pt(95,r-5); const [m2x,m2y]=pt(95,r+5);
   const bgPath=`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
   const vPath=v>0?`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${xv.toFixed(1)} ${yv.toFixed(1)}`:'';
   return`<div style="text-align:center;flex:1;min-width:52px;max-width:80px">
-    <svg viewBox="0 0 100 66" width="100%" style="display:block;margin:0 auto;overflow:visible">
-      <path d="${bgPath}" fill="none" stroke="#d0d8e8" stroke-width="7" stroke-linecap="round"/>
-      ${vPath?`<path d="${vPath}" fill="none" stroke="${clr}" stroke-width="7" stroke-linecap="round"/>`:''}
-      <line x1="${mi.toFixed(1)}" y1="${mii.toFixed(1)}" x2="${mo.toFixed(1)}" y2="${moo.toFixed(1)}" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${clr}" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="3.5" fill="${clr}"/>
-      <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" font-weight="800" fill="${clr}" font-family="system-ui,sans-serif">${v>0?fmtN(v,1)+'%':'—'}</text>
+    <svg viewBox="0 0 100 54" width="100%" style="display:block;margin:0 auto;overflow:visible">
+      <path d="${bgPath}" fill="none" stroke="${bgClr}" stroke-width="9" stroke-linecap="round"/>
+      ${vPath?`<path d="${vPath}" fill="none" stroke="${clr}" stroke-width="9" stroke-linecap="round"/>`:''}
+      <line x1="${m1x.toFixed(1)}" y1="${m1y.toFixed(1)}" x2="${m2x.toFixed(1)}" y2="${m2y.toFixed(1)}" stroke="rgba(255,255,255,.95)" stroke-width="2.2" stroke-linecap="round"/>
     </svg>
-    <div style="font-size:10px;font-weight:700;color:var(--text-secondary);margin-top:1px;letter-spacing:.4px">${lbl}</div>
+    <div style="font-size:13px;font-weight:800;color:${clr};line-height:1;margin-top:-4px">${v>0?fmtN(v,1)+'%':'—'}</div>
+    <div style="font-size:9px;font-weight:700;color:var(--text-secondary);margin-top:3px;letter-spacing:.3px">${lbl}</div>
   </div>`;
 }
 
@@ -490,10 +487,10 @@ function gaugeGer(p){
   return`<div style="text-align:center;flex:1;min-width:60px;max-width:90px">
     <div style="font-size:15px;font-weight:800;color:${clr};line-height:1.2">${p.prog>0?fmtN(effPct,1)+'%':'—'}</div>
     <svg viewBox="0 0 100 56" width="100%" style="display:block;margin:0 auto;overflow:visible">
-      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${x98.toFixed(1)} ${y98.toFixed(1)}" fill="none" stroke="#fca5a5" stroke-width="7" stroke-linecap="round"/>
-      <path d="M ${x98.toFixed(1)} ${y98.toFixed(1)} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#86efac" stroke-width="7" stroke-linecap="round"/>
-      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
-      <circle cx="${cx}" cy="${cy}" r="3.5" fill="#94a3b8"/>
+      <path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${x98.toFixed(1)} ${y98.toFixed(1)}" fill="none" stroke="#fde8e8" stroke-width="9" stroke-linecap="round"/>
+      <path d="M ${x98.toFixed(1)} ${y98.toFixed(1)} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#d1fae5" stroke-width="9" stroke-linecap="round"/>
+      <line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="${clr}" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="${cx}" cy="${cy}" r="3.5" fill="${clr}"/>
     </svg>
     <div style="font-size:10px;font-weight:700;color:var(--text-secondary);margin-top:1px;letter-spacing:.4px">${sl}</div>
     ${p.desp.length?`<div style="font-size:8px;color:var(--text-light);margin-top:1px;letter-spacing:.3px">${p.desp.join(' · ')}</div>`:''}
@@ -670,7 +667,7 @@ function initChart(){
   const maxVal=Math.max(...vals,1);
   const maxRound=Math.ceil(maxVal/200)*200||200;
   const colors=ugs.map(u=>u.cond==='EDE'?'#0d8a7a':u.cond==='FDD'?'#f4a024':'#e04444');
-  const pad={top:22,right:6,bottom:34,left:44};
+  const pad={top:26,right:6,bottom:22,left:44};
   const chartW=w-pad.left-pad.right;
   const chartH=h-pad.top-pad.bottom;
   const barW=chartW/ugs.length;
@@ -694,6 +691,7 @@ function initChart(){
     const x=pad.left+i*barW+gap/2;
     const bw=barW-gap;
     const r=Math.min(4,bw/2);
+    const vlbl=v>0?(v>=1000?(v/1000).toFixed(1)+'k':fmtN(v,1)):'0';
     if(v>0){
       const barH=(v/maxRound)*chartH;
       const y=pad.top+chartH-barH;
@@ -703,16 +701,14 @@ function initChart(){
       ctx.quadraticCurveTo(x+bw,y,x+bw,y+r);
       ctx.lineTo(x+bw,y+barH); ctx.lineTo(x,y+barH); ctx.lineTo(x,y+r);
       ctx.quadraticCurveTo(x,y,x+r,y); ctx.fill();
-      // Rótulo superior removido; valor permanece abaixo da UG.
-} else {
+      ctx.fillStyle=colors[i]; ctx.font=`bold 8px -apple-system,sans-serif`; ctx.textAlign='center';
+      ctx.fillText(vlbl,x+bw/2,y-3);
+    } else {
       ctx.fillStyle='#e8ecf4';
       ctx.fillRect(x,pad.top+chartH-3,bw,3);
     }
-    ctx.fillStyle='#5a6482'; ctx.font='bold 8px -apple-system,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(u.l,x+bw/2,h-18);
-    const vlbl=v>0?(v>=1000?(v/1000).toFixed(1)+'k':fmtN(v,1)):'0';
-    ctx.fillStyle=v>0?colors[i]:'#b0b8cc'; ctx.font='bold 7px -apple-system,sans-serif';
-    ctx.fillText(vlbl,x+bw/2,h-8);
+    ctx.fillStyle='#5a6482'; ctx.font='bold 9px -apple-system,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(u.l,x+bw/2,h-8);
   });
 }
 
