@@ -667,7 +667,7 @@ function initChart(){
   const maxVal=Math.max(...vals,1);
   const maxRound=Math.ceil(maxVal/200)*200||200;
   const colors=ugs.map(u=>u.cond==='EDE'?'#0d8a7a':u.cond==='FDD'?'#f4a024':'#e04444');
-  const pad={top:26,right:6,bottom:22,left:44};
+  const pad={top:26,right:6,bottom:34,left:44};
   const chartW=w-pad.left-pad.right;
   const chartH=h-pad.top-pad.bottom;
   const barW=chartW/ugs.length;
@@ -691,7 +691,7 @@ function initChart(){
     const x=pad.left+i*barW+gap/2;
     const bw=barW-gap;
     const r=Math.min(4,bw/2);
-    const vlbl=v>0?(v>=1000?(v/1000).toFixed(1)+'k':fmtN(v,1)):'0';
+    const vlbl=v>0?(v>=1000?(v/1000).toFixed(1)+'k':fmtN(v,1)):'—';
     if(v>0){
       const barH=(v/maxRound)*chartH;
       const y=pad.top+chartH-barH;
@@ -701,14 +701,28 @@ function initChart(){
       ctx.quadraticCurveTo(x+bw,y,x+bw,y+r);
       ctx.lineTo(x+bw,y+barH); ctx.lineTo(x,y+barH); ctx.lineTo(x,y+r);
       ctx.quadraticCurveTo(x,y,x+r,y); ctx.fill();
-      ctx.fillStyle=colors[i]; ctx.font=`bold 8px -apple-system,sans-serif`; ctx.textAlign='center';
-      ctx.fillText(vlbl,x+bw/2,y-3);
+      // Valor vertical na base da barra
+      ctx.save();
+      ctx.translate(x+bw/2, pad.top+chartH-4);
+      ctx.rotate(-Math.PI/2);
+      ctx.fillStyle='rgba(255,255,255,0.92)';
+      ctx.font=`bold 8px -apple-system,sans-serif`;
+      ctx.textAlign='left';
+      ctx.fillText(vlbl,4,0);
+      ctx.restore();
     } else {
       ctx.fillStyle='#e8ecf4';
       ctx.fillRect(x,pad.top+chartH-3,bw,3);
     }
-    ctx.fillStyle='#5a6482'; ctx.font='bold 9px -apple-system,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(u.l,x+bw/2,h-8);
+    // Rótulo da UG em 45°
+    ctx.save();
+    ctx.translate(x+bw/2, pad.top+chartH+6);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillStyle='#5a6482';
+    ctx.font=`bold 9px -apple-system,sans-serif`;
+    ctx.textAlign='right';
+    ctx.fillText(u.l,0,0);
+    ctx.restore();
   });
 }
 
