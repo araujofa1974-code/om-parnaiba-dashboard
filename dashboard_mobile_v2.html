@@ -494,10 +494,9 @@ function gaugeGer(p){
     </svg>
     <div style="font-size:10px;font-weight:700;color:var(--text-secondary);margin-top:1px;letter-spacing:.4px">${sl}</div>
     ${p.desp.length?`<div style="font-size:8px;color:var(--text-light);margin-top:1px;letter-spacing:.3px">${p.desp.join(' · ')}</div>`:''}
-    <div style="font-size:8px;color:var(--text-light);margin-top:2px;display:flex;justify-content:center;align-items:center;gap:3px;white-space:nowrap">
-      <span>GER ${fmtN(p.real,1)}MWh</span>
-      <span style="width:1px;height:9px;background:#94a3b8;display:inline-block;flex-shrink:0"></span>
-      <span>PRG ${p.prog>0?fmtN(p.prog,1)+'MWh':'—'}</span>
+    <div style="font-size:8px;color:var(--text-light);margin-top:2px;line-height:1.5;text-align:center">
+      <div>GER ${fmtN(p.real,1)} MWh</div>
+      <div>PRG ${p.prog>0?fmtN(p.prog,1)+' MWh':'—'}</div>
     </div>
     ${alert?`<div style="font-size:11px;font-weight:800;color:var(--accent-red);margin-top:1px">▼ ${fmtN(devPct,1)}%</div>`:''}
   </div>`;
