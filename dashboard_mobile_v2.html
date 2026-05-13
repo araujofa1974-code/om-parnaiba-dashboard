@@ -137,8 +137,12 @@ label.btn-reload{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,2
 .leg-dot{width:7px;height:7px;border-radius:50%}
 
 /* ── CHART ── */
-.chart-wrap{padding:11px 13px 8px}
-canvas.bar-chart{width:100%;display:block}
+canvas.bar-chart{
+  width:100%;
+  display:block;
+  background:#2a3555; /* ✅ NOVO: fundo levemente escuro */
+  border-radius:8px;  /* opcional (visual melhor) */
+}
 
 /* ── OCC ── */
 .occ-item{display:flex;gap:9px;align-items:flex-start;padding:10px 13px;border-bottom:1px solid var(--border)}
