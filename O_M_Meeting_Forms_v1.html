@@ -2247,12 +2247,46 @@ window.addEventListener('DOMContentLoaded',()=>{
 <!-- ── TOAST de feedback da publicação ── -->
 <div id="toast-pub"></div>
 
+<style>
+#wa-modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center}
+#wa-modal.open{display:flex}
+#wa-sheet{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;box-shadow:0 -4px 24px rgba(0,0,0,.18)}
+#wa-sheet h3{font-size:15px;font-weight:700;color:#1a2340;margin-bottom:4px}
+#wa-sheet p{font-size:12px;color:#5a6482;margin-bottom:16px}
+.wa-btn{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;margin-bottom:10px;background:#f0faf4;border:1px solid #b7e4c7;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;color:#1a5c35;text-decoration:none}
+.wa-btn svg{flex-shrink:0}
+.wa-btn:last-of-type{margin-bottom:0}
+#wa-fechar{margin-top:14px;width:100%;padding:12px;background:none;border:1px solid #e0e5f0;border-radius:10px;font-size:13px;color:#5a6482;cursor:pointer}
+</style>
+
+<!-- Modal WhatsApp -->
+<div id="wa-modal">
+  <div id="wa-sheet">
+    <h3>Compartilhar via WhatsApp</h3>
+    <p>Dashboard atualizado. Selecione quem deseja notificar:</p>
+    <div id="wa-contatos"></div>
+    <button id="wa-fechar" onclick="fecharModalWA()">Fechar</button>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
 //  PUBLICAR NO DRIVE
 //  Substitua WEBAPP_URL pela URL gerada ao implantar o Apps Script
 // ═══════════════════════════════════════════════════════════════════════════
 const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx6dFEhaQRt3MmGi-l3BUWQoH-oDGhNklxxnh7eqEZ0NIJ5jL7wX0YeZ4DcmpDtnEM/exec';
+
+const DASHBOARD_URL = 'https://araujofa1974-code.github.io/om-parnaiba-dashboard/dashboard_mobile_v2.html';
+
+// ── CONTATOS WHATSAPP ─────────────────────────────────────────────────────
+// Formato do número: código do país + DDD + número (sem espaços ou símbolos)
+// Exemplo Brasil: 55 + 86 + 999999999 → '5586999999999'
+const CONTATOS_WA = [
+  { nome: 'Contato 1', numero: '5521981717210' },
+  { nome: 'Contato 2', numero: '5551994237887' },
+  { nome: 'Contato 3', numero: '5531999222652' },
+];
+// ─────────────────────────────────────────────────────────────────────────
 
 function publicarNoDrive() {
   const btn = document.getElementById('btn-pub');
@@ -2272,12 +2306,13 @@ function publicarNoDrive() {
     body: JSON.stringify(estado)
   })
   .then(() => {
-    showToast('✅ Publicado no Drive! Dashboard atualizado.', '#22a66a');
+    showToast('✅ Publicado! Dashboard atualizado.', '#22a66a');
     btn.textContent = '✅ Publicado';
     setTimeout(() => {
       btn.disabled = false;
       btn.textContent = '☁️ Publicar';
     }, 3000);
+    abrirModalWA(estado);
   })
   .catch(err => {
     showToast('❌ Erro ao publicar: ' + err.message, '#e04444');
@@ -2285,6 +2320,48 @@ function publicarNoDrive() {
     btn.textContent = '☁️ Publicar';
   });
 }
+
+function abrirModalWA(estado) {
+  const diaObs = estado['diaObs'] || '';
+  const dataFmt = diaObs
+    ? diaObs.split('-').reverse().join('/')
+    : new Date().toLocaleDateString('pt-BR');
+
+  const mensagem =
+    `🔔 *Dashboard O&M Parnaíba atualizado!*\n` +
+    `📅 Dia de referência: ${dataFmt}\n` +
+    `📊 Acesse: ${DASHBOARD_URL}`;
+
+  const container = document.getElementById('wa-contatos');
+  container.innerHTML = '';
+
+  CONTATOS_WA.forEach(c => {
+    const url = `https://wa.me/${c.numero}?text=${encodeURIComponent(mensagem)}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.className = 'wa-btn';
+    a.innerHTML = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.571a.75.75 0 0 0 .93.909l5.875-1.54A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.721 9.721 0 0 1-4.964-1.357l-.355-.212-3.684.967.982-3.588-.232-.369A9.722 9.722 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+      </svg>
+      ${c.nome}`;
+    container.appendChild(a);
+  });
+
+  document.getElementById('wa-modal').classList.add('open');
+}
+
+function fecharModalWA() {
+  document.getElementById('wa-modal').classList.remove('open');
+}
+
+// Fecha o modal ao clicar fora do sheet
+document.getElementById('wa-modal').addEventListener('click', function(e) {
+  if(e.target === this) fecharModalWA();
+});
 
 function showToast(msg, cor) {
   const t = document.getElementById('toast-pub');
