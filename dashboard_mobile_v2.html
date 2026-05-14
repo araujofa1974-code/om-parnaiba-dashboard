@@ -748,66 +748,39 @@ function showTab(id,tabBtn,navBtn){
 function toggleColl(hdr){hdr.classList.toggle('open');hdr.nextElementSibling.classList.toggle('open');}
 
 /* ── FILE LOAD ── */
-// ── ID do arquivo JSON no Google Drive ──
-const DRIVE_FILE_ID = '1npX9qoJeqHkozPg9YbCJwCHveahqKjT4';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyW1G1hlqXPXLm9OXeQkieDMcNPsIRMPJlHbnSTxgmJ2drh1k-f5DjaddyKx4tJL6BY/exec';
+const GITHUB_BASE = 'https://araujofa1974-code.github.io/om-parnaiba-dashboard';
+
+function getJsonUrl() {
+  const d1 = new Date();
+  d1.setDate(d1.getDate() - 1);
+  const dd   = String(d1.getDate()).padStart(2, '0');
+  const mm   = String(d1.getMonth() + 1).padStart(2, '0');
+  const aaaa = d1.getFullYear();
+  return `${GITHUB_BASE}/Dados_${dd}${mm}${aaaa}.json`;
+}
 
 function carregarDoDrive(){
-  const msg = document.getElementById('load-msg');
-  const spinner = document.getElementById('load-spinner');
-  const errEl = document.getElementById('load-err');
+  const msg      = document.getElementById('load-msg');
+  const spinner  = document.getElementById('load-spinner');
+  const errEl    = document.getElementById('load-err');
   const btnRetry = document.getElementById('btn-retry');
   if(msg){ msg.style.display='block'; msg.textContent='Buscando dados...'; }
   if(spinner) spinner.style.display='block';
-  if(errEl) errEl.style.display='none';
+  if(errEl)   errEl.style.display='none';
   if(btnRetry) btnRetry.style.display='none';
 
-  // Estratégia 1: fetch direto com redirect follow
-  fetch(APPS_SCRIPT_URL, { redirect: 'follow' })
-    .then(r => r.text())
-    .then(txt => {
-      const json = JSON.parse(txt);
-      if(json.ok === false) throw new Error(json.erro || 'Sem dados');
-      render(extract(json));
+  fetch(getJsonUrl(), { cache: 'no-store' })
+    .then(r => {
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
     })
+    .then(json => { render(extract(json)); })
     .catch(() => {
-      // Estratégia 2: proxy jsonp via script tag
-      carregarViaScript();
-    });
-}
-
-function carregarViaScript(){
-  const msg = document.getElementById('load-msg');
-  const errEl = document.getElementById('load-err');
-  const btnRetry = document.getElementById('btn-retry');
-  const spinner = document.getElementById('load-spinner');
-
-  // Usa callback JSONP para contornar CORS
-  window._dashCB = function(json){
-    try{
-      if(json.ok === false) throw new Error(json.erro);
-      render(extract(json));
-    } catch(e){
       if(spinner) spinner.style.display='none';
-      if(msg) msg.style.display='none';
-      if(errEl) errEl.style.display='block';
+      if(msg)     msg.style.display='none';
+      if(errEl)   errEl.style.display='block';
       if(btnRetry) btnRetry.style.display='block';
-    }
-    const s = document.getElementById('_jsonp_s');
-    if(s) s.remove();
-  };
-
-  const s = document.createElement('script');
-  s.id = '_jsonp_s';
-  s.onerror = () => {
-    if(spinner) spinner.style.display='none';
-    if(msg) msg.style.display='none';
-    if(errEl) errEl.style.display='block';
-    if(btnRetry) btnRetry.style.display='block';
-  };
-  // Apps Script suporta callback= para JSONP
-  s.src = APPS_SCRIPT_URL + '?callback=_dashCB&t=' + Date.now();
-  document.head.appendChild(s);
+    });
 }
 
 function loadFile(f){
