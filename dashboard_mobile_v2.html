@@ -379,9 +379,10 @@ function extract(j){
     pv:  P(G(j,'avons_pv',  _POS_AVONS[4])),
     acum:P(G(j,'avons_acum',_POS_AVONS[5]))
   };
-  let s2={};try{s2=JSON.parse(j['__s2__']||'{}');}catch(e){}
-  let s6=[];try{s6=JSON.parse(j['__s6__']||'[]');}catch(e){}
-  let s8=[];try{s8=JSON.parse(j['__s8__']||'[]');}catch(e){}
+  let s2={};try{s2=JSON.parse(j['__s2__']||'{}');}catch(e){console.warn('[Dashboard] Falha ao parsear __s2__:',e);}
+  let s6=[];try{s6=JSON.parse(j['__s6__']||'[]');}catch(e){console.warn('[Dashboard] Falha ao parsear __s6__:',e);}
+  let s8=[];try{s8=JSON.parse(j['__s8__']||'[]');}catch(e){console.warn('[Dashboard] Falha ao parsear __s8__:',e);}
+  if(!j['totalMwh'] && !j['real_piv']) console.warn('[Dashboard] Campos críticos ausentes no JSON — verifique se o formulário foi preenchido e publicado corretamente.');
   const s7prod=S7PROD.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
   const s7cons=S7CONS.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
   const tanks=TANKS.map(t=>({...t,val:N(G(j,t.id,_S7pk(t.id)))}));
@@ -658,7 +659,7 @@ function initChart(){
   const canvas=document.getElementById('genChart');
   if(!canvas)return;
   const dpr=window.devicePixelRatio||1;
-  const w=canvas.offsetWidth||canvas.parentElement?.offsetWidth-26||340;
+  const w=canvas.offsetWidth||(canvas.parentElement?.offsetWidth??0)-26||340;
   const h=180;
   canvas.width=w*dpr; canvas.height=h*dpr; canvas.style.height=h+'px';
   const ctx=canvas.getContext('2d');
@@ -840,7 +841,7 @@ function addLocalLinkButton(fileName){
     btn.onclick = function(){
       let fn = currentFileName || getLinkParams().om || getLinkParams().localId || '';
       if(!fn){
-        fn = prompt('Informe o nome do JSON:', 'OM_20260509.json') || '';
+        fn = prompt('Informe o nome do JSON:', (()=>{const n=new Date(),p=v=>String(v).padStart(2,'0');return `OM_${n.getFullYear()}${p(n.getMonth()+1)}${p(n.getDate())}.json`;})()) || '';
       }
       if(fn) loadLinkedJsonFromFolder(fn);
     };
@@ -848,18 +849,6 @@ function addLocalLinkButton(fileName){
     const manualLabel = upload.querySelector('label.btn-upload');
     if(manualLabel){ upload.insertBefore(btn, manualLabel); }
     else{ upload.appendChild(btn); }
-  }
-
-  if(false && !document.getElementById('btn-wa-upload') && !document.getElementById('btn-wa-upload-static')){
-    const waBtn = document.createElement('button');
-    waBtn.id = 'btn-wa-upload';
-    waBtn.className = 'btn-wa';
-    waBtn.type = 'button';
-    waBtn.textContent = 'Compartilhar WhatsApp';
-    waBtn.onclick = shareWhatsApp;
-    const manualLabel = upload.querySelector('label.btn-upload');
-    if(manualLabel){ upload.insertBefore(waBtn, manualLabel); }
-    else{ upload.appendChild(waBtn); }
   }
 
   if(!document.getElementById('link-json-info')){
