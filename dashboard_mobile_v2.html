@@ -571,7 +571,7 @@ function buildOcorrencias(d){
 
 /* ── BUILD: ÁGUA ── */
 function buildAgua(d){
-  const prodHtml=d.s7prod.map(p=>`<div class="wi${p.val===0?' alert':''}"><span class="w-name">${p.l}</span><span class="w-val">${p.val>0?fmtN(p.val,1):'0'}<span class="w-unit"> m³/h</span></span></div>`).join('');
+  const prodHtml=d.s7prod.map(p=>`<div class="wi"><span class="w-name">${p.l}</span><span class="w-val">${p.val>0?fmtN(p.val,1):'0'}<span class="w-unit"> m³/h</span></span></div>`).join('');
   const consHtml=d.s7cons.map(p=>{
     const alerta=p.refMax!=null && p.val>p.refMax;
     const ref=p.refTxt?`<div style="font-size:9px;color:var(--text-light);margin-top:3px">Ref: ${p.refTxt} m³/h</div>`:'';
