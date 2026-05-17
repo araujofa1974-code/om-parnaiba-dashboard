@@ -2297,8 +2297,66 @@ const CONTATOS_WA = [
 ];
 // ─────────────────────────────────────────────────────────────────────────
 
+function _validarCampos() {
+  const erros = [];
+  const num = id => { const el = document.getElementById(id); return el ? parseBR(el.value) : 0; };
+
+  // S0 — Data da Reunião
+  const datEl = document.getElementById('datReu');
+  if (!datEl || !datEl.value) erros.push('S0 • Data da Reunião não preenchida');
+
+  // S1 — Geração e Gás
+  if (num('totalMwh') <= 0)  erros.push('S1 • Geração Total Real (MWh) = 0');
+  if (num('totalProg') <= 0) erros.push('S1 • Geração Programada (MWh) = 0');
+  if (num('consumoGN') <= 0) erros.push('S1 • Consumo de Gás Natural = 0');
+  if (num('progGN')    <= 0) erros.push('S1 • GN Programado = 0');
+  if (num('tempAmb')   <= 0) erros.push('S1 • Temperatura Ambiente = 0');
+
+  // S3 — Disponibilidade Física (todos os UGs)
+  const avfisIds = [
+    'avfis_tg31','avfis_tg32','avfis_tg21','avfis_tg22','avfis_tv28',
+    'avfis_tg51','avfis_tg52','avfis_tv58',
+    'avfis_tv18','avfis_tg12','avfis_ug10',
+    'avfis_bag11','avfis_bag21','avfis_bag31'
+  ];
+  const avfisZero = avfisIds.filter(id => num(id) <= 0);
+  if (avfisZero.length === avfisIds.length) {
+    erros.push('S3 • Disponibilidade Física — todos os UGs estão em 0%');
+  } else if (avfisZero.length > 0) {
+    erros.push('S3 • Disponibilidade Física — UG(s) sem valor: ' +
+      avfisZero.map(i => i.replace('avfis_', '').toUpperCase()).join(', '));
+  }
+
+  // S7 — Tratamento de Água
+  const s7Ids = [
+    's7_cap_rio','s7_cap_poc','s7_clar',
+    's7_desmin_piv','s7_desmin_pii','s7_desmin_piii',
+    's7_tr_piv','s7_tr_pii','s7_tr_pvi',
+    's7_cd_piv','s7_cd_pii','s7_cd_piii',
+    's7_tq_ab','s7_tq_pot',
+    's7_tq_cl_pii1','s7_tq_cl_pii2','s7_tq_cl_pv',
+    's7_tq_sv_pi','s7_tq_sv_pii','s7_tq_sv_pv','s7_tq_sv_pvi',
+    's7_tq_dm_pi','s7_tq_dm_pii','s7_tq_dm_pv1','s7_tq_dm_pvi','s7_tq_dm_pv2'
+  ];
+  const s7Zero = s7Ids.filter(id => num(id) <= 0);
+  if (s7Zero.length === s7Ids.length) {
+    erros.push('S7 • Tratamento de Água — todos os campos estão em 0');
+  } else if (s7Zero.length > 0) {
+    erros.push('S7 • Tratamento de Água — ' + s7Zero.length + ' campo(s) sem valor: ' +
+      s7Zero.map(i => i.replace('s7_', '')).join(', '));
+  }
+
+  return erros;
+}
+
 function publicarNoDrive() {
   const btn = document.getElementById('btn-pub');
+
+  const erros = _validarCampos();
+  if (erros.length > 0) {
+    alert('⚠️ Não é possível publicar!\n\nCampos obrigatórios não preenchidos:\n\n• ' + erros.join('\n• '));
+    return;
+  }
 
   const estado = _coletarEstado();
   const d = new Date();
