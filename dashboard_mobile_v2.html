@@ -458,12 +458,6 @@ function buildVisao(d){
         <div class="kpi-val" style="color:${d.avons.acum?'var(--accent-green)':''}">${d.avons.acum?fmtN(d.avons.acum,1):'—'}<span class="kpi-unit">%</span></div>
         <div class="kpi-sub">Complexo M-1</div>
       </div>
-      <div class="kpi-card c-orange">
-        <span class="kpi-ico">🌡</span>
-        <div class="kpi-lbl">Temp. Ambiente</div>
-        <div class="kpi-val">${d.temp?fmtN(d.temp,1):'—'}<span class="kpi-unit">°C</span></div>
-        <div class="kpi-sub">Média D-1</div>
-      </div>
       <div class="kpi-card c-red wide">
         <span class="kpi-ico" style="color:var(--accent-red)">⏻</span>
         <div class="kpi-lbl">Desativações Temporárias Abertas</div>
