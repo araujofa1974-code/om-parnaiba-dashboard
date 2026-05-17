@@ -2389,9 +2389,9 @@ function publicarNoDrive() {
 }
 
 function abrirModalWA(estado) {
-  const diaObs = estado['diaObs'] || '';
-  const dataFmt = diaObs
-    ? diaObs.split('-').reverse().join('/')
+  const diaObsEl = document.getElementById('diaObs');
+  const dataFmt = (diaObsEl && diaObsEl.value)
+    ? diaObsEl.value
     : new Date().toLocaleDateString('pt-BR');
 
   const mensagem =
