@@ -554,19 +554,7 @@ function buildOcorrencias(d){
     </div>`;
   }).join('');
 
-  const crits=d.s6.filter(r=>parseInt(r[2])<=2).sort((a,b)=>(parseInt(a[2])||5)-(parseInt(b[2])||5));
-  const cmmsHtml=crits.length?`
-    <div class="sec-lbl">Observações CMMS — Alta Criticidade</div>
-    ${crits.map(r=>{
-      const c=parseInt(r[2])||1;
-      return`<div class="alert-card ${c===1?'critical':''}">
-        <div class="alert-ico">${c===1?'🚨':'⚠️'}</div>
-        <div><div class="alert-ttl">Crit. ${c} — Nota ${r[0]||'—'}</div>
-        <div class="alert-body">${r[3]||'—'} · Local: ${r[4]||'—'} · Status: <strong>${r[5]||'—'}</strong></div></div>
-      </div>`;
-    }).join('')}`:'';
-
-  return`<div class="sec-lbl">Ocorrências Relevantes</div>${cards}${cmmsHtml}`;
+  return`<div class="sec-lbl">Ocorrências Relevantes</div>${cards}`;
 }
 
 /* ── BUILD: ÁGUA ── */
