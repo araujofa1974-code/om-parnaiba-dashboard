@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, initial-scale=1.0">
+<title>O&amp;M Sala — Complexo Parnaíba</title>
+<style>
+:root{
+  --navy:#0b1e3d; --navy2:#0e2652; --blue:#1a5eb8; --blue-light:#2e7dd1;
+  --teal:#0d8a7a; --accent:#f4a024; --accent-red:#e04444; --accent-green:#22a66a;
+  --card:rgba(255,255,255,.06); --card-border:rgba(255,255,255,.11);
+  --text:#ffffff; --text-sec:rgba(255,255,255,.6); --text-dim:rgba(255,255,255,.32);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:var(--navy);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* ══ UPLOAD ══════════════════════════════════════════════════════ */
+#upload{width:100%;height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:28px;background:var(--navy)}
+#upload .brand{font-size:13px;font-weight:700;letter-spacing:3px;
+  color:rgba(255,255,255,.35);text-transform:uppercase;text-align:center}
+#upload h2{font-size:32px;font-weight:300;color:#fff;text-align:center;line-height:1.35}
+#upload h2 b{font-weight:800;color:var(--accent)}
+#upload p{color:rgba(255,255,255,.38);font-size:14px;text-align:center}
+.btn-upload{background:var(--blue-light);color:#fff;border:none;
+  padding:18px 44px;border-radius:14px;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;font-family:inherit;
+  box-shadow:0 6px 28px rgba(26,94,184,.42);transition:background .2s}
+.btn-upload:hover{background:var(--blue)}
+#upload input[type=file]{display:none}
+
+/* ══ APP ═════════════════════════════════════════════════════════ */
+#app{display:none;width:100%;height:100vh;position:relative;overflow:hidden}
+
+/* ══ HEADER ══════════════════════════════════════════════════════ */
+.sala-hdr{
+  position:absolute;top:0;left:0;right:0;height:60px;
+  background:rgba(11,30,61,.97);border-bottom:1px solid rgba(255,255,255,.09);
+  display:flex;align-items:center;padding:0 28px;gap:18px;z-index:100;
+  box-shadow:0 2px 20px rgba(0,0,0,.35)}
+.hdr-stripe{width:4px;height:30px;background:var(--accent);border-radius:2px;flex-shrink:0}
+.hdr-info{display:flex;flex-direction:column;gap:1px}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:.3px}
+.hdr-sub{font-size:11px;color:var(--text-dim);font-weight:400}
+.hdr-sep{width:1px;height:26px;background:rgba(255,255,255,.12);flex-shrink:0}
+.hdr-dates{display:flex;gap:22px}
+.hdr-dt{display:flex;flex-direction:column;gap:1px}
+.hdr-dt .lbl{font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.9px;color:var(--text-dim)}
+.hdr-dt .val{font-size:13px;font-weight:600;color:rgba(255,255,255,.88)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.badge-live{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(34,166,106,.16);border:1px solid rgba(34,166,106,.38);
+  color:#4fd99a;font-size:10px;font-weight:700;padding:4px 12px;border-radius:20px}
+.badge-live::before{content:'';width:7px;height:7px;background:#4fd99a;
+  border-radius:50%;animation:blink 1.6s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.18}}
+.hdr-btn{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.17);
+  color:rgba(255,255,255,.8);padding:6px 14px;border-radius:8px;
+  font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+.hdr-btn:hover{background:rgba(255,255,255,.15)}
+.hdr-btn.active{background:rgba(244,160,36,.18);border-color:rgba(244,160,36,.45);color:var(--accent)}
+
+/* ══ SLIDES CONTAINER ════════════════════════════════════════════ */
+.slides{position:absolute;top:60px;left:0;right:0;bottom:50px;overflow:hidden}
+.slide{display:none;width:100%;height:100%;padding:16px 28px;
+  flex-direction:column;gap:14px}
+.slide.active{display:flex}
+
+/* ══ SLIDE LABEL ═════════════════════════════════════════════════ */
+.s-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;
+  color:var(--text-dim);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.s-lbl::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07)}
+
+/* ══ KPI ROW ═════════════════════════════════════════════════════ */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex-shrink:0}
+.kpi-box{background:var(--card);border:1px solid var(--card-border);
+  border-radius:13px;padding:14px 16px;display:flex;flex-direction:column;
+  gap:3px;position:relative;overflow:hidden}
+.kpi-box::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-box.c-blue::before{background:var(--blue-light)}
+.kpi-box.c-green::before{background:var(--accent-green)}
+.kpi-box.c-orange::before{background:var(--accent)}
+.kpi-box.c-teal::before{background:var(--teal)}
+.kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.9px;color:var(--text-dim)}
+.kpi-val{font-size:34px;font-weight:800;line-height:1.05}
+.kpi-val .ku{font-size:15px;font-weight:400;color:var(--text-sec);margin-left:3px}
+.kpi-sub{font-size:11px;color:var(--text-sec);margin-top:2px}
+
+/* ══ BOTTOM NAV ══════════════════════════════════════════════════ */
+.nav-bar{position:absolute;bottom:0;left:0;right:0;height:50px;
+  background:rgba(11,30,61,.97);border-top:1px solid rgba(255,255,255,.07);
+  display:flex;align-items:center;justify-content:center;gap:18px;z-index:100}
+.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);
+  color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;
+  font-size:17px;display:flex;align-items:center;justify-content:center;
+  font-family:inherit;line-height:1;transition:background .2s;flex-shrink:0}
+.nav-btn:hover{background:rgba(255,255,255,.18)}
+.dots{display:flex;gap:7px;align-items:center}
+.dot{width:7px;height:7px;border-radius:50%;
+  background:rgba(255,255,255,.18);cursor:pointer;transition:all .25s}
+.dot.active{width:22px;border-radius:4px;background:var(--accent)}
+.nav-lbl{font-size:11px;color:var(--text-sec);min-width:160px;text-align:center}
+
+/* ══ CARDS ═══════════════════════════════════════════════════════ */
+.card-d{background:var(--card);border:1px solid var(--card-border);border-radius:13px}
+.card-ttl{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--text-dim);margin-bottom:10px}
+
+/* ══ UNITS GRID ══════════════════════════════════════════════════ */
+.units-flex{display:flex;gap:8px;flex-wrap:wrap}
+.uc{flex:1;min-width:72px;max-width:110px;border-radius:11px;padding:10px 8px;
+  text-align:center;border:1px solid transparent;
+  display:flex;flex-direction:column;align-items:center;gap:4px}
+.uc.on{background:rgba(34,166,106,.13);border-color:rgba(34,166,106,.3)}
+.uc.fdd{background:rgba(244,160,36,.13);border-color:rgba(244,160,36,.3)}
+.uc.off{background:rgba(224,68,68,.13);border-color:rgba(224,68,68,.3)}
+.uc-dot{width:9px;height:9px;border-radius:50%}
+.uc.on .uc-dot{background:var(--accent-green)}
+.uc.fdd .uc-dot{background:var(--accent)}
+.uc.off .uc-dot{background:var(--accent-red)}
+.uc-name{font-size:13px;font-weight:700}
+.uc.on .uc-name{color:#fff}
+.uc.fdd .uc-name{color:var(--accent)}
+.uc.off .uc-name{color:var(--accent-red)}
+.uc-cond{font-size:8px;font-weight:700;letter-spacing:.4px;color:var(--text-dim)}
+.uc-mw{font-size:11px;font-weight:700}
+.uc.on .uc-mw{color:#4fd99a}
+.uc.fdd .uc-mw{color:var(--accent)}
+.uc.off .uc-mw{color:var(--accent-red)}
+
+/* ══ AVAIL BARS ══════════════════════════════════════════════════ */
+.av-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.av-row:last-child{margin-bottom:0}
+.av-nm{font-size:10px;font-weight:600;color:var(--text-sec);min-width:42px}
+.av-bg{flex:1;height:7px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden}
+.av-fill{height:100%;border-radius:5px}
+.av-fill.good{background:var(--accent-green)}
+.av-fill.warn{background:var(--accent)}
+.av-fill.bad{background:var(--accent-red)}
+.av-pct{font-size:11px;font-weight:700;min-width:40px;text-align:right}
+.av-pct.good{color:#4fd99a}.av-pct.warn{color:var(--accent)}.av-pct.bad{color:var(--accent-red)}
+
+/* ══ ONS GAUGES ══════════════════════════════════════════════════ */
+.ons-wrap{display:flex;gap:6px;justify-content:space-around;align-items:center;flex:1}
+
+/* ══ PLANT CARDS ═════════════════════════════════════════════════ */
+.plant-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1}
+.plant-card{background:var(--card);border:1px solid var(--card-border);
+  border-radius:13px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.plant-name{font-size:15px;font-weight:700}
+.plant-kpis{display:flex;gap:22px;align-items:flex-end}
+.pk{display:flex;flex-direction:column;gap:2px}
+.pk-lbl{font-size:9px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--text-dim)}
+.pk-real{font-size:30px;font-weight:800;line-height:1}
+.pk-prog{font-size:17px;font-weight:500;color:var(--text-sec)}
+.pk-pct{font-size:22px;font-weight:800}
+.plant-bar-bg{height:10px;background:rgba(255,255,255,.07);border-radius:6px;overflow:hidden}
+.plant-bar-fill{height:100%;border-radius:6px;transition:width .7s ease}
+.plant-chips{display:flex;gap:6px;flex-wrap:wrap}
+.pchip{font-size:11px;font-weight:700;padding:3px 8px;
+  border-radius:5px;border:1px solid rgba(255,255,255,.1)}
+.pchip.on{color:#4fd99a;background:rgba(34,166,106,.14);border-color:rgba(34,166,106,.28)}
+.pchip.fdd{color:var(--accent);background:rgba(244,160,36,.14);border-color:rgba(244,160,36,.28)}
+.pchip.off{color:var(--accent-red);background:rgba(224,68,68,.14);border-color:rgba(224,68,68,.28)}
+.plant-desp{font-size:11px;color:var(--text-sec);font-style:italic;line-height:1.4}
+
+/* ══ SUMMARY BOXES ═══════════════════════════════════════════════ */
+.summ-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex-shrink:0}
+.summ-box{background:var(--card);border:1px solid var(--card-border);
+  border-radius:12px;padding:12px;text-align:center}
+.summ-n{font-size:30px;font-weight:800;display:block}
+.summ-n.green{color:#4fd99a}.summ-n.red{color:var(--accent-red)}
+.summ-n.orange{color:var(--accent)}.summ-n.blue{color:#78aff5}
+.summ-l{font-size:10px;color:var(--text-sec);font-weight:500;margin-top:2px}
+
+/* ══ OCC TABLE ════════════════════════════════════════════════════ */
+.occ-plants{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;min-height:0}
+.occ-plant-card{background:var(--card);border:1px solid var(--card-border);
+  border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.ocp-name{font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:1px;color:var(--text-dim)}
+.occ-item-s{font-size:13px;color:rgba(255,255,255,.8);line-height:1.4;
+  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.occ-item-s:last-child{border-bottom:none}
+.occ-ok{font-size:13px;color:var(--text-dim);font-style:italic}
+.occ-badge-s{display:inline-block;font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:4px;margin-right:5px;vertical-align:middle}
+.occ-badge-s.oc{background:rgba(244,160,36,.2);color:var(--accent)}
+
+/* ══ S6 TABLE ═════════════════════════════════════════════════════ */
+.s6-wrap{background:var(--card);border:1px solid var(--card-border);
+  border-radius:12px;overflow:hidden;flex-shrink:0}
+.s6-table{width:100%;border-collapse:collapse;font-size:12px}
+.s6-table th{text-align:left;padding:8px 12px;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);
+  background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.07)}
+.s6-table td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.05);
+  color:var(--text);vertical-align:top}
+.s6-table tr:last-child td{border-bottom:none}
+.s6-badge{display:inline-block;font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:4px;letter-spacing:.3px}
+.s6-badge.op{background:rgba(13,138,122,.22);color:#4fd9cc}
+.s6-badge.mnt{background:rgba(244,160,36,.18);color:var(--accent)}
+.s6-badge.pdp{background:rgba(26,94,184,.2);color:#78aff5}
+.s6-empty{text-align:center;padding:16px;color:var(--text-dim);font-size:12px;font-style:italic}
+
+/* ══ WATER ═══════════════════════════════════════════════════════ */
+.water-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex-shrink:0}
+.water-sec{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:14px 16px}
+.water-row{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.water-row:last-child{border-bottom:none}
+.wr-nm{font-size:12px;color:var(--text-sec)}
+.wr-val{font-size:14px;font-weight:700}
+.tank-section{background:var(--card);border:1px solid var(--card-border);
+  border-radius:12px;padding:14px 16px;flex:1}
+.tank-grid-s{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:10px}
+.tq{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:9px;padding:9px 7px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:5px}
+.tq-nm{font-size:8.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.3px;color:var(--text-dim);line-height:1.2}
+.tq-val{font-size:19px;font-weight:800}
+.tq-bg{width:100%;height:5px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+.tq-fill{height:100%;border-radius:4px}
+
+/* ══ DT TABLE ════════════════════════════════════════════════════ */
+.dt-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;min-height:0;
+  background:var(--card);border:1px solid var(--card-border);border-radius:12px}
+.dt-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.dt-table th{text-align:left;padding:9px 11px;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.7px;color:var(--text-dim);
+  background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.07)}
+.dt-table td{padding:8px 11px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+.dt-table tr:last-child td{border-bottom:none}
+.dt-st{display:inline-block;font-size:9px;font-weight:700;
+  padding:3px 8px;border-radius:5px;white-space:nowrap}
+.dt-st.impl{background:rgba(13,138,122,.22);color:#4fd9cc}
+.dt-st.await{background:rgba(244,160,36,.18);color:var(--accent)}
+.dt-st.aprov{background:rgba(26,94,184,.2);color:#78aff5}
+.dt-days{font-size:13px;font-weight:700}
+.dt-days.old{color:var(--accent-red)}.dt-days.recent{color:var(--accent)}
+.dt-days.new{color:#4fd99a}
+</style>
+</head>
+<body>
+
+<!-- ══ UPLOAD ════════════════════════════════════════════════════ -->
+<div id="upload">
+  <div class="brand">ENEVA Power</div>
+  <h2>Reunião <b>O&amp;M</b><br>Complexo Parnaíba</h2>
+  <p>Selecione o arquivo JSON exportado pelo formulário de ata</p>
+  <label class="btn-upload">
+    <span style="font-size:22px">📂</span>
+    Carregar arquivo JSON
+    <input type="file" id="fileInput" accept=".json">
+  </label>
+  <p>Ex.: OM_estado_16052026_1200.json</p>
+</div>
+
+<!-- ══ APP ═══════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <div class="sala-hdr">
+    <div class="hdr-stripe"></div>
+    <div class="hdr-info">
+      <div class="hdr-title">O&amp;M — Complexo Parnaíba</div>
+      <div class="hdr-sub">ENEVA Power · Reunião Diária</div>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-dates">
+      <div class="hdr-dt"><span class="lbl">Data Obs.</span><span class="val" id="h-dia">—</span></div>
+      <div class="hdr-dt"><span class="lbl">Reunião</span><span class="val" id="h-reu">—</span></div>
+      <div class="hdr-dt"><span class="lbl">Semana Op.</span><span class="val" id="h-sem">—</span></div>
+    </div>
+    <div class="hdr-right">
+      <div class="badge-live">AO VIVO</div>
+      <button class="hdr-btn" id="btn-auto" onclick="toggleAuto()">⏵ Auto (3 min)</button>
+      <label class="hdr-btn">📂 Trocar JSON
+        <input type="file" accept=".json" onchange="handleFile(this.files[0])" style="display:none">
+      </label>
+    </div>
+  </div>
+
+  <!-- SLIDES -->
+  <div class="slides">
+
+    <!-- ── SLIDE 1: VISÃO GERAL ─────────────────────────────── -->
+    <div class="slide active" id="slide-0">
+      <div class="s-lbl">📊 Visão Geral</div>
+
+      <!-- KPIs -->
+      <div class="kpi-row">
+        <div class="kpi-box c-blue">
+          <div class="kpi-lbl">Geração Total</div>
+          <div class="kpi-val" id="kpi-mwh">—<span class="ku">MWh</span></div>
+          <div class="kpi-sub" id="kpi-mwh-sub">—</div>
+        </div>
+        <div class="kpi-box c-green">
+          <div class="kpi-lbl">Conformidade</div>
+          <div class="kpi-val" id="kpi-pct">—</div>
+          <div class="kpi-sub" id="kpi-pct-sub">—</div>
+        </div>
+        <div class="kpi-box c-orange">
+          <div class="kpi-lbl">Consumo Gás Natural</div>
+          <div class="kpi-val" id="kpi-gn">—<span class="ku">MM³</span></div>
+          <div class="kpi-sub" id="kpi-gn-sub">—</div>
+        </div>
+        <div class="kpi-box c-teal">
+          <div class="kpi-lbl">Temperatura Ambiente</div>
+          <div class="kpi-val" id="kpi-temp">—<span class="ku">°C</span></div>
+          <div class="kpi-sub" id="kpi-dts-sub">—</div>
+        </div>
+      </div>
+
+      <!-- Units + ONS -->
+      <div style="flex:1;display:grid;grid-template-columns:2fr 1fr;gap:14px;min-height:0">
+
+        <!-- Units -->
+        <div class="card-d" style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+          <div class="card-ttl">Status das Unidades Geradoras</div>
+          <div class="units-flex" id="units-grid"></div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap;padding-top:4px;
+               border-top:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-sec)">
+              <span style="width:8px;height:8px;border-radius:50%;background:#22a66a;display:inline-block"></span>
+              Disponível (EDE)
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-sec)">
+              <span style="width:8px;height:8px;border-radius:50%;background:#f4a024;display:inline-block"></span>
+              Fora de Disponibilidade (FDD)
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--text-sec)">
+              <span style="width:8px;height:8px;border-radius:50%;background:#e04444;display:inline-block"></span>
+              Indisponível (IND)
+            </div>
+          </div>
+        </div>
+
+        <!-- ONS + Avfis -->
+        <div class="card-d" style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+          <div class="card-ttl">Disponibilidade ONS</div>
+          <div class="ons-wrap" id="ons-gauges"></div>
+          <div style="border-top:1px solid rgba(255,255,255,.06);padding-top:10px">
+            <div class="card-ttl" style="margin-bottom:8px">Disponib. Física por Unidade</div>
+            <div id="avfis-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SLIDE 2: GERAÇÃO ──────────────────────────────────── -->
+    <div class="slide" id="slide-1">
+      <div class="s-lbl">⚡ Geração por Planta</div>
+      <div class="plant-grid" id="plant-grid"></div>
+    </div>
+
+    <!-- ── SLIDE 3: OCORRÊNCIAS ──────────────────────────────── -->
+    <div class="slide" id="slide-2">
+      <div class="s-lbl">📋 Ocorrências do Período</div>
+      <div class="occ-plants" id="occ-plants"></div>
+      <div class="s6-wrap" id="s6-wrap"></div>
+    </div>
+
+    <!-- ── SLIDE 4: ÁGUA ─────────────────────────────────────── -->
+    <div class="slide" id="slide-3">
+      <div class="s-lbl">💧 Sistema de Água (S7)</div>
+      <div class="water-cols" id="water-cols"></div>
+      <div class="tank-section">
+        <div class="card-ttl">Nível dos Reservatórios (%)</div>
+        <div class="tank-grid-s" id="tank-grid"></div>
+      </div>
+    </div>
+
+    <!-- ── SLIDE 5: DTs ──────────────────────────────────────── -->
+    <div class="slide" id="slide-4">
+      <div class="s-lbl">🔧 Desativações Temporárias — DTs Ativas</div>
+      <div class="summ-row" id="dt-summ"></div>
+      <div class="dt-wrap">
+        <table class="dt-table">
+          <thead><tr>
+            <th>DT</th><th>Status</th><th>KKS</th><th>Equipamento</th>
+            <th>OS</th><th>Responsável</th><th>Previsão Término</th><th>Dias</th>
+          </tr></thead>
+          <tbody id="dt-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /slides -->
+
+  <!-- NAV BAR -->
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="prevSlide()" title="Anterior (←)">‹</button>
+    <div class="dots" id="nav-dots"></div>
+    <button class="nav-btn" onclick="nextSlide()" title="Próximo (→)">›</button>
+    <div class="nav-lbl" id="nav-lbl"></div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+/* ── CONSTANTES ──────────────────────────────────────────────── */
+const UGS=[
+  {id:'tg31',l:'TG31',pl:'piv'},{id:'tg32',l:'TG32',pl:'piv'},
+  {id:'tg21',l:'TG21',pl:'piv'},{id:'tg22',l:'TG22',pl:'piv'},{id:'tv28',l:'TV28',pl:'piv'},
+  {id:'tg51',l:'TG51',pl:'pii'},{id:'tg52',l:'TG52',pl:'pii'},{id:'tv58',l:'TV58',pl:'pii'},
+  {id:'tv18',l:'TV18',pl:'piii'},{id:'tg12',l:'TG12',pl:'piii'},{id:'ug10',l:'UG10',pl:'piii'},
+  {id:'bag11',l:'BAG11',pl:'p4'},{id:'bag21',l:'BAG21',pl:'p4'},{id:'bag31',l:'BAG31',pl:'p4'},
+];
+const PLANTS=[
+  {key:'piv',label:'Parnaíba I / V',color:'#2e7dd1'},
+  {key:'pii',label:'Parnaíba II',color:'#22a66a'},
+  {key:'piii',label:'Parnaíba III / VI',color:'#f4a024'},
+  {key:'p4',label:'Parnaíba IV',color:'#0d8a7a'},
+];
+const OCC_PLANTS=[
+  {key:'u_piv',label:'Parnaíba I / V'},
+  {key:'u_pii',label:'Parnaíba II'},
+  {key:'u_piii',label:'Parnaíba III / VI'},
+  {key:'u_p4',label:'Parnaíba IV'},
+];
+const TANKS=[
+  {id:'s7_tq_ab',l:'Água\nBruta'},
+  {id:'s7_tq_pot',l:'Potável'},
+  {id:'s7_tq_cl_pii1',l:'Clarif.\nPII #1'},
+  {id:'s7_tq_cl_pii2',l:'Clarif.\nPII #2'},
+  {id:'s7_tq_cl_pv',l:'Clarif.\nPV'},
+  {id:'s7_tq_sv_pi',l:'Serv.\nPI'},
+  {id:'s7_tq_sv_pii',l:'Serv.\nPII'},
+  {id:'s7_tq_sv_pv',l:'Serv.\nPV'},
+  {id:'s7_tq_sv_pvi',l:'Serv.\nPVI'},
+  {id:'s7_tq_dm_pi',l:'Desmin.\nPI'},
+  {id:'s7_tq_dm_pii',l:'Desmin.\nPII'},
+  {id:'s7_tq_dm_pv1',l:'Desmin.\nPV1'},
+  {id:'s7_tq_dm_pvi',l:'Desmin.\nPVI'},
+  {id:'s7_tq_dm_pv2',l:'Desmin.\nPV2'},
+];
+const S7PROD=[
+  {id:'s7_cap_rio',l:'Captação Rio Mearim'},
+  {id:'s7_cap_poc',l:'Poços Artesianos'},
+  {id:'s7_clar',l:'Clarificação'},
+  {id:'s7_desmin_piv',l:'Desmin. Par. I/V'},
+  {id:'s7_desmin_pii',l:'Desmin. Par. II'},
+  {id:'s7_desmin_piii',l:'Desmin. Par. III'},
+];
+const S7CONS=[
+  {id:'s7_tr_piv',l:'Torre P-I/V',refMax:1350},
+  {id:'s7_tr_pii',l:'Torre P-II',refMax:550},
+  {id:'s7_tr_pvi',l:'Torre P-VI',refMax:260},
+  {id:'s7_cd_piv',l:'Condensado P-I/V',refMax:30},
+  {id:'s7_cd_pii',l:'Condensado P-II',refMax:10},
+  {id:'s7_cd_piii',l:'Condensado P-III',refMax:4.7},
+];
+const SLIDE_LBLS=['Visão Geral','Geração por Planta','Ocorrências','Sistema de Água','Desativações (DTs)'];
+const NTABS=5;
+
+/* ── HELPERS ─────────────────────────────────────────────────── */
+const N=v=>parseFloat((v||'0').toString().replace(/\./g,'').replace(',','.'))||0;
+const P=v=>N((v||'0').toString().replace('%',''));
+const G=(j,k,p)=>{const v=j['#'+k]??j[k];return(v!==undefined&&v!=='')?v:(p&&j[p]!==undefined?j[p]:'');};
+const fmtN=(n,d=1)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtDate=v=>{if(!v)return'—';if(/^\d{4}-\d{2}-\d{2}$/.test(v)){const[y,m,d]=v.split('-');return`${d}/${m}/${y}`;}return v;};
+const pCls=p=>p>=95?'good':p>=80?'warn':'bad';
+const condCls=c=>c==='EDE'?'on':c==='FDD'?'fdd':'off';
+
+/* ── POSITIONAL FALLBACKS ────────────────────────────────────── */
+const _POS_COND=i=>`@cs_1>DIV:0>DIV:1>TABLE:0>TBODY:0>TR:0>TD:${i}>SELECT:0`;
+const _POS_MWH =i=>`@cs_1>DIV:0>DIV:1>TABLE:0>TBODY:0>TR:1>TD:${i}>INPUT:0`;
+const _POS_AVFIS=i=>`@cs_3>DIV:0>DIV:1>DIV:3>INPUT:${i}`;
+const _POS_AVONS=[0,1,2,3,4,6].map(d=>`@cs_3>DIV:0>DIV:1>DIV:7>DIV:${d}>INPUT:0`);
+const _POS_S7={
+  s7_cap_rio:'TR:1>TD:2',s7_cap_poc:'TR:2>TD:1',s7_clar:'TR:3>TD:2',
+  s7_desmin_piv:'TR:4>TD:2',s7_desmin_pii:'TR:5>TD:1',s7_desmin_piii:'TR:6>TD:1',
+  s7_tr_piv:'TR:8>TD:3',s7_tr_pii:'TR:9>TD:2',s7_tr_pvi:'TR:10>TD:2',
+  s7_cd_piv:'TR:11>TD:3',s7_cd_pii:'TR:12>TD:2',s7_cd_piii:'TR:13>TD:2',
+  s7_tq_ab:'TR:15>TD:3',s7_tq_pot:'TR:16>TD:3',
+  s7_tq_cl_pii1:'TR:17>TD:3',s7_tq_cl_pii2:'TR:18>TD:2',s7_tq_cl_pv:'TR:19>TD:2',
+  s7_tq_sv_pi:'TR:20>TD:3',s7_tq_sv_pii:'TR:21>TD:2',
+  s7_tq_sv_pv:'TR:22>TD:2',s7_tq_sv_pvi:'TR:23>TD:2',
+  s7_tq_dm_pi:'TR:24>TD:3',s7_tq_dm_pii:'TR:25>TD:2',
+  s7_tq_dm_pv1:'TR:26>TD:2',s7_tq_dm_pvi:'TR:27>TD:2',s7_tq_dm_pv2:'TR:28>TD:2',
+};
+const _S7pk=id=>_POS_S7[id]?`@cs_6>DIV:0>DIV:1>TABLE:0>TBODY:0>${_POS_S7[id]}>INPUT:0`:'';
+
+/* ── EXTRACT ─────────────────────────────────────────────────── */
+function extract(j){
+  const ugs=UGS.map((u,i)=>({...u,
+    mwh  :N(G(j,'mwh_'+u.id,  _POS_MWH(i))),
+    cond :G(j,'cond_'+u.id,   _POS_COND(i))||'EDE',
+    avfis:P(G(j,'avfis_'+u.id,_POS_AVFIS(i))),
+  }));
+  const plants=PLANTS.map(p=>({...p,
+    real:N(G(j,'real_'+p.key)),
+    prog:N(G(j,'prog_'+p.key)),
+    ugs :ugs.filter(u=>u.pl===p.key),
+    desp:(j['__ms__ms_'+p.key]||'').split(',').map(s=>s.trim()).filter(Boolean),
+  }));
+  const avons={
+    pi  :P(G(j,'avons_pi',  _POS_AVONS[0])),
+    pii :P(G(j,'avons_pii', _POS_AVONS[1])),
+    piii:P(G(j,'avons_piii',_POS_AVONS[2])),
+    piv :P(G(j,'avons_piv', _POS_AVONS[3])),
+    pv  :P(G(j,'avons_pv',  _POS_AVONS[4])),
+    acum:P(G(j,'avons_acum',_POS_AVONS[5])),
+  };
+  let s2={};try{s2=JSON.parse(j['__s2__']||'{}');}catch(e){}
+  let s6=[];try{s6=JSON.parse(j['__s6__']||'[]');}catch(e){}
+  let s8=[];try{s8=JSON.parse(j['__s8__']||'[]');}catch(e){}
+  const s7prod=S7PROD.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
+  const s7cons=S7CONS.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
+  const tanks =TANKS.map(t=>({...t,val:N(G(j,t.id,_S7pk(t.id)))}));
+  return{
+    diaObs:fmtDate(G(j,'diaObs')),
+    datReu:fmtDate(G(j,'datReu')),
+    semana:G(j,'semOp'),
+    temp  :N(G(j,'tempAmb')),
+    totalMwh:N(G(j,'totalMwh')),
+    totalProg:N(G(j,'totalProg')),
+    consumoGN:N(G(j,'consumoGN')),
+    progGN   :N(G(j,'progGN')),
+    ugs,plants,avons,s2,s6,s8,s7prod,s7cons,tanks,
+  };
+}
+
+/* ── ONS GAUGE (SVG semicírculo) ─────────────────────────────── */
+function gaugeONS(v,lbl){
+  const r=36,cx=50,cy=50;
+  const cls=v>0?pCls(v):'';
+  const clr=cls==='good'?'#22a66a':cls==='warn'?'#f4a024':cls==='bad'?'#e04444':'#4a5470';
+  const bgClr=cls==='good'?'rgba(34,166,106,.14)':cls==='warn'?'rgba(244,160,36,.14)':
+              cls==='bad'?'rgba(224,68,68,.14)':'rgba(255,255,255,.05)';
+  function pt(pct,rad){const a=(180-pct*1.8)*Math.PI/180;return[cx+rad*Math.cos(a),cy-rad*Math.sin(a)];}
+  const[xv,yv]=pt(Math.min(v,99.9),r);
+  const bg=`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`;
+  const vp=v>0?`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${xv.toFixed(1)} ${yv.toFixed(1)}`:'';
+  const[m1x,m1y]=pt(95,r-5);const[m2x,m2y]=pt(95,r+5);
+  return`<div style="text-align:center;flex:1;min-width:55px;max-width:85px">
+    <svg viewBox="0 0 100 56" width="100%" style="display:block;margin:0 auto;overflow:visible">
+      <path d="${bg}" fill="none" stroke="${bgClr}" stroke-width="10" stroke-linecap="round"/>
+      ${vp?`<path d="${vp}" fill="none" stroke="${clr}" stroke-width="10" stroke-linecap="round"/>`:''}
+      <line x1="${m1x.toFixed(1)}" y1="${m1y.toFixed(1)}" x2="${m2x.toFixed(1)}" y2="${m2y.toFixed(1)}"
+            stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    <div style="font-size:15px;font-weight:800;color:${clr};line-height:1;margin-top:-3px">
+      ${v>0?fmtN(v,1)+'%':'—'}
+    </div>
+    <div style="font-size:9.5px;font-weight:700;color:var(--text-sec);margin-top:5px">${lbl}</div>
+  </div>`;
+}
+
+/* ── RENDER ──────────────────────────────────────────────────── */
+function render(d){
+  /* header */
+  document.getElementById('h-dia').textContent=d.diaObs||'—';
+  document.getElementById('h-reu').textContent=d.datReu||'—';
+  document.getElementById('h-sem').textContent=d.semana||'—';
+
+  /* ── slide 1: KPIs ── */
+  const pct=d.totalProg>0?d.totalMwh/d.totalProg*100:null;
+  const pctCls=pct!=null?pCls(pct):'';
+  const pctColor=pctCls==='good'?'#4fd99a':pctCls==='warn'?'var(--accent)':'var(--accent-red)';
+  document.getElementById('kpi-mwh').innerHTML=
+    `${fmtN(d.totalMwh,0)}<span class="ku"> MWh</span>`;
+  document.getElementById('kpi-mwh-sub').textContent=
+    `Programado: ${fmtN(d.totalProg,0)} MWh`;
+  document.getElementById('kpi-pct').innerHTML=
+    `<span style="color:${pct!=null?pctColor:'#fff'}">${pct!=null?fmtN(pct,1)+'%':'—'}</span>`;
+  document.getElementById('kpi-pct-sub').textContent=
+    pct!=null?(pctCls==='good'?'✓ Dentro do programa':'✗ Abaixo do programa'):'Sem dados';
+
+  const gnPct=d.progGN>0?d.consumoGN/d.progGN*100:null;
+  const gnColor=gnPct!=null?(pCls(gnPct)==='good'?'#4fd99a':pCls(gnPct)==='warn'?'var(--accent)':'var(--accent-red)'):'#fff';
+  document.getElementById('kpi-gn').innerHTML=
+    `<span style="color:${gnColor}">${fmtN(d.consumoGN,1)}</span><span class="ku"> MM³</span>`;
+  document.getElementById('kpi-gn-sub').textContent=
+    gnPct!=null?`Prog: ${fmtN(d.progGN,1)} MM³  (${fmtN(gnPct,1)}%)`:'—';
+
+  document.getElementById('kpi-temp').innerHTML=
+    `${fmtN(d.temp,1)}<span class="ku"> °C</span>`;
+
+  const pend=d.s8.filter(r=>r[1]==='Aguardando revalidação'||r[1]==='Aprovar revalidação').length;
+  document.getElementById('kpi-dts-sub').textContent=
+    `DTs ativas: ${d.s8.length}  |  Pendentes: ${pend}`;
+
+  /* ── unidades ── */
+  document.getElementById('units-grid').innerHTML=d.ugs.map(u=>{
+    const cls=condCls(u.cond);
+    return`<div class="uc ${cls}">
+      <span class="uc-dot"></span>
+      <span class="uc-name">${u.l}</span>
+      <span class="uc-cond">${u.cond}</span>
+      <span class="uc-mw">${u.mwh>0?fmtN(u.mwh,0)+' MWh':'—'}</span>
+    </div>`;
+  }).join('');
+
+  /* ── ONS gauges ── */
+  const onsItems=[
+    {l:'PI',v:d.avons.pi},{l:'PII',v:d.avons.pii},{l:'PIII/VI',v:d.avons.piii},
+    {l:'PIV/V',v:d.avons.piv},{l:'Acum.',v:d.avons.acum},
+  ];
+  document.getElementById('ons-gauges').innerHTML=onsItems.map(o=>gaugeONS(o.v,o.l)).join('');
+
+  /* ── disponib. física ── */
+  const avfisData=d.ugs.filter(u=>u.avfis>0);
+  document.getElementById('avfis-list').innerHTML=avfisData.length
+    ?avfisData.map(u=>{const c=pCls(u.avfis);return`<div class="av-row">
+        <span class="av-nm">${u.l}</span>
+        <div class="av-bg"><div class="av-fill ${c}" style="width:${Math.min(u.avfis,100)}%"></div></div>
+        <span class="av-pct ${c}">${fmtN(u.avfis,1)}%</span>
+      </div>`;}).join('')
+    :'<div style="color:var(--text-dim);font-size:11px">Sem dados de disponibilidade</div>';
+
+  /* ── slide 2: plantas ── */
+  document.getElementById('plant-grid').innerHTML=d.plants.map(p=>{
+    const pctV=p.prog>0?p.real/p.prog*100:null;
+    const cls=pctV!=null?pCls(pctV):'';
+    const clr=cls==='good'?'#4fd99a':cls==='warn'?'var(--accent)':cls==='bad'?'var(--accent-red)':p.color;
+    const barW=p.prog>0?Math.min(p.real/p.prog*100,100):0;
+    return`<div class="plant-card" style="border-top:3px solid ${p.color}">
+      <div class="plant-name">${p.label}</div>
+      <div class="plant-kpis">
+        <div class="pk">
+          <div class="pk-lbl">Real</div>
+          <div class="pk-real">${fmtN(p.real,0)}<span style="font-size:14px;font-weight:400;color:var(--text-sec)"> MWh</span></div>
+        </div>
+        <div class="pk">
+          <div class="pk-lbl">Prog.</div>
+          <div class="pk-prog">${fmtN(p.prog,0)} MWh</div>
+        </div>
+        ${pctV!=null?`<div class="pk">
+          <div class="pk-lbl">Conf.</div>
+          <div class="pk-pct" style="color:${clr}">${fmtN(pctV,1)}%</div>
+        </div>`:''}
+      </div>
+      <div class="plant-bar-bg">
+        <div class="plant-bar-fill" style="width:${barW}%;background:${clr}"></div>
+      </div>
+      <div class="plant-chips">
+        ${p.ugs.map(u=>`<span class="pchip ${condCls(u.cond)}">${u.l} ${u.mwh>0?fmtN(u.mwh,0)+' MWh':'—'}</span>`).join('')}
+      </div>
+      ${p.desp.length?`<div class="plant-desp">${p.desp.join(' · ')}</div>`:''}
+    </div>`;
+  }).join('');
+
+  /* ── slide 3: ocorrências ── */
+  document.getElementById('occ-plants').innerHTML=OCC_PLANTS.map(op=>{
+    const rows=(d.s2[op.key]||[]).filter(t=>t&&t.trim());
+    return`<div class="occ-plant-card">
+      <div class="ocp-name">${op.label}</div>
+      ${rows.length
+        ?rows.map(t=>`<div class="occ-item-s"><span class="occ-badge-s oc">OC</span>${t}</div>`).join('')
+        :`<div class="occ-ok">Sem ocorrências relevantes no período</div>`}
+    </div>`;
+  }).join('');
+
+  const s6Fil=d.s6.filter(r=>r[3]&&r[3].trim());
+  if(s6Fil.length){
+    document.getElementById('s6-wrap').innerHTML=`
+      <table class="s6-table">
+        <thead><tr><th>Planta / Tag</th><th>Tipo</th><th>Descrição</th><th>Início</th><th>Término</th></tr></thead>
+        <tbody>${s6Fil.map(r=>{
+          const tp=parseInt(r[2])||0;
+          const cls=tp===1?'op':tp===2?'mnt':tp===3?'pdp':'';
+          const tpLbl=tp===1?'Operacional':tp===2?'Manutenção':tp===3?'PdP':'—';
+          return`<tr>
+            <td style="font-family:monospace;font-size:11px">${r[0]||r[1]||'—'}</td>
+            <td>${cls?`<span class="s6-badge ${cls}">${tpLbl}</span>`:'—'}</td>
+            <td>${r[3]||'—'}</td>
+            <td style="white-space:nowrap;font-size:11px">${r[4]||'—'}</td>
+            <td style="white-space:nowrap;font-size:11px">${r[5]||'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  } else {
+    document.getElementById('s6-wrap').innerHTML=
+      `<div class="s6-empty">Nenhuma ocorrência estruturada (S6) registrada</div>`;
+  }
+
+  /* ── slide 4: água ── */
+  document.getElementById('water-cols').innerHTML=`
+    <div class="water-sec">
+      <div class="card-ttl">Produção de Água (m³/h)</div>
+      ${d.s7prod.map(p=>`<div class="water-row">
+        <span class="wr-nm">${p.l}</span>
+        <span class="wr-val">${p.val>0?fmtN(p.val,1)+' m³/h':'—'}</span>
+      </div>`).join('')}
+    </div>
+    <div class="water-sec">
+      <div class="card-ttl">Torres e Condensado (m³/h)</div>
+      ${d.s7cons.map(p=>{
+        const over=p.refMax&&p.val>p.refMax;
+        const color=over?'var(--accent-red)':p.val>0?'#4fd99a':'var(--text-sec)';
+        return`<div class="water-row">
+          <span class="wr-nm">${p.l}</span>
+          <span class="wr-val" style="color:${color}">${p.val>0?fmtN(p.val,1)+' m³/h':'—'}${p.refMax?`<span style="font-size:10px;font-weight:400;color:var(--text-dim);margin-left:6px">máx ${fmtN(p.refMax,0)}</span>`:''}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  document.getElementById('tank-grid').innerHTML=d.tanks.map(t=>{
+    const v=Math.max(0,Math.min(t.val,100));
+    const clr=v>=50?'#22a66a':v>=20?'#f4a024':'#e04444';
+    return`<div class="tq">
+      <div class="tq-nm">${t.l.replace('\n','<br>')}</div>
+      <div class="tq-val" style="color:${clr}">${v>0?fmtN(v,0)+'%':'—'}</div>
+      <div class="tq-bg"><div class="tq-fill" style="width:${v}%;background:${clr}"></div></div>
+    </div>`;
+  }).join('');
+
+  /* ── slide 5: DTs ── */
+  const impl  =d.s8.filter(r=>r[1]==='Implementada').length;
+  const aguard=d.s8.filter(r=>r[1]==='Aguardando revalidação').length;
+  const aprov =d.s8.filter(r=>r[1]==='Aprovar revalidação').length;
+  document.getElementById('dt-summ').innerHTML=`
+    <div class="summ-box"><span class="summ-n">${d.s8.length}</span><div class="summ-l">Total de DTs</div></div>
+    <div class="summ-box"><span class="summ-n red">${aguard+aprov}</span><div class="summ-l">Pendentes Ação</div></div>
+    <div class="summ-box"><span class="summ-n green">${impl}</span><div class="summ-l">Implementadas</div></div>
+  `;
+  const today=new Date();today.setHours(0,0,0,0);
+  const sorted=[...d.s8].sort((a,b)=>(parseInt(b[8])||0)-(parseInt(a[8])||0));
+  document.getElementById('dt-tbody').innerHTML=sorted.map(r=>{
+    const st=r[1]||'';
+    const stCls=st==='Implementada'?'impl':st==='Aguardando revalidação'?'await':'aprov';
+    const days=parseInt(r[8])||0;
+    const dayCls=days>180?'old':days>30?'recent':'new';
+    const prevRaw=r[7]||'—';
+    let prevHtml=prevRaw;
+    const m=prevRaw.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if(m){
+      const dt=new Date(+m[3],+m[2]-1,+m[1]);
+      if(dt<today) prevHtml=`<span style="color:var(--accent-red)">${prevRaw}</span>`;
+    }
+    return`<tr>
+      <td style="font-weight:700;white-space:nowrap;color:#78aff5;font-size:11.5px">${r[0]||'—'}</td>
+      <td><span class="dt-st ${stCls}">${st||'—'}</span></td>
+      <td style="font-family:monospace;font-size:10.5px;white-space:nowrap">${r[2]||'—'}</td>
+      <td>${r[3]||'—'}</td>
+      <td style="font-family:monospace;font-size:10.5px">${r[4]||'—'}</td>
+      <td style="font-size:11px;max-width:140px;color:var(--text-sec)">${r[5]||'—'}</td>
+      <td style="font-size:11px;white-space:nowrap">${prevHtml}</td>
+      <td><span class="dt-days ${dayCls}">${days}d</span></td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-dim)">Sem desativações registradas</td></tr>`;
+}
+
+/* ── SLIDES ──────────────────────────────────────────────────── */
+let cur=0, autoTimer=null;
+
+function showSlide(n){
+  n=((n%NTABS)+NTABS)%NTABS;
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active',i===n));
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===n));
+  document.getElementById('nav-lbl').textContent=`${n+1} / ${NTABS}  —  ${SLIDE_LBLS[n]}`;
+  cur=n;
+}
+function nextSlide(){showSlide(cur+1);}
+function prevSlide(){showSlide(cur-1);}
+function toggleAuto(){
+  const btn=document.getElementById('btn-auto');
+  if(autoTimer){
+    clearInterval(autoTimer);autoTimer=null;
+    btn.classList.remove('active');btn.textContent='⏵ Auto (3 min)';
+  } else {
+    autoTimer=setInterval(nextSlide,180000);
+    btn.classList.add('active');btn.textContent='⏸ Auto ON';
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();nextSlide();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();prevSlide();}
+  else if(e.key==='f'||e.key==='F'){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  }
+});
+
+/* ── INIT ────────────────────────────────────────────────────── */
+(function init(){
+  const dots=document.getElementById('nav-dots');
+  SLIDE_LBLS.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='dot'+(i===0?' active':'');
+    d.title=SLIDE_LBLS[i];
+    d.onclick=()=>showSlide(i);
+    dots.appendChild(d);
+  });
+  showSlide(0);
+})();
+
+/* ── FILE HANDLER ────────────────────────────────────────────── */
+function handleFile(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const j=JSON.parse(e.target.result);
+      const d=extract(j);
+      document.getElementById('upload').style.display='none';
+      document.getElementById('app').style.display='block';
+      render(d);
+    }catch(err){
+      alert('Erro ao processar o JSON:\n'+err.message);
+    }
+  };
+  r.readAsText(file,'UTF-8');
+}
+document.getElementById('fileInput').addEventListener('change',e=>handleFile(e.target.files[0]));
+</script>
+</body>
+</html>
