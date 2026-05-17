@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>O&M Meeting Forms v1 — Complexo Parnaíba</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ─── VARS ── */
+:root{
+  --navy:#0f4c81; --navy-d:#0a3560; --blue:#1d9be0;
+  --amber:#e8a427; --green:#16a34a; --red:#dc2626;
+  --bg:#eef2f7; --surf:#ffffff; --bdr:#d8e1ee;
+  --text:#1f2937; --muted:#6b7280; --lbl:#374151;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;margin:0;padding:0;overflow:hidden}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+button{font-family:inherit;cursor:pointer}
+
+/* ─── HEADER ── */
+.hdr{
+  position:fixed;top:0;left:0;right:0;height:52px;
+  background:var(--navy);padding:0 18px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:0 2px 14px rgba(0,0,0,.3);z-index:200;
+}
+.logo{height:36px;width:auto;border-radius:4px;flex-shrink:0}
+.hdr-title{color:#fff;font-size:13px;font-weight:700;flex:1}
+.hdr-sub{color:rgba(255,255,255,.55);font-size:11px;font-weight:400;margin-left:6px}
+.hdr-meta{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.hdr-chip{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.85);font-size:10px;padding:4px 10px;border-radius:12px;
+  white-space:nowrap;
+}
+.hdr-chip strong{color:#fff}
+.btn-print{
+  background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.85);padding:5px 13px;border-radius:5px;
+  font-size:11px;font-weight:600;transition:all .18s;display:flex;align-items:center;gap:5px;
+}
+.btn-print:hover{background:rgba(255,255,255,.22);color:#fff}
+.btn-novo-dia{
+  background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.85);padding:5px 13px;border-radius:5px;
+  font-size:11px;font-weight:600;transition:all .18s;display:flex;align-items:center;gap:5px;
+}
+.btn-novo-dia:hover{background:rgba(232,164,39,.25);border-color:var(--amber);color:var(--amber)}
+.btn-save{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:5px 13px;border-radius:5px;font-size:11px;font-weight:600;transition:all .18s;display:flex;align-items:center;gap:5px;cursor:pointer}
+.btn-save:hover{background:rgba(34,197,94,.25);border-color:#4ade80;color:#4ade80}
+.btn-publish{background:rgba(244,160,36,.15);border:1.5px solid rgba(244,160,36,.5);color:#f4a024;padding:5px 13px;border-radius:5px;font-size:11px;font-weight:600;transition:all .18s;display:flex;align-items:center;gap:5px;cursor:pointer}
+.btn-publish:hover{background:rgba(244,160,36,.3);border-color:#f4a024;color:#fbbf24}
+.btn-publish:disabled{opacity:.45;cursor:not-allowed}
+/* Toast de feedback */
+#toast-pub{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
+#toast-pub.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.btn-load{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);padding:5px 13px;border-radius:5px;font-size:11px;font-weight:600;transition:all .18s;display:flex;align-items:center;gap:5px;cursor:pointer;text-transform:none;letter-spacing:normal;margin-bottom:0}
+.btn-load:hover{background:rgba(59,130,246,.25);border-color:#60a5fa;color:#93c5fd}
+#file-load-inp{display:none}
+
+/* Modal */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:999;align-items:center;justify-content:center;
+}
+.modal-overlay.show{display:flex}
+.modal-box{
+  background:#fff;border-radius:10px;padding:28px 28px 22px;
+  max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+.modal-box h3{font-size:16px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.modal-box p{font-size:12px;color:#4b5563;margin-bottom:20px;line-height:1.7}
+.modal-box p strong{color:var(--text)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-cancel{padding:8px 18px;font-size:12px;font-weight:600;background:#e2e8f0;border:none;border-radius:5px;cursor:pointer}
+.modal-cancel:hover{background:#cbd5e1}
+.modal-confirm{padding:8px 18px;font-size:12px;font-weight:600;background:var(--navy);color:#fff;border:none;border-radius:5px;cursor:pointer}
+.modal-confirm:hover{background:var(--navy-d)}
+
+/* ─── MAIN AREA ── */
+#main{position:fixed;top:52px;left:0;right:0;bottom:0;display:flex;overflow:hidden}
+
+/* ─── SIDEBAR ── */
+.sidebar{
+  width:208px;flex-shrink:0;background:var(--surf);
+  border-right:1px solid var(--bdr);display:flex;flex-direction:column;
+  height:100%;overflow:hidden;
+}
+.sb-head{padding:14px 14px 10px;border-bottom:1px solid var(--bdr);flex-shrink:0}
+.sb-head .sh-t{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.7px}
+.sb-prog-lbl{font-size:10px;color:var(--muted);margin-top:5px}
+.sb-prog-bar{background:#e2e8f0;height:5px;border-radius:99px;margin-top:5px;overflow:hidden}
+.sb-prog-fill{background:var(--green);height:100%;transition:width .4s;border-radius:99px}
+
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0}
+.sb-nav::-webkit-scrollbar{width:3px}
+.sb-nav::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+
+.sb-item{
+  display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;
+  font-size:11px;font-weight:500;color:#4b5563;
+  border-left:3px solid transparent;transition:all .16s;
+  position:relative;
+}
+.sb-item:hover{background:#f8fafc;color:var(--navy)}
+.sb-item.active{background:#eff6ff;color:var(--navy);border-left-color:var(--navy);font-weight:700}
+.sb-item.done{color:var(--green)}
+.sb-item.done .sb-dot{background:#dcfce7;color:var(--green)}
+.sb-item.active .sb-dot{background:var(--navy);color:#fff}
+.sb-dot{
+  width:22px;height:22px;border-radius:50%;background:#e5e7eb;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  font-size:9px;font-weight:700;flex-shrink:0;transition:all .16s;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+.sb-footer{
+  padding:12px 14px;border-top:1px solid var(--bdr);flex-shrink:0;
+}
+.sb-all-done{
+  display:none;background:#f0fdf4;border:1px solid #bbf7d0;
+  border-radius:6px;padding:8px 10px;
+  font-size:10px;font-weight:600;color:var(--green);text-align:center;
+}
+.sb-all-done.show{display:block}
+
+/* ─── CONTENT ── */
+.content{flex:1;height:100%;overflow-y:auto;padding:20px 22px;scroll-behavior:smooth}
+.content::-webkit-scrollbar{width:5px}
+.content::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+
+.c-section{margin-bottom:24px;scroll-margin-top:14px}
+
+/* ─── SECTION CARDS ── */
+.sec-card{background:var(--surf);border:1px solid var(--bdr);border-radius:8px;overflow:hidden}
+.sec-title{
+  background:#eef1f7;padding:10px 14px;
+  font-weight:700;font-size:12px;border-bottom:1px solid var(--bdr);
+  display:flex;align-items:center;gap:7px;
+}
+.sec-code{
+  background:var(--navy);color:#fff;font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:3px;font-family:'IBM Plex Mono',monospace;letter-spacing:.5px;
+}
+.sec-body{padding:14px}
+
+/* ─── DONE BAR ── */
+.done-bar{
+  display:flex;align-items:center;justify-content:flex-end;gap:8px;
+  padding:8px 14px;background:#f0fdf4;border-top:1px solid #bbf7d0;
+}
+.done-msg{font-size:10px;color:var(--green);font-weight:700;display:none}
+.btn-done{
+  padding:5px 14px;font-size:11px;font-weight:700;background:var(--green);
+  color:#fff;border:none;border-radius:4px;display:flex;align-items:center;gap:4px;
+  transition:all .16s;
+}
+.btn-done:hover:not(:disabled){background:#15803d}
+.btn-done:disabled{background:#9ca3af;cursor:default}
+.btn-reabrir{
+  padding:5px 13px;font-size:11px;font-weight:700;
+  background:#fff;color:var(--navy);border:1.5px solid var(--navy);
+  border-radius:4px;display:none;align-items:center;gap:4px;transition:all .16s;
+}
+.btn-reabrir:hover{background:#eff6ff}
+.btn-reabrir.show{display:flex}
+
+/* ─── FORMS ── */
+label{display:block;font-size:10px;font-weight:700;color:var(--lbl);margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{
+  width:100%;font-size:12px;border:1px solid #cbd5e1;border-radius:5px;
+  padding:6px 9px;background:#fff;font-family:inherit;color:var(--text);transition:border-color .15s;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,155,224,.12)}
+input[readonly]{background:#f8fafc;color:#374151}
+input[type="text"],input[type="date"]{height:28px}
+select{height:28px}
+textarea{resize:vertical;min-height:40px}
+.grid{display:grid;gap:10px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+
+/* ─── S2 OCORRÊNCIAS ── */
+.usina-blk{margin-bottom:16px}
+.usina-ttl{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px;padding-bottom:4px;border-bottom:2px solid var(--bdr)}
+.ocorrencia{display:flex;align-items:flex-start;gap:5px;margin-bottom:5px}
+.ocorrencia textarea{flex:1;min-height:30px;padding:5px 8px;font-size:11px}
+.btn-rm{background:#fef2f2;border:1px solid #fecaca;color:var(--red);font-size:12px;padding:0 7px;height:28px;border-radius:4px;flex-shrink:0}
+.btn-addl{margin-top:3px;background:#f1f5f9;border:1px dashed #94a3b8;font-weight:700;width:28px;height:28px;border-radius:4px;color:#475569;font-size:15px}
+
+/* ─── S3 DISPONIBILIDADE ── */
+.sub-l{font-size:11px;font-weight:700;color:var(--lbl);margin-bottom:7px}
+.ugs-hdr{display:grid;grid-template-columns:5fr 3fr 3fr 3fr;gap:5px;text-align:center;font-weight:700;font-size:11px;margin-bottom:3px;color:var(--navy)}
+.ugs-lbs,.ugs-ins{display:grid;grid-template-columns:repeat(5,minmax(40px,1fr)) repeat(3,minmax(40px,1fr)) repeat(3,minmax(40px,1fr)) repeat(3,minmax(40px,1fr));gap:4px}
+.ugs-lbs{text-align:center;font-size:9px;font-weight:700;margin-bottom:3px;font-family:'IBM Plex Mono',monospace;color:var(--lbl)}
+.ugs-ins{margin-bottom:14px}
+.ugs-ins input{height:24px;font-size:10px;text-align:center;padding:1px 3px}
+.ug-div{border-left:2px solid var(--bdr);padding-left:3px}
+.hsep{border-top:1px solid var(--bdr);margin:12px 0}
+.row-lbs,.row-ins{display:grid;grid-template-columns:repeat(5,1fr) 12px 1fr;gap:8px;align-items:center}
+.rl{font-size:10px;font-weight:700;text-align:center;color:var(--lbl)}
+.dv{border-left:1px solid var(--bdr);height:100%}
+.ig{position:relative}
+.ig input{padding-right:22px;font-size:11px;height:26px;text-align:center}
+.ig span{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted)}
+
+/* ─── S3 SI TABLE ── */
+.si-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:8px}
+table.si{width:100%;border-collapse:collapse;font-size:11px;min-width:720px}
+table.si th{text-align:left;padding:6px 8px;font-size:11px;font-weight:700;color:var(--muted);background:#f7f9fc;border-bottom:2px solid var(--bdr);white-space:nowrap}
+table.si td{padding:5px 6px;border-bottom:1px solid var(--bdr);vertical-align:top}
+table.si tbody tr:last-child td{border-bottom:none}
+table.si input[type="text"]{height:26px;font-size:11px;padding:2px 7px}
+table.si textarea{min-height:44px;font-size:11px;padding:4px 7px;resize:vertical}
+.col-num{width:132px}.col-equip{min-width:130px}.col-serv{min-width:250px}.col-prog{width:238px}.col-del{width:30px;text-align:center;vertical-align:middle}
+table.si .col-num input{font-family:'IBM Plex Mono',monospace;letter-spacing:.5px}
+table.si .col-prog input{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2px}
+.btn-del{background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:4px 5px;border-radius:3px;transition:background .12s}
+.btn-del:hover{background:#fef2f2}
+.btn-add-row{margin-top:8px;padding:5px 14px;font-size:11px;font-weight:700;background:#f1f5f9;border:1px dashed #94a3b8;border-radius:4px;color:#475569;cursor:pointer;transition:background .14s}
+.btn-add-row:hover{background:#e2e8f0}
+
+/* ─── S4 COMPRESSORES ── */
+.s4-grid{display:grid;grid-template-columns:68px 124px repeat(10,1fr);font-size:9px;min-width:820px}
+.cell{border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;min-height:30px;padding:1px}
+.cell.hdr{background:#f8faff!important;font-weight:700!important;min-height:30px!important;font-size:10px!important;color:#374151!important;display:flex!important;visibility:visible!important;opacity:1!important;border:1px solid #e5e7eb!important}
+.s4-grid .cell.hdr{display:flex!important;min-height:30px!important;visibility:visible!important;background:#eef2f9!important;color:#1f2937!important}
+.cell.sep{border-top:2px solid var(--bdr);background:#f1f5f9}
+.cell.uc{grid-column:1;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-weight:700;background:#f0f4fb;font-size:12px;color:var(--navy)}
+.cell.kks{font-weight:600;justify-content:flex-start;padding-left:5px;font-family:'IBM Plex Mono',monospace;font-size:8px}
+.s4-grid input{width:90%;height:20px;font-size:9px;text-align:center;border:1px solid #cbd5e1;border-radius:3px;padding:0}
+
+/* ─── S4 STATUS CELL ── */
+.s4c{
+  width:100%;height:100%;min-height:22px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;border-radius:3px;transition:background .14s;
+}
+.s4c:hover{background:#f1f5f9}
+.s4-sym{font-size:24px;line-height:1;transition:color .14s}
+.s4-empty{font-size:11px;color:#d1d5db;font-weight:400}
+.s4c[data-val="0"] .s4-sym{color:#0d9488}
+.s4c[data-val="1"] .s4-sym{color:#d97706}
+.s4c[data-val="2"] .s4-sym{color:#dc2626}
+.s4c[data-val="3"] .s4-sym{color:#ea580c}
+
+/* ─── S4 PICKER ── */
+#s4-picker{
+  position:fixed;background:#fff;
+  border:1px solid var(--bdr);border-radius:8px;
+  box-shadow:0 6px 22px rgba(0,0,0,.16);
+  z-index:300;padding:5px;min-width:158px;display:none;
+}
+#s4-picker.show{display:block}
+.s4-opt{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:5px;cursor:pointer;
+  font-size:11px;font-weight:700;color:var(--text);
+  transition:background .12s;
+}
+.s4-opt:hover{background:#f1f5f9}
+.s4-opt .so{font-size:20px;line-height:1;flex-shrink:0}
+.s4-opt-sep{border:none;border-top:1px solid var(--bdr);margin:3px 0}
+.s4-opt.clr .so{color:#d1d5db;font-size:11px}
+.s4-reset-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:10px;padding:8px 12px;
+  background:#fff8ed;border:1px solid #fde68a;border-radius:6px;gap:10px;
+}
+.s4-reset-info{font-size:10px;color:#92400e;font-weight:600}
+.s4-legend{
+  display:flex;align-items:center;gap:12px;
+  background:#f8fafc;border:1px solid var(--bdr);border-radius:5px;
+  padding:5px 10px;margin-bottom:10px;flex-wrap:wrap;
+}
+.s4-leg-item{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--lbl)}
+.s4-leg-sym{font-size:13px;line-height:1}
+.btn-reset-s4{
+  padding:5px 14px;font-size:11px;font-weight:700;
+  background:#fff;color:#92400e;border:1.5px solid #f59e0b;
+  border-radius:4px;white-space:nowrap;transition:all .16s;
+}
+.btn-reset-s4:hover{background:#fffbeb;border-color:#d97706}
+.s4-cycle-btn{
+  font-size:8px;background:rgba(15,76,129,.08);
+  border:1px solid rgba(15,76,129,.28);border-radius:3px;
+  color:#0f4c81;cursor:pointer;padding:1px 5px;margin-left:5px;
+  line-height:1.5;font-family:'IBM Plex Sans',sans-serif;font-weight:700;
+  white-space:nowrap;
+}
+.s4-cycle-btn:hover{background:#dbeafe;border-color:#0f4c81}
+
+/* ─── TABELAS GENÉRICAS ── */
+table.dt{width:100%;border-collapse:collapse;font-size:11px}
+table.dt th,table.dt td{border-bottom:1px solid var(--bdr);padding:5px;text-align:center;vertical-align:middle}
+table.dt th{background:#f8faff;font-weight:700;font-size:10px}
+table.dt .left{text-align:left}
+table.dt input,table.dt select{height:24px;font-size:10px;padding:2px 5px}
+table.dt textarea{min-height:38px;font-size:10px}
+.btn-add-row{margin-top:8px;padding:5px 13px;font-size:11px;font-weight:700;background:#f1f5f9;border:1px dashed #94a3b8;border-radius:4px;color:#475569}
+
+/* ─── S8 DESATIVAÇÕES ── */
+/* larguras calibradas pelos dados reais */
+table.dt .col-id    {width:112px}
+table.dt .col-st    {width:148px}
+table.dt .col-kks   {width:100px}
+table.dt .col-desc  {min-width:240px}
+table.dt .col-ord   {width:72px}
+table.dt .col-resp  {width:110px}
+table.dt .col-data  {width:126px}
+table.dt .col-dias  {width:44px}
+table.dt .col-del   {width:28px}
+table.dt .col-desc input{text-align:left}
+table.dt .col-resp textarea{
+  width:100%;min-height:34px;font-size:10px;padding:2px 5px;
+  border:1px solid #cbd5e1;border-radius:3px;
+  font-family:'IBM Plex Sans',sans-serif;
+  resize:none;text-align:center;vertical-align:top;line-height:1.4
+}
+/* select status */
+table.dt select.sel-status{height:24px;font-size:9px;padding:2px 4px;width:100%;border:1px solid #cbd5e1;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer}
+select.sel-status.st-aguardando{background:#fff7ed;border-color:#fb923c;color:#92400e;font-weight:600}
+select.sel-status.st-aprovar   {background:#eff6ff;border-color:#60a5fa;color:#1d4ed8;font-weight:600}
+select.sel-status.st-impl      {background:#f0fdf4;border-color:#4ade80;color:#15803d;font-weight:600}
+.btn-del{background:none;border:none;color:var(--red);font-size:13px}
+
+/* ─── S7 ÁGUA ── */
+table.wt{width:100%;border-collapse:collapse;font-size:10px}
+table.wt td{border:1px solid var(--bdr);padding:5px 7px;vertical-align:middle;text-align:center}
+.hs{font-weight:700;background:#eef1f7!important;font-size:10px;letter-spacing:.3px}
+.hx{font-weight:700;background:#f8fafc!important;text-align:left!important;padding-left:9px!important}
+.hl{text-align:left!important;padding-left:9px!important}
+.hr{color:var(--muted);font-size:9px}
+.hi input{width:80%;height:22px;font-size:10px;text-align:center;padding:0 4px}
+.hi input.s7-ok {background:#f0fdf4;border-color:#86efac;color:#16a34a;font-weight:700}
+.hi input.s7-err{background:#fef2f2;border-color:#fca5a5;color:#dc2626;font-weight:700}
+
+/* ─── MULTI-SELECT MODELO ── */
+.ms-wrap{position:relative;width:100%}
+.ms-display{
+  display:flex;align-items:center;justify-content:space-between;
+  min-height:24px;padding:3px 8px;font-size:10px;
+  border:1px solid #cbd5e1;border-radius:4px;background:#fff;
+  cursor:pointer;user-select:none;transition:border-color .15s;gap:4px;
+}
+.ms-display:hover{border-color:var(--blue)}
+.ms-display.open{border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,155,224,.12)}
+.ms-val{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-arrow{font-size:9px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.ms-display.open .ms-arrow{transform:rotate(180deg)}
+.ms-panel{
+  display:none;position:absolute;top:calc(100% + 3px);left:0;
+  background:#fff;border:1px solid var(--bdr);border-radius:7px;
+  box-shadow:0 6px 20px rgba(0,0,0,.13);z-index:100;
+  padding:8px;min-width:260px;
+  grid-template-columns:repeat(4,1fr);gap:3px;
+}
+.ms-panel.open{display:grid}
+.ms-item{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;color:var(--text);
+  padding:5px 7px;border-radius:4px;cursor:pointer;
+  border:1px solid transparent;transition:all .14s;
+}
+.ms-item:hover{background:#eff6ff;border-color:#bfdbfe}
+.ms-item input[type="checkbox"]{
+  width:13px;height:13px;margin:0;accent-color:var(--navy);cursor:pointer;flex-shrink:0;
+}
+
+
+/* ─── COMENTÁRIOS S4 ── */
+.s4c{position:relative}
+.s4c .comment-badge{
+  position:absolute;top:1px;right:2px;
+  font-size:8px;line-height:1;color:#0f4c81;display:none;
+}
+.s4c.has-comment .comment-badge{display:block}
+.s4c.has-comment{background:#eff6ff!important}
+.s4c.has-comment:hover::after{
+  content:attr(data-comment);
+  position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%);
+  background:#1e1e2e;color:#cdd6f4;font-size:10px;
+  font-family:'IBM Plex Sans',sans-serif;
+  padding:6px 9px;border-radius:5px;white-space:pre-wrap;max-width:240px;
+  box-shadow:0 4px 14px rgba(0,0,0,.3);z-index:200;pointer-events:none;
+  line-height:1.5;text-align:left;
+}
+/* Modal comentário */
+#comment-modal{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:998;
+  align-items:center;justify-content:center;
+}
+#comment-modal.show{display:flex}
+.cm-box{
+  background:#fff;border-radius:10px;padding:22px;
+  width:420px;max-width:95vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.25);
+}
+.cm-box h3{font-size:13px;font-weight:700;margin-bottom:4px;
+           font-family:'IBM Plex Sans',sans-serif}
+.cm-meta{font-size:10px;color:var(--muted);margin-bottom:12px;
+         font-family:'IBM Plex Mono',monospace}
+.cm-meta span{color:var(--navy);font-weight:600}
+.cm-box textarea{
+  width:100%;border:1px solid #cbd5e1;border-radius:6px;
+  padding:8px 10px;font-size:12px;font-family:'IBM Plex Sans',sans-serif;
+  resize:vertical;min-height:80px;max-height:160px;
+  line-height:1.5;color:#1f2937;transition:border-color .15s;
+}
+.cm-box textarea:focus{outline:none;border-color:var(--navy);
+  box-shadow:0 0 0 3px rgba(15,76,129,.1)}
+.cm-counter{font-size:10px;color:var(--muted);text-align:right;
+            margin-top:3px;font-family:'IBM Plex Sans',sans-serif}
+.cm-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.cm-cancel{padding:6px 14px;font-size:11px;font-weight:600;
+           background:#e2e8f0;border:none;border-radius:5px;
+           cursor:pointer;font-family:'IBM Plex Sans',sans-serif;color:#374151}
+.cm-clear{padding:6px 14px;font-size:11px;font-weight:600;
+          background:#fef2f2;color:var(--red);border:1px solid #fecaca;
+          border-radius:5px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif}
+.cm-save{padding:6px 14px;font-size:11px;font-weight:700;
+         background:var(--navy);color:#fff;border:none;border-radius:5px;
+         cursor:pointer;font-family:'IBM Plex Sans',sans-serif}
+.cm-save:hover{background:var(--navy-d)}
+
+
+/* ─── LEGENDA TIPO DESPACHO S1 ── */
+.td-legend{margin-top:14px;background:#f8fafc;border:1px solid var(--bdr);border-radius:6px;padding:10px 14px}
+.td-legend-title{font-size:10px;font-weight:700;color:var(--navy);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.td-legend-grid{display:flex;flex-wrap:wrap;gap:4px 16px}
+.td-leg-item{font-size:10px;color:var(--lbl);white-space:nowrap}
+.td-leg-item strong{color:var(--navy);font-family:'IBM Plex Mono',monospace}
+
+/* ─── PRINT ── */
+@media print{
+  /* ── página ── */
+  @page{size:A4 landscape;margin:10mm 8mm 10mm 8mm}
+
+  /* ── ocultar UI de navegação ── */
+  .hdr,.sidebar,.done-bar,.btn-print,.btn-novo-dia,.btn-save,.btn-load,
+  .btn-add-row,.btn-del,.reabrir-btn{display:none!important}
+
+  /* ── layout ── */
+  body{background:#fff!important;font-size:9px!important;padding:0!important}
+  #main{position:static!important;display:block!important;overflow:visible!important;top:0!important}
+  .content{display:block!important;height:auto!important;overflow:visible!important;padding:4px 0!important}
+  .c-section{display:block!important;visibility:visible!important;margin-bottom:10px;break-inside:avoid}
+  .sec-card{border:1px solid #bbb!important;border-radius:4px!important;break-inside:avoid;overflow:visible!important}
+
+  /* ── títulos de seção ── */
+  .sec-title{background:#1e3a5f!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    color:#fff!important;padding:5px 10px!important;font-size:9px!important}
+
+  /* ── tabelas wt e dt ── */
+  table.wt,table.dt{font-size:8px!important;width:100%!important}
+  table.wt th,table.wt td,
+  table.dt th,table.dt td{padding:3px 5px!important;font-size:8px!important}
+  .hs{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#eef1f7!important}
+  .hx{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#f8fafc!important}
+
+  /* ── inputs e selects ── */
+  input,textarea,select{
+    border:none!important;border-bottom:1px solid #ccc!important;
+    background:transparent!important;font-size:8px!important;
+    box-shadow:none!important;padding:1px 3px!important
+  }
+  textarea{resize:none!important;overflow:visible!important;height:auto!important}
+  select{-webkit-appearance:none;appearance:none}
+
+  /* ── S4 grid ── */
+  .s4-grid,.ugs-lbs,.ugs-ins,.s4-grid input,.cell{font-size:7px!important}
+  .cell{border:1px solid #ddd!important;min-height:18px!important}
+  .cell.hdr{background:#eef2f9!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* ── status colorido S8 ── */
+  .st-aguardando{background:#fff7ed!important;color:#92400e!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .st-aprovar   {background:#eff6ff!important;color:#1d4ed8!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .st-impl      {background:#f0fdf4!important;color:#15803d!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* ── quebras de página ── */
+  .c-section[id="cs_0"]{break-before:avoid}
+  .c-section[id="cs_4"]{break-before:page}   /* S4 — nova página */
+  .c-section[id="cs_6"]{break-before:page}   /* S6 — nova página */
+  .c-section[id="cs_7"]{break-before:page}   /* S7 — nova página */
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAFPAWMDASIAAhEBAxEB/8QAHQABAAIDAQEBAQAAAAAAAAAAAAcIAQUGBAIJA//EAFUQAAEDAwIDBAUGBwoMBQUAAAEAAgMEBREGBxIhMQhBUWETInGBkRQyobGywRUjNkJSdNEWFzM3YnOSlNLhGCQnNUNERlNWcoLCJSZVovFUg4ST8P/EABsBAQACAwEBAAAAAAAAAAAAAAAFBgEDBAIH/8QANREAAQQCAQIEAwcDBAMAAAAAAAECAwQFESESMQYTQVEUImEWIzJScYGRNEKhFTOxwSRTYv/aAAwDAQACEQMRAD8AjJERfVj5IEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEWevVACThoJPgAiqiJtTKNVV0hhF9EYOCCCO5fKGNBEWQgMIvrhcGcXCeHxxyQjAysIqL2Mq1U7ofKIiyYCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgO42S03bdV7g0tnurZHUr4pJHNY7hJLRkK2entvdIWCMNttipGOxgyPZxvPvOVWjstxuduzSvHRtLKT8FcMqleIJ5G2OhHKiaLt4egjdX6nNRV2VC7SOhjprVP4YoYeG3XJxcMDlHL1cPfzIUSlX03D0zSas0rW2eqa0mVh9E8jPA/813/APeao3qK1VdjvVXaa5nBUUshjf8AcffyUxg7/nxeW9fmQh83j/h5etqfKpr1stMWerv9/orPRML56qUMaAM48SfYM/Ba7GOqs72WtCut1tfqu5U/DU1beGlDxzZF+l7/AKl25O42pArl7+hw42m61MjU7epJdi0Fp2h0rSWGe10lVBDEGO9LEDxEdT08cqHO0ZtvpbTmlhfbNQGkqX1TYy2Nx4MOzk8Pd0VkAMFRL2rIw/a5x/Qq4z9apmOszLabty8ryXTI1IW1XaanCFRHdVhEX0Q+dhERYAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAEREAREQBERAFkLCy0tGOLp3ovCcmU5U6Pb7Rt41pfGWy1w8hzmncPUib4n9i2m4O2GqNGzOfWUZqqLPq1UA4mY8x1CtFsfbdP0WgbdLp9odFPEHyyuA9I9/fxe/PsXcVMMU8Topo2SMcMFrhkFU+fxBMydUa35U4LfB4fikgRVd8yn53EEdUVsNy9ibFfi+usDmWmuOS5gGYXnzH5vtCrjrbReotI1ppr3b5IWkkMmaMxSex3RT1PKwWk01dL7EHdxM9RduTae53fZRbnc4nwo3/crXXisFvtdVXFhkFPE6UtBwXYGcfQqp9k4H98qQ45fJH/WFZ3XpDdFXp2cYoZvsFVnOp1XkRfZCzYJemkqp9RpC/UOqNPUt6oH5gqY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" alt="ENEVA" style="height:36px;width:auto;border-radius:4px;flex-shrink:0">
+  <div class="hdr-title">
+    Ata de Reunião O&amp;M
+    <span class="hdr-sub">Complexo Parnaíba</span>
+  </div>
+  <div class="hdr-meta">
+    <div class="hdr-chip">Semana: <strong id="hdr-semana">—</strong></div>
+    <div class="hdr-chip" id="ver-chip" style="font-family:monospace;letter-spacing:.5px">v1</div>
+    <button class="btn-save" onclick="salvarEstado()" title="Exportar preenchimento como JSON">💾 Salvar</button>
+    <button class="btn-publish" id="btn-pub" onclick="publicarNoDrive()" title="Enviar JSON para o Google Drive e atualizar dashboard">☁️ Publicar</button>
+    <label class="btn-load" title="Carregar preenchimento (JSON) ou dados (CSV)">📂 Carregar<input type="file" id="file-load-inp" accept=".json,.csv" onchange="carregarEstado(this)"></label>
+    <button class="btn-novo-dia" onclick="abrirModalNovoDia()">🔄 Novo Dia</button>
+    <button class="btn-print" onclick="window.print()">🖨 Imprimir</button>
+  </div>
+</div>
+
+<!-- S4 STATUS PICKER -->
+<div id="s4-picker">
+  <div class="s4-opt" onclick="pickS4(0)"><span class="so" style="color:#0d9488">●</span> 0 — PARADO</div>
+  <div class="s4-opt" onclick="pickS4(1)"><span class="so" style="color:#d97706">●</span> 1 — INDISPONÍVEL</div>
+  <div class="s4-opt" onclick="pickS4(2)"><span class="so" style="color:#dc2626">●</span> 2 — OPERANDO</div>
+  <div class="s4-opt" onclick="pickS4(3)"><span class="so" style="color:#ea580c">▲</span> 3 — COM RESTRIÇÃO</div>
+  <hr class="s4-opt-sep">
+  <div class="s4-opt clr" onclick="pickS4(-1)"><span class="so">—</span> Limpar</div>
+</div>
+
+<!-- MODAL NOVO DIA -->
+<div class="modal-overlay" id="modal-novoDia">
+  <div class="modal-box">
+    <h3>🔄 Novo Dia</h3>
+    <p>
+      Esta ação irá <strong>apagar todos os dados preenchidos</strong> e preparar
+      o formulário para o próximo preenchimento.<br><br>
+      Certifique-se de ter <strong>salvo ou impresso o PDF</strong> antes de continuar.
+    </p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="modal-confirm" onclick="confirmarNovoDia()">✓ Confirmar e Limpar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESET S4 -->
+<div class="modal-overlay" id="modal-s4">
+  <div class="modal-box">
+    <h3>🔄 Reiniciar Ciclo S4</h3>
+    <p>
+      Esta ação irá <strong>apagar todos os dados de Compressores / Secadoras</strong>
+      (os 10 dias preenchidos).<br><br>
+      Use apenas ao iniciar um <strong>novo ciclo de 10 dias</strong>.
+      Certifique-se de ter <strong>salvo o PDF</strong> antes de continuar.
+    </p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="fecharModalS4()">Cancelar</button>
+      <button class="modal-confirm" style="background:#d97706" onclick="confirmarResetS4()">🔄 Limpar S4</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AVANÇAR CICLO UNIDADE -->
+<div class="modal-overlay" id="modal-s4cycle">
+  <div class="modal-box">
+    <h3>↺ Avançar Ciclo</h3>
+    <p id="modal-s4cycle-msg"></p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="fecharModalS4Cycle()">Cancelar</button>
+      <button class="modal-confirm" onclick="confirmarAdvanceS4Cycle()">↺ Confirmar Avanço</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMENTÁRIO S4 -->
+<div id="comment-modal">
+  <div class="cm-box">
+    <h3>💬 Comentário</h3>
+    <div class="cm-meta">KKS: <span id="cm-kks">—</span> &nbsp;|&nbsp; Data: <span id="cm-date">—</span></div>
+    <textarea id="cm-text" maxlength="300" placeholder="Ex: Emitida nota 1023565 para falha elétrica do compressor..."></textarea>
+    <div class="cm-counter"><span id="cm-count">0</span>/300</div>
+    <div class="cm-actions">
+      <button class="cm-cancel" onclick="closeComment()">Cancelar</button>
+      <button class="cm-clear" onclick="clearComment()">🗑 Limpar</button>
+      <button class="cm-save" onclick="saveComment()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sb-head">
+      <div class="sh-t">Seções da Ata</div>
+      <div class="sb-prog-lbl" id="prog-lbl">0 de 8 concluídas</div>
+      <div class="sb-prog-bar"><div class="sb-prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="sb-nav" id="sb-nav"></div>
+    <div class="sb-footer">
+      <div class="sb-all-done" id="all-done">🎉 Ata concluída!</div>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content" id="content"></div>
+
+</div>
+
+<script>
+/* ═══ SEÇÕES ═══════════════════════════════════════════ */
+const SECS = [
+  {id:'s0', code:'S0', label:'Cabeçalho /<br>Identificação',           full:'Cabeçalho / Identificação'},
+  {id:'s1', code:'S1', label:'Média de<br>Geração D-1',                full:'Média de Geração D-1'},
+  {id:'s2', code:'S2', label:'Ocorrências<br>Relevantes',              full:'Ocorrências Relevantes'},
+  {id:'s3', code:'S3', label:'Disponibilidade',                         full:'Disponibilidade'},
+  {id:'s4', code:'S4', label:'Compressores /<br>Secadoras',            full:'Compressores / Secadoras'},
+  {id:'s6', code:'S5', label:'Observações<br>Imediatas',               full:'Observações Imediatas'},
+  {id:'s7', code:'S6', label:'Dados Operacionais<br>Trat. Água (D-1)', full:'Dados Operacionais Tratamento de Água (D-1)'},
+  {id:'s8', code:'S7', label:'Desativações<br>Temporárias Vigentes',   full:'Desativações Temporárias Vigentes'},
+];
+const N = SECS.length;
+const done = Array(N).fill(false);
+
+/* ═══ HTML DAS SEÇÕES ══════════════════════════════════ */
+function secCard(id, idx){
+  return `<div class="sec-card">${secInner(id)}
+    <div class="done-bar">
+      <span class="done-msg" id="dm_${idx}">✓ Seção concluída</span>
+      <button class="btn-reabrir" id="br_${idx}" onclick="reabrirSec(${idx})" title="Voltar e corrigir esta seção">↩ Reabrir</button>
+      <button class="btn-done" id="bd_${idx}" onclick="markDone(${idx})">✓ Concluir seção</button>
+    </div>
+  </div>`;
+}
+
+function hdr(code, title){
+  return `<div class="sec-title"><span class="sec-code">${code}</span> ${title}</div>`;
+}
+
+function secInner(id){
+  switch(id){
+
+    /* ── S0 ── */
+    case 's0': return hdr('S0','Cabeçalho / Identificação')+`
+      <div class="sec-body">
+        <div class="grid g3">
+          <div><label style="text-transform:none;letter-spacing:normal">Dia observado</label>
+            <input id="diaObs" readonly></div>
+          <div><label style="text-transform:none;letter-spacing:normal">Semana operativa</label>
+            <input id="semOp" readonly></div>
+          <div><label style="text-transform:none;letter-spacing:normal">Data da reunião</label>
+            <input type="date" id="datReu"></div>
+        </div>
+      </div>`;
+
+    /* ── S1 ── */
+    case 's1':{
+      const sel=(f,id='')=>`<select${id?` id="${id}"`:''}>${['EDE','FDD','IND'].sort((a,b)=>a===f?-1:b===f?1:0).map(o=>`<option>${o}</option>`).join('')}</select>`;
+      const bdl='border-left:2px solid var(--bdr)';
+      return hdr('S1','Média de Geração D-1')+`
+      <div class="sec-body" style="overflow-x:auto">
+        <table class="dt" style="min-width:900px">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:66px"></th>
+              <th colspan="5">Parnaíba I / V</th>
+              <th colspan="3" style="${bdl}">Parnaíba II</th>
+              <th colspan="3" style="${bdl}">Parnaíba III / VI</th>
+              <th colspan="3" style="${bdl}">Parnaíba IV</th>
+            </tr>
+            <tr>
+              <th>TG31</th><th>TG32</th><th>TG21</th><th>TG22</th><th>TV28</th>
+              <th style="${bdl}">TG51</th><th>TG52</th><th>TV58</th>
+              <th style="${bdl}">TV18</th><th>TG12</th><th>UG10</th>
+              <th style="${bdl}">BAG11</th><th>BAG21</th><th>BAG31</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Condição</th>
+              <td>${sel('EDE','cond_tg31')}</td><td>${sel('EDE','cond_tg32')}</td><td>${sel('EDE','cond_tg21')}</td><td>${sel('EDE','cond_tg22')}</td><td>${sel('EDE','cond_tv28')}</td>
+              <td style="${bdl}">${sel('FDD','cond_tg51')}</td><td>${sel('IND','cond_tg52')}</td><td>${sel('IND','cond_tv58')}</td>
+              <td style="${bdl}">${sel('EDE','cond_tv18')}</td><td>${sel('EDE','cond_tg12')}</td><td>${sel('EDE','cond_ug10')}</td>
+              <td style="${bdl}">${sel('FDD','cond_bag11')}</td><td>${sel('FDD','cond_bag21')}</td><td>${sel('FDD','cond_bag31')}</td>
+            </tr>
+            <tr>
+              <th>MWh</th>
+              <td><input id="mwh_tg31" class="mwh mwh-piv" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tg32" class="mwh mwh-piv" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tg21" class="mwh mwh-piv" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tg22" class="mwh mwh-piv" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tv28" class="mwh mwh-piv" type="text" value="0,0" style="text-align:center"></td>
+              <td style="${bdl}"><input id="mwh_tg51" class="mwh mwh-pii" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tg52" class="mwh mwh-pii" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tv58" class="mwh mwh-pii" type="text" value="0,0" style="text-align:center"></td>
+              <td style="${bdl}"><input id="mwh_tv18" class="mwh mwh-piii" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_tg12" class="mwh mwh-piii" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_ug10" class="mwh mwh-piii" type="text" value="0,0" style="text-align:center"></td>
+              <td style="${bdl}"><input id="mwh_bag11" class="mwh mwh-p4" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_bag21" class="mwh mwh-p4" type="text" value="0,0" style="text-align:center"></td>
+              <td><input id="mwh_bag31" class="mwh mwh-p4" type="text" value="0,0" style="text-align:center"></td>
+            </tr>
+            <tr>
+              <th>MWh Gerada</th>
+              <td colspan="5" style="padding:3px"><input id="real_piv" readonly type="text" value="0,0" style="text-align:center;font-weight:700;font-size:11px;background:#f0f9ff;color:var(--navy)"></td>
+              <td colspan="3" style="${bdl};padding:3px"><input id="real_pii" readonly type="text" value="0,0" style="text-align:center;font-weight:700;font-size:11px;background:#f0f9ff;color:var(--navy)"></td>
+              <td colspan="3" style="${bdl};padding:3px"><input id="real_piii" readonly type="text" value="0,0" style="text-align:center;font-weight:700;font-size:11px;background:#f0f9ff;color:var(--navy)"></td>
+              <td colspan="3" style="${bdl};padding:3px"><input id="real_p4" readonly type="text" value="0,0" style="text-align:center;font-weight:700;font-size:11px;background:#f0f9ff;color:var(--navy)"></td>
+            </tr>
+            <tr>
+              <th>MWh Programada</th>
+              <td colspan="5" style="padding:3px"><input id="prog_piv" type="text" value="0,0" style="text-align:center;font-size:11px"></td>
+              <td colspan="3" style="${bdl};padding:3px"><input id="prog_pii" type="text" value="0,0" style="text-align:center;font-size:11px"></td>
+              <td colspan="3" style="${bdl};padding:3px"><input id="prog_piii" type="text" value="0,0" style="text-align:center;font-size:11px"></td>
+              <td colspan="3" style="${bdl};padding:3px"><input id="prog_p4" type="text" value="0,0" style="text-align:center;font-size:11px"></td>
+            </tr>
+            <tr>
+              <th>Tipo Despacho</th>
+              <td colspan="5" style="padding:2px">${msHtml('ms_piv')}</td>
+              <td colspan="3" style="${bdl};padding:2px">${msHtml('ms_pii')}</td>
+              <td colspan="3" style="${bdl};padding:2px">${msHtml('ms_piii')}</td>
+              <td colspan="3" style="${bdl};padding:2px">${msHtml('ms_p4')}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="font-size:10px;margin-top:7px;color:var(--muted)">
+          <strong>EDE</strong> = Em Despacho &nbsp;·&nbsp;
+          <strong>FDD</strong> = Fora de Despacho &nbsp;·&nbsp;
+          <strong>IND</strong> = UG Indisponível
+        </div>
+        <div class="grid" style="margin-top:14px;max-width:820px;grid-template-columns:repeat(5,1fr);gap:10px">
+          <div><label style="text-transform:none">Gerado Total (MWh)</label>
+            <input id="totalMwh" readonly type="text" value="0,0" style="font-weight:700;background:#f0f9ff;color:var(--navy);text-align:center"></div>
+          <div><label style="text-transform:none">Programado Total (MWh)</label>
+            <input id="totalProg" readonly type="text" value="0,0" style="font-weight:700;background:#f8fafc;text-align:center"></div>
+          <div><label style="text-transform:none">Consumo GN (Nm³/d)</label>
+            <input id="consumoGN" type="text" value="0,0" style="text-align:center"></div>
+          <div><label style="text-transform:none">Programado GN (Nm³/d)</label>
+            <input id="progGN" type="text" value="0,0" style="text-align:center"></div>
+          <div><label style="text-transform:none">Temperatura Ambiente (°C)</label>
+            <input id="tempAmb" type="text" value="0,0" style="text-align:center"></div>
+        </div>
+        <div class="td-legend" id="td-legend" style="display:none">
+          <div class="td-legend-title">Razão de Despacho</div>
+          <div class="td-legend-grid" id="td-legend-grid"></div>
+        </div>
+      </div>`;}
+
+        /* ── S2 ── */
+    case 's2': return hdr('S2','Ocorrências Relevantes')+`
+      <div class="sec-body">
+        ${usBlk('u_piv','Parnaíba I / V','')}
+        ${usBlk('u_pii','Parnaíba II','')}
+        ${usBlk('u_piii','Parnaíba III / VI','')}
+        ${usBlk('u_p4','Parnaíba IV','')}
+      </div>`;
+
+    /* ── S3 ── */
+    case 's3': return hdr('S3','Disponibilidade')+`
+      <div class="sec-body">
+        <div class="sub-l">Disponibilidade Física por UGs – 24 horas (%)</div>
+        <div class="ugs-hdr">
+          <div>Parnaíba I / V</div><div>Parnaíba II</div>
+          <div>Parnaíba III / VI</div><div>Parnaíba IV</div>
+        </div>
+        <div class="ugs-lbs">
+          <div>TG31</div><div>TG32</div><div>TG21</div><div>TG22</div><div>TV28</div>
+          <div class="ug-div">TG51</div><div>TG52</div><div>TV58</div>
+          <div class="ug-div">TV18</div><div>TG12</div><div>UG10</div>
+          <div class="ug-div">BAG11</div><div>BAG21</div><div>BAG31</div>
+        </div>
+<div class="ugs-ins">
+  <input id="avfis_tg31" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tg32" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tg21" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tg22" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tv28" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)">
+  <input id="avfis_tg51" class="ug-div" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tg52" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tv58" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)">
+  <input id="avfis_tv18" class="ug-div" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_tg12" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_ug10" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)">
+  <input id="avfis_bag11" class="ug-div" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_bag21" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"><input id="avfis_bag31" data-fmt="pct" value="0,0%" onfocus="fmtPctF(this)" onblur="fmtPctB(this)">
+</div>
+<div class="hsep"></div>
+<div class="sub-l">Intervenções Vigentes (SI)</div>
+<div class="si-wrap">
+  <table class="si">
+    <thead>
+      <tr>
+        <th class="col-num">Número</th>
+        <th class="col-equip">Equipamento</th>
+        <th class="col-serv">Serviço</th>
+        <th class="col-prog">Programação</th>
+        <th class="col-del"></th>
+      </tr>
+    </thead>
+    <tbody id="tb-si"></tbody>
+  </table>
+</div>
+<button class="btn-add-row" onclick="addSIRow()">＋ Adicionar Intervenção</button>
+<div class="hsep"></div>
+<div class="sub-l">Disponibilidade Mensal ONS (M-1)</div>
+<div class="row-lbs">
+  <div class="rl">Parnaíba I</div><div class="rl">Parnaíba II</div>
+  <div class="rl">Parnaíba III/VI</div><div class="rl">Parnaíba IV</div>
+  <div class="rl">Parnaíba V</div><div class="dv"></div>
+  <div class="rl">Acumulada</div>
+</div>
+<div class="row-ins" style="margin-top:6px">
+  <div class="ig"><input id="avons_pi"   class="no-reset" value="" data-fmt="pct" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"></div>
+  <div class="ig"><input id="avons_pii"  class="no-reset" value="" data-fmt="pct" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"></div>
+  <div class="ig"><input id="avons_piii" class="no-reset" value="" data-fmt="pct" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"></div>
+  <div class="ig"><input id="avons_piv"  class="no-reset" value="" data-fmt="pct" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"></div>
+  <div class="ig"><input id="avons_pv"   class="no-reset" value="" data-fmt="pct" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"></div>
+  <div class="dv"></div>
+  <div class="ig"><input id="avons_acum" class="no-reset" value="" data-fmt="pct" onfocus="fmtPctF(this)" onblur="fmtPctB(this)"></div>
+</div>
+<div style="margin-top:12px">
+  <label>Observações</label>
+  <textarea id="s3_obs" maxlength="300" placeholder="Observações adicionais (até 300 caracteres)..."></textarea>
+</div>
+</div>`;
+
+
+    /* ── S4 ── */
+    case 's4': return hdr('S4','Compressores / Secadoras')+`
+      <div class="sec-body" style="overflow-x:auto">
+        <div class="s4-grid">
+          ${s4U('Parnaíba I', ['00QFA10AN001','00QFA20AN001','00QFA30AN001'],['00QFA21AT002','00QFA22AT002'], 'pi_comp', 'pi_sec')}
+          ${s4U('Parnaíba V', ['30QEA10AN001','30QEA11AN001','30QEA12AN001'],['30QFB11AT002','30QFB12AT002'], 'pv_comp', 'pv_sec')}
+          ${s4U('Parnaíba VI',['10QEA15AN001','10QEA25AN001'],['10QEB30AT003','10QEB35AT003'], 'pvi_comp', 'pvi_sec', false)}
+          ${s4U('Parnaíba II',['58QEA11AN001','58QEA12AN001','58QEA13AN001'],['58QFA10AT001','58QFA20AT001'], 'pii_comp', 'pii_sec', false)}
+          ${s4U('Parnaíba IV',['TCA901','TCA902'],['TSA901-D1','TSA901-D2'], 'p4_comp', 'p4_sec', false)}
+        </div>
+        <div class="s4-legend" style="margin-top:12px">
+          <span style="font-size:10px;font-weight:700;color:var(--muted);margin-right:4px">LEGENDA:</span>
+          <div class="s4-leg-item"><span class="s4-leg-sym" style="color:#0d9488">●</span> 0 — PARADO</div>
+          <div class="s4-leg-item"><span class="s4-leg-sym" style="color:#d97706">●</span> 1 — INDISPONÍVEL</div>
+          <div class="s4-leg-item"><span class="s4-leg-sym" style="color:#dc2626">●</span> 2 — OPERANDO</div>
+          <div class="s4-leg-item"><span class="s4-leg-sym" style="color:#ea580c">▲</span> 3 — COM RESTRIÇÃO</div>
+        </div>
+        <div class="s4-reset-bar">
+          <span class="s4-reset-info">📅 Ciclo de 10 dias — limpe ao iniciar um novo ciclo</span>
+          <button class="btn-reset-s4" onclick="abrirModalS4()">🔄 Reiniciar ciclo de 10 dias</button>
+        </div>
+      </div>`;
+
+        /* ── S6 ── */
+    case 's6': return hdr('S5','Observações Imediatas')+`
+      <div class="sec-body">
+        <table class="dt">
+          <thead><tr>
+            <th style="width:8%">Nota</th><th style="width:8%">Ordem</th>
+            <th style="width:9%">Criticidade</th><th style="width:38%">Descrição</th>
+            <th style="width:19%">Local Instalação</th>
+            <th style="width:9%">Status</th><th style="width:4%"></th>
+          </tr></thead>
+          <tbody id="tb_s6">
+            <tr>
+              <td><input></td><td><input></td>
+              <td><select>${[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('')}</select></td>
+              <td class="left"><textarea maxlength="100"></textarea></td>
+              <td class="left"><input></td><td><input maxlength="4"></td>
+              <td><button class="btn-del" onclick="delRow(this)">🗑</button></td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="btn-add-row" onclick="addS6()">＋ Adicionar Observação</button>
+      </div>`;
+
+    /* ── S7 ── */
+    case 's7': return hdr('S6','Dados Operacionais Tratamento de Água (D-1)')+`
+      <div class="sec-body" style="overflow-x:auto">
+        <table class="wt">
+          <tr><td colspan="4" class="hs">PRODUÇÃO DE ÁGUA — MÉDIA (m³/h)</td></tr>
+          <tr><td class="hx" rowspan="2">CAPTAÇÃO</td><td class="hl" colspan="2">RIO MEARIM</td><td class="hi"><input id="s7_cap_rio" value="0,0" data-fmt="mil1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl" colspan="2">POÇOS ARTESIANOS</td><td class="hi"><input id="s7_cap_poc" value="0,0" data-fmt="mil1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hx">CLARIFICAÇÃO</td><td class="hl" colspan="2">MULTIFLO</td><td class="hi"><input id="s7_clar" value="0,0" data-fmt="mil1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hx" rowspan="3">DESMINERALIZAÇÃO</td><td class="hl" colspan="2">PAR I/V</td><td class="hi"><input id="s7_desmin_piv" value="0,0" data-fmt="mil1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl" colspan="2">PAR II</td><td class="hi"><input id="s7_desmin_pii" value="0,0" data-fmt="mil1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl" colspan="2">PAR III/VI</td><td class="hi"><input id="s7_desmin_piii" value="0,0" data-fmt="mil1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td colspan="4" class="hs">CONSUMO DE ÁGUA — MÉDIA (m³/h)</td></tr>
+          <tr><td class="hx" rowspan="3">CLARIFICADA</td><td class="hl">TORRE RESFRIAMENTO P-I/V</td><td class="hr">365 a 1350</td><td class="hi"><input id="s7_tr_piv" value="0,0" data-fmt="mil1" data-min="365" data-max="1350" data-gt="1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)" oninput="valS7(this)"></td></tr>
+          <tr><td class="hl">TORRE RESFRIAMENTO P-II</td><td class="hr">365 a 550</td><td class="hi"><input id="s7_tr_pii" value="0,0" data-fmt="mil1" data-min="365" data-max="550" data-gt="1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)" oninput="valS7(this)"></td></tr>
+          <tr><td class="hl">TORRE RESFRIAMENTO P-VI</td><td class="hr">185 a 260</td><td class="hi"><input id="s7_tr_pvi" value="0,0" data-fmt="mil1" data-min="185" data-max="260" data-gt="1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)" oninput="valS7(this)"></td></tr>
+          <tr><td class="hx" rowspan="3">MAKE UP CONDENSADO</td><td class="hl">CONDENSADOR PAR I/V</td><td class="hr">25,0 a 30,0</td><td class="hi"><input id="s7_cd_piv" value="0,0" data-fmt="dec1" data-min="25" data-max="30" data-gt="1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)" oninput="valS7(this)"></td></tr>
+          <tr><td class="hl">CONDENSADOR PAR II</td><td class="hr">7,0 a 10,0</td><td class="hi"><input id="s7_cd_pii" value="0,0" data-fmt="dec1" data-min="7" data-max="10" data-gt="1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)" oninput="valS7(this)"></td></tr>
+          <tr><td class="hl">CONDENSADOR PAR III/VI</td><td class="hr">4,7</td><td class="hi"><input id="s7_cd_piii" value="0,0" data-fmt="dec1" data-min="4.7" data-max="4.7" data-gt="1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)" oninput="valS7(this)"></td></tr>
+          <tr><td colspan="5" class="hs">NÍVEIS TANQUE DE ÁGUA — (%) ÀS 01:00H</td></tr>
+          <tr><td class="hx">ÁGUA BRUTA</td><td class="hl">TQ #1 - PAR V</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GAD10BB051</td><td class="hi"><input id="s7_tq_ab" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hx">POTÁVEL</td><td class="hl">TQ #1 - PAR I</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GKB10BB001</td><td class="hi"><input id="s7_tq_pot" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hx" rowspan="3">TQ ÁGUA CLARIFICADA</td><td class="hl">TQ #1 - PAR II</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">50GAD11BB001</td><td class="hi"><input id="s7_tq_cl_pii1" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #2 - PAR II</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">50GAD12BB001</td><td class="hi"><input id="s7_tq_cl_pii2" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #3 - PAR V</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GHB20BB051</td><td class="hi"><input id="s7_tq_cl_pv" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hx" rowspan="4">TANQUE DE SERVIÇO</td><td class="hl">TQ #1 - PAR I</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GBL10BB001</td><td class="hi"><input id="s7_tq_sv_pi" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #1 - PAR II</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">58GHA10BB001</td><td class="hi"><input id="s7_tq_sv_pii" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #1 - PAR V</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GHB60BB051</td><td class="hi"><input id="s7_tq_sv_pv" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #1 - PAR VI</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">10GHB30BB001</td><td class="hi"><input id="s7_tq_sv_pvi" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hx" rowspan="5">TQ ÁGUA DESMINERALIZADA</td><td class="hl">TQ #1 - PAR I</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GHC10BB001</td><td class="hi"><input id="s7_tq_dm_pi" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #1 - PAR II</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">58GHC10BB001</td><td class="hi"><input id="s7_tq_dm_pii" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #1 - PAR V</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GHC11BB051</td><td class="hi"><input id="s7_tq_dm_pv1" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #1 - PAR VI</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">10GHC10BB001</td><td class="hi"><input id="s7_tq_dm_pvi" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+          <tr><td class="hl">TQ #2 - PAR V</td><td class="hl" style="font-family:'IBM Plex Mono',monospace">00GHC13BB051</td><td class="hi"><input id="s7_tq_dm_pv2" value="0,0" data-fmt="dec1" onfocus="fmtS7f(this)" onblur="fmtS7b(this)"></td></tr>
+        </table>
+      </div>`;
+
+    /* ── S8 ── */
+    case 's8': setTimeout(()=>{if(document.getElementById('tb_s8')&&document.getElementById('tb_s8').children.length<=1)loadS8Data();},0); return hdr('S7','Desativações Temporárias Vigentes')+`
+      <div class="sec-body" style="overflow-x:auto">
+        <table class="dt" style="font-size:10px;min-width:900px">
+          <thead><tr>
+            <th class="col-id">ID Conecta</th>
+            <th class="col-st">Status</th>
+            <th class="col-kks">KKS</th>
+            <th class="col-desc">Descrição Equipamento</th>
+            <th class="col-ord">Ordem/Nota</th>
+            <th class="col-resp">Responsável</th>
+            <th class="col-data">Data Abertura</th>
+            <th class="col-data">Previsão Término</th>
+            <th class="col-dias">Nº Dias</th>
+            <th class="col-del"></th>
+          </tr></thead>
+          <tbody id="tb_s8">
+            <tr>${s8Row()}</tr>
+          </tbody>
+        </table>
+        <button class="btn-add-row" onclick="addS8()">＋ Adicionar Linha</button>
+      </div>`;
+  }
+  return '';
+}
+
+/* ═══ HELPERS HTML ═════════════════════════════════════ */
+function usBlk(bid, title, ...lines){
+  return `<div class="usina-blk" id="${bid}">
+    <div class="usina-ttl">${title}</div>
+    ${lines.map(t=>`<div class="ocorrencia">
+      <textarea>${t}</textarea>
+      <button class="btn-rm" onclick="delOc(this)">🗑</button>
+    </div>`).join('')}
+    <button class="btn-addl" onclick="addOc('${bid}')" title="Adicionar linha">+</button>
+  </div>`;
+}
+function s4U(name, comp, sec, compKey, secKey, showSecHdr=true){
+  const compDates = S4_DATES[compKey] || [];
+  const secDates  = S4_DATES[secKey]  || [];
+  const rs = (showSecHdr ? 2 : 1)+comp.length+sec.length;
+  const STY_HDR = 'border:1px solid #c8d4e8;display:flex;align-items:center;justify-content:center;min-height:30px;padding:2px;background:#eef2f9;font-weight:700;font-size:10px;color:#1f2937;';
+  const STY_SEP = STY_HDR + 'border-top:2px solid #b0c0d8;background:#e8ecf4;';
+  const STY_UC  = 'grid-row:span '+rs+';border:1px solid #c8d4e8;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-weight:700;background:#f0f4fb;font-size:13px;color:#0f4c81;letter-spacing:.5px;';
+  const STY_KKS = 'border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:flex-start;padding-left:8px;min-height:30px;font-family:monospace;font-size:9px;font-weight:600;color:#374151;';
+  const STY_DAT = 'border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;min-height:30px;padding:1px;';
+
+  let html = `<div style="${STY_UC}">${name}</div>`;
+  // Header compressores
+  html += `<div style="${STY_HDR}">KKS <button class="s4-cycle-btn" onclick="advanceS4Cycle('${compKey}')" title="Avançar ciclo de compressores">↺</button></div>`;
+  compDates.forEach(d=>{ html+=`<div style="${STY_HDR}" data-s4unit="${compKey}">${d}</div>`; });
+  // Linhas compressores
+  comp.forEach(k=>{
+    html+=`<div style="${STY_KKS}">${k}</div>`;
+    for(let i=0;i<10;i++) html+=`<div style="${STY_DAT}"><div class="s4c" data-val="" data-s4row="${compKey}" onclick="openS4Picker(this,event)" ondblclick="openComment(this,event)"><span class="s4-sym s4-empty">—</span><span class="comment-badge">💬</span></div></div>`;
+  });
+  // Header secadoras (opcional)
+  if(showSecHdr){
+    html += `<div style="${STY_SEP}">KKS <button class="s4-cycle-btn" onclick="advanceS4Cycle('${secKey}')" title="Avançar ciclo de secadoras">↺</button></div>`;
+    secDates.forEach(d=>{ html+=`<div style="${STY_SEP}" data-s4unit="${secKey}">${d}</div>`; });
+  }
+  // Linhas secadoras
+  sec.forEach(k=>{
+    html+=`<div style="${STY_KKS}">${k}</div>`;
+    for(let i=0;i<10;i++) html+=`<div style="${STY_DAT}"><div class="s4c" data-val="" data-s4row="${secKey}" onclick="openS4Picker(this,event)" ondblclick="openComment(this,event)"><span class="s4-sym s4-empty">—</span><span class="comment-badge">💬</span></div></div>`;
+  });
+  return html;
+}
+
+/* ═══ DATAS DINÂMICAS S4 ════════════════════════════════ */
+const S4_DATES = (function(){
+  function calc(startDates, period){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const fmt = d => String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+
+    // Parseia datas rastreando virada de ano pelo mês
+    let dates = [], prevM = null, yr = today.getFullYear();
+    for(const s of startDates){
+      const [d,m] = s.split('/').map(Number);
+      if(prevM !== null && m < prevM) yr++;   // virada de ano na sequência
+      dates.push(new Date(yr, m-1, d));
+      prevM = m;
+    }
+
+    // Avança ciclos completos (10 × period) enquanto hoje > última data
+    let last = dates[dates.length-1];
+    while(today > last){
+      const next = []; let d = new Date(last);
+      for(let i=0;i<10;i++){ d = new Date(d.getTime()+period*86400000); next.push(new Date(d)); }
+      dates = next; last = next[next.length-1];
+    }
+    return dates.map(fmt);
+  }
+
+  return {
+    // Parnaíba I — ciclo independente por equipamento
+    pi_comp:  ['14/04','17/04','20/04','23/04','26/04','29/04','02/05','05/05','08/05','11/05'],
+    pi_sec:   calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
+    // Parnaíba V — ciclo independente por equipamento
+    pv_comp:  ['14/04','17/04','20/04','23/04','26/04','29/04','02/05','05/05','08/05','11/05'],
+    pv_sec:   calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
+    // Parnaíba VI — ciclo independente por equipamento
+    pvi_comp: calc(['16/04','17/04','18/04','19/04','20/04','21/04','22/04','23/04','24/04','25/04'], 1),
+    pvi_sec:  calc(['16/04','17/04','18/04','19/04','20/04','21/04','22/04','23/04','24/04','25/04'], 1),
+    // Parnaíba II — ciclo independente por equipamento
+    pii_comp: calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
+    pii_sec:  calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
+    // Parnaíba IV — ciclo independente por equipamento
+    p4_comp:  calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
+    p4_sec:   calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
+  };
+})();
+
+/* ═══ PERÍODO POR CHAVE DE UNIDADE ══════════════════════ */
+const S4_PERIODS = {
+  pi_comp:3, pi_sec:7, pv_comp:3, pv_sec:7,
+  pvi_comp:1, pvi_sec:1, pii_comp:7, pii_sec:7, p4_comp:7, p4_sec:7
+};
+
+/* ═══ AVANÇAR CICLO DE UMA UNIDADE ══════════════════════ */
+const S4_UNIT_LABELS = {
+  pi_comp:'Parnaíba I — Compressores',   pi_sec:'Parnaíba I — Secadoras',
+  pv_comp:'Parnaíba V — Compressores',   pv_sec:'Parnaíba V — Secadoras',
+  pvi_comp:'Parnaíba VI — Compressores', pvi_sec:'Parnaíba VI — Secadoras',
+  pii_comp:'Parnaíba II — Compressores', pii_sec:'Parnaíba II — Secadoras',
+  p4_comp:'Parnaíba IV — Compressores',  p4_sec:'Parnaíba IV — Secadoras',
+};
+let s4CyclePendingKey = null;
+
+function _calcNewS4Dates(key){
+  const dates  = S4_DATES[key];
+  const period = S4_PERIODS[key];
+  if(!dates || !period) return null;
+  const fmt = d => String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  const [ld, lm] = dates[dates.length-1].split('/').map(Number);
+  const today = new Date();
+  let yr = today.getFullYear();
+  let last = new Date(yr, lm-1, ld);
+  if((today - last) > 180 * 86400000){ yr++; last = new Date(yr, lm-1, ld); }
+  const newDates = [];
+  let d = new Date(last);
+  for(let i=0;i<10;i++){ d = new Date(d.getTime()+period*86400000); newDates.push(fmt(d)); }
+  return newDates;
+}
+
+function advanceS4Cycle(key){
+  const dates = S4_DATES[key];
+  if(!dates) return;
+  const newDates = _calcNewS4Dates(key);
+  if(!newDates) return;
+  s4CyclePendingKey = key;
+  const label = S4_UNIT_LABELS[key] || key;
+  document.getElementById('modal-s4cycle-msg').innerHTML =
+    `Unidade: <strong>${label}</strong><br><br>`+
+    `O ciclo atual (<strong>${dates[0]} → ${dates[dates.length-1]}</strong>) será substituído `+
+    `por <strong>${newDates[0]} → ${newDates[9]}</strong> e os registros de status desta `+
+    `unidade serão <strong>apagados</strong>.<br><br>`+
+    `Certifique-se de ter <strong>salvo o estado</strong> antes de continuar.`;
+  document.getElementById('modal-s4cycle').classList.add('show');
+}
+
+function fecharModalS4Cycle(){
+  document.getElementById('modal-s4cycle').classList.remove('show');
+  s4CyclePendingKey = null;
+}
+
+function confirmarAdvanceS4Cycle(){
+  const key = s4CyclePendingKey;
+  fecharModalS4Cycle();
+  if(!key) return;
+  const newDates = _calcNewS4Dates(key);
+  if(!newDates) return;
+  S4_DATES[key] = newDates;
+  document.querySelectorAll(`[data-s4unit="${key}"]`).forEach((el,i)=>{ el.textContent=newDates[i]; });
+  document.querySelectorAll(`.s4c[data-s4row="${key}"]`).forEach(el=>{
+    el.dataset.val=''; el.dataset.comment='';
+    el.classList.remove('has-comment'); el.removeAttribute('data-comment');
+    const sym=el.querySelector('.s4-sym');
+    if(sym){ sym.textContent='—'; sym.style.color=''; sym.className='s4-sym s4-empty'; }
+  });
+  if(typeof showToast==='function')
+    showToast(`↺ Ciclo avançado: ${newDates[0]} → ${newDates[9]}`, '#1a5eb8');
+}
+
+/* ═══ PRÉ-COMPUTAR HTML S4 ══════════════════════════════ */
+const S4_HTML =
+  s4U('Parnaíba I', ['00QFA10AN001','00QFA20AN001','00QFA30AN001'],['00QFA21AT002','00QFA22AT002'], 'pi_comp', 'pi_sec') +
+  s4U('Parnaíba V', ['30QEA10AN001','30QEA11AN001','30QEA12AN001'],['30QFB11AT002','30QFB12AT002'], 'pv_comp', 'pv_sec') +
+  s4U('Parnaíba VI',['10QEA15AN001','10QEA25AN001'],               ['10QEB30AT003','10QEB35AT003'], 'pvi_comp', 'pvi_sec') +
+  s4U('Parnaíba II',['58QEA11AN001','58QEA12AN001','58QEA13AN001'],['58QFA10AT001','58QFA20AT001'], 'pii_comp', 'pii_sec', false) +
+  s4U('Parnaíba IV',['TCA901','TCA902'],                           ['TSA901-D1','TSA901-D2'],       'p4_comp', 'p4_sec', false);
+
+/* ═══ RENDERIZAR ═══════════════════════════════════════ */
+function render(){
+  const nav = document.getElementById('sb-nav');
+  const cnt = document.getElementById('content');
+
+  nav.innerHTML = SECS.map((s,i)=>`
+    <div class="sb-item" id="sbi_${i}" onclick="navTo(${i})">
+      <div class="sb-dot" id="sbd_${i}">${s.code}</div>
+      <span style="line-height:1.35">${s.label}</span>
+    </div>`).join('');
+
+  cnt.innerHTML = SECS.map((s,i)=>
+    `<div class="c-section" id="cs_${i}">${secCard(s.id,i)}</div>`
+  ).join('');
+
+  // S0 semana
+  const dr = document.getElementById('datReu');
+  if(dr){ updSemana(); dr.addEventListener('change', updSemana); }
+
+  // S1 MWh + formato BR
+  document.querySelectorAll('.mwh').forEach(el=>{
+    el.addEventListener('input', calcMwh);
+    el.addEventListener('blur', ()=>{ el.value=toBR1(parseBR(el.value)); calcMwh(); });
+  });
+  ['prog_piv','prog_pii','prog_piii','prog_p4'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){
+      el.addEventListener('input', calcMwh);
+      el.addEventListener('blur', ()=>{ el.value=toBR1(parseBR(el.value)); calcMwh(); });
+    }
+  });
+  ['consumoGN','progGN'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('blur', ()=>el.value=toBR1(parseBR(el.value)));
+  });
+  const ta=document.getElementById('tempAmb');
+  if(ta) ta.addEventListener('blur', ()=>ta.value=toBR1(parseBR(ta.value)));
+  calcMwh();
+
+  // S3 SI — linha inicial (só se tb-si existir e estiver vazio)
+  const _tbSI=document.getElementById('tb-si');
+  if(_tbSI&&_tbSI.children.length===0) addSIRow();
+
+  updSidebar();
+  observeSections();
+}
+
+/* ── garante que todas as seções estão no DOM antes de imprimir ── */
+window.addEventListener('beforeprint', function(){
+  const cnt = document.getElementById('content');
+  if(!cnt) return;
+  // todas as c-section já existem (renderizadas no render())
+  // garante visibilidade e carrega S8 se necessário
+  document.querySelectorAll('.c-section').forEach(el=>{
+    el.style.display='block';
+    el.style.visibility='visible';
+  });
+  if(document.getElementById('tb_s8') &&
+     document.getElementById('tb_s8').children.length <= 1) loadS8Data();
+});
+window.addEventListener('afterprint', function(){
+  document.querySelectorAll('.c-section').forEach(el=>{
+    el.style.display='';
+    el.style.visibility='';
+  });
+});
+
+/* ═══ NAVEGAÇÃO ════════════════════════════════════════ */
+function navTo(i){
+  const el = document.getElementById(`cs_${i}`);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  setActive(i);
+}
+function setActive(i){
+  document.querySelectorAll('.sb-item').forEach((el,j)=>{
+    el.classList.toggle('active', j===i);
+  });
+}
+function markDone(i){
+  done[i]=true;
+  const btn = document.getElementById(`bd_${i}`);
+  const msg = document.getElementById(`dm_${i}`);
+  const rbr = document.getElementById(`br_${i}`);
+  if(btn){ btn.disabled=true; btn.textContent='✓ Concluído'; }
+  if(msg) msg.style.display='block';
+  if(rbr) rbr.classList.add('show');
+  updSidebar();
+  if(i<N-1) setTimeout(()=>navTo(i+1), 350);
+}
+function reabrirSec(i){
+  done[i]=false;
+  const btn = document.getElementById(`bd_${i}`);
+  const msg = document.getElementById(`dm_${i}`);
+  const rbr = document.getElementById(`br_${i}`);
+  if(btn){ btn.disabled=false; btn.textContent='✓ Concluir seção'; }
+  if(msg) msg.style.display='none';
+  if(rbr) rbr.classList.remove('show');
+  document.getElementById('all-done').classList.remove('show');
+  updSidebar();
+}
+
+/* ═══ S4 STATUS PICKER ═════════════════════════════════ */
+const S4_ST = [
+  {sym:'●', color:'#0d9488', label:'PARADO'},
+  {sym:'●', color:'#d97706', label:'INDISPONÍVEL'},
+  {sym:'●', color:'#dc2626', label:'OPERANDO'},
+  {sym:'▲', color:'#ea580c', label:'COM RESTRIÇÃO'},
+];
+let s4ActiveCell = null;
+
+function openS4Picker(cell, e){
+  e.stopPropagation();
+  const picker = document.getElementById('s4-picker');
+  s4ActiveCell = cell;
+  const rect = cell.getBoundingClientRect();
+  // posiciona o picker abaixo/acima dependendo do espaço
+  const spaceBelow = window.innerHeight - rect.bottom;
+  picker.style.left = Math.min(rect.left, window.innerWidth - 170) + 'px';
+  if(spaceBelow > 160){
+    picker.style.top  = (rect.bottom + 3) + 'px';
+    picker.style.bottom = 'auto';
+  } else {
+    picker.style.bottom = (window.innerHeight - rect.top + 3) + 'px';
+    picker.style.top = 'auto';
+  }
+  picker.classList.add('show');
+}
+function pickS4(val){
+  if(!s4ActiveCell) return;
+  const sym = s4ActiveCell.querySelector('.s4-sym');
+  if(val < 0){
+    s4ActiveCell.dataset.val = '';
+    sym.textContent = '—';
+    sym.style.color = '';
+    sym.className = 's4-sym s4-empty';
+  } else {
+    const st = S4_ST[val];
+    s4ActiveCell.dataset.val = val;
+    sym.textContent = st.sym;
+    sym.style.color = st.color;
+    sym.className = 's4-sym';
+  }
+  document.getElementById('s4-picker').classList.remove('show');
+  s4ActiveCell = null;
+}
+document.addEventListener('click', ()=>{
+  document.getElementById('s4-picker')?.classList.remove('show');
+  s4ActiveCell = null;
+});
+
+/* ═══ MULTI-SELECT MODELO ══════════════════════════════ */
+const MS_SIGLAS = ['REL','FOM','OME','INF','EXP','GEN','PCI','GFM','GSB','ERP','UCM','RRO'];
+
+function msHtml(id){
+  const items = MS_SIGLAS.map(s=>
+    `<label class="ms-item">
+       <input type="checkbox" value="${s}" onchange="updMs('${id}')"> ${s}
+     </label>`
+  ).join('');
+  return `<div class="ms-wrap" id="${id}">
+    <div class="ms-display" onclick="toggleMs('${id}')" id="${id}_disp">
+      <span class="ms-val" id="${id}_txt" style="color:#9ca3af">— selecionar —</span>
+      <span class="ms-arrow">▾</span>
+    </div>
+    <div class="ms-panel" id="${id}_panel">${items}</div>
+  </div>`;
+}
+function toggleMs(id){
+  const panel = document.getElementById(id+'_panel');
+  const disp  = document.getElementById(id+'_disp');
+  const isOpen = panel.classList.contains('open');
+  // fecha todos
+  document.querySelectorAll('.ms-panel.open').forEach(p=>p.classList.remove('open'));
+  document.querySelectorAll('.ms-display.open').forEach(d=>d.classList.remove('open'));
+  if(!isOpen){
+    panel.classList.add('open');
+    disp.classList.add('open');
+  }
+}
+function updMs(id){
+  const wrap    = document.getElementById(id);
+  const checked = [...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(c=>c.value);
+  const txt     = document.getElementById(id+'_txt');
+  if(checked.length===0){
+    txt.textContent='— selecionar —';
+    txt.style.color='#9ca3af';
+  } else {
+    txt.textContent=checked.join(' / ');
+    txt.style.color='var(--text)';
+  }
+  updLegendaTD();
+}
+function resetAllMs(){
+  ['ms_piv','ms_pii','ms_piii','ms_p4'].forEach(id=>{
+    const wrap = document.getElementById(id); if(!wrap) return;
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.checked=false);
+    const txt = document.getElementById(id+'_txt');
+    if(txt){ txt.textContent='— selecionar —'; txt.style.color='#9ca3af'; }
+    const panel = document.getElementById(id+'_panel');
+    const disp  = document.getElementById(id+'_disp');
+    if(panel) panel.classList.remove('open');
+    if(disp)  disp.classList.remove('open');
+  });
+}
+// fecha dropdown ao clicar fora
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.ms-wrap')){
+    document.querySelectorAll('.ms-panel.open').forEach(p=>p.classList.remove('open'));
+    document.querySelectorAll('.ms-display.open').forEach(d=>d.classList.remove('open'));
+  }
+});
+
+/* ═══ NOVO DIA ═════════════════════════════════════════ */
+function abrirModalNovoDia(){
+  document.getElementById('modal-novoDia').classList.add('show');
+}
+function fecharModal(){
+  document.getElementById('modal-novoDia').classList.remove('show');
+}
+function abrirModalS4(){
+  document.getElementById('modal-s4').classList.add('show');
+}
+function fecharModalS4(){
+  document.getElementById('modal-s4').classList.remove('show');
+}
+function confirmarResetS4(){
+  fecharModalS4();
+  document.querySelectorAll('.s4c').forEach(cell=>{
+    cell.dataset.val='';
+    cell.dataset.comment='';
+    cell.classList.remove('has-comment');
+    cell.removeAttribute('data-comment');
+    const sym=cell.querySelector('.s4-sym');
+    if(sym){ sym.textContent='—'; sym.style.color=''; sym.className='s4-sym s4-empty'; }
+  });
+}
+function confirmarNovoDia(){
+  fecharModal();
+
+  // 1. Limpa todos inputs editáveis fora do S8 (exceto readonly, no-reset e checkboxes)
+  const tb8=document.getElementById('tb_s8');
+  document.querySelectorAll('input:not([readonly]):not(.no-reset):not([type=checkbox])').forEach(inp=>{
+    if(tb8&&tb8.contains(inp)) return;
+    if(inp.type==='date'){ inp.value=new Date().toISOString().slice(0,10); return; }
+    const s1ids=['consumoGN','progGN','tempAmb','prog_piv','prog_pii','prog_piii','prog_p4'];
+    const s1mwh=inp.classList.contains('mwh');
+    if(s1ids.includes(inp.id)||s1mwh){ inp.value='0,0'; return; }
+    if(inp.dataset.fmt==='pct'){ inp.value='0,0%'; return; }
+    inp.value='';
+  });
+
+  // 2. Limpa todos textareas fora do S8
+  document.querySelectorAll('textarea').forEach(ta=>{
+    if(tb8&&tb8.contains(ta)) return;
+    ta.value='';
+  });
+
+  // 3. Reseta selects para primeira opção, exceto os do S8
+  document.querySelectorAll('select').forEach(sel=>{
+    if(tb8&&tb8.contains(sel)) return;
+    sel.selectedIndex=0;
+  });
+
+  // 4. S2 — mantém uma linha vazia por usina, remove extras
+  ['u_piv','u_pii','u_piii','u_p4'].forEach(bid=>{
+    const blk=document.getElementById(bid); if(!blk) return;
+    [...blk.querySelectorAll('.ocorrencia')].forEach((r,i)=>{
+      i===0 ? r.querySelector('textarea').value='' : r.remove();
+    });
+  });
+
+  // 5. S6 — mantém apenas a primeira linha em branco
+  const tb6=document.getElementById('tb_s6');
+  if(tb6) resetTabela(tb6);
+
+  // 6. S8 — atualiza apenas a contagem de dias (conteúdo preservado)
+  if(tb8){
+    tb8.querySelectorAll('tr').forEach(tr=>{
+      const abInp=tr.cells[6]?.querySelector('input');
+      if(abInp) calcDias(abInp);
+    });
+  }
+
+  // 7. Reseta estado de conclusão de todas as seções
+  done.fill(false);
+  SECS.forEach((_,i)=>{
+    const btn=document.getElementById(`bd_${i}`);
+    const msg=document.getElementById(`dm_${i}`);
+    const rbr=document.getElementById(`br_${i}`);
+    const dot=document.getElementById(`sbd_${i}`);
+    const item=document.getElementById(`sbi_${i}`);
+    if(btn){ btn.disabled=false; btn.textContent='✓ Concluir seção'; }
+    if(msg) msg.style.display='none';
+    if(rbr) rbr.classList.remove('show');
+    if(dot) dot.textContent=SECS[i].code;
+    if(item) item.classList.remove('done','active');
+  });
+  document.getElementById('all-done').classList.remove('show');
+
+  // 8. Reseta multi-selects de Modelo (S1)
+  resetAllMs();
+
+  // 9. Atualiza sidebar, semana e MWh
+  updSidebar();
+  updSemana();
+  calcMwh();
+
+  // 10. Volta ao topo — S0
+  navTo(0);
+}
+function resetTabela(tbody){
+  [...tbody.querySelectorAll('tr')].forEach((r,i)=>{
+    if(i>0){ r.remove(); return; }
+    r.querySelectorAll('input:not([readonly]),select,textarea').forEach(el=>{
+      el.tagName==='SELECT' ? el.selectedIndex=0 : el.value='';
+    });
+  });
+}
+function updSidebar(){
+  const cnt = done.filter(Boolean).length;
+  document.getElementById('prog-lbl').textContent = `${cnt} de ${N} concluídas`;
+  document.getElementById('prog-fill').style.width = Math.round((cnt/N)*100)+'%';
+  SECS.forEach((_,i)=>{
+    const d  = document.getElementById(`sbd_${i}`);
+    const it = document.getElementById(`sbi_${i}`);
+    if(d && done[i]) d.textContent='✓';
+    if(it) it.classList.toggle('done', done[i]);
+  });
+  if(cnt===N) document.getElementById('all-done').classList.add('show');
+}
+function observeSections(){
+  const root = document.getElementById('content');
+  const obs = new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting && e.intersectionRatio >= .2){
+        const i = parseInt(e.target.id.replace('cs_',''));
+        if(!isNaN(i)) setActive(i);
+      }
+    });
+  },{threshold:.2, root});
+  SECS.forEach((_,i)=>{const el=document.getElementById(`cs_${i}`);if(el)obs.observe(el);});
+}
+
+/* ═══ LÓGICA DAS SEÇÕES ════════════════════════════════ */
+function updSemana(){
+  const inp = document.getElementById('datReu');
+  const out = document.getElementById('semOp');
+  const hdr = document.getElementById('hdr-semana');
+  const diaObs = document.getElementById('diaObs');
+  if(!inp||!inp.value) return;
+  const dt=new Date(inp.value+'T00:00:00');
+  // D-1: dia anterior à DATA DA REUNIÃO
+  const d1=new Date(dt); d1.setDate(dt.getDate()-1);
+  const f=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+  if(diaObs) diaObs.value=f(d1);
+  // Semana operativa calculada sobre D-1 (dia observado)
+  const day=d1.getDay(); // 0=Dom,1=Seg,...,6=Sáb
+  const back = day===6 ? 0 : day+1;
+  const ini=new Date(d1); ini.setDate(d1.getDate()-back);
+  const fim=new Date(ini); fim.setDate(ini.getDate()+6);
+  const val=`${f(ini)} à ${f(fim)}`;
+  if(out) out.value=val;
+  if(hdr) hdr.textContent=val;
+}
+
+// Inicializa data de hoje no S0
+function initDate(){
+  const dr = document.getElementById('datReu');
+  if(dr && !dr.value){
+    const now = new Date();
+    dr.value = now.toISOString().slice(0,10);
+  }
+  updSemana();
+}
+
+/* ═══ SALVAR / CARREGAR ESTADO ═════════════════════════════════════
+   Captura todos os inputs, textareas e selects do formulário,
+   exporta como JSON para download e recarrega na próxima versão.
+═══════════════════════════════════════════════════════════════════ */
+/* ═══ SALVAR: JSON (reimporte) + CSV (evidência) ═══════════════════════
+   - JSON: todos os campos indexados por id/posição → reimporte fiel
+   - CSV: apenas campos preenchidos com valor ≠ default/vazio → evidência
+   Ambos gerados no mesmo clique de 💾 Salvar.
+═══════════════════════════════════════════════════════════════════════ */
+function _stableKey(el){
+  if(el.id) return '#'+el.id;
+  return _posKey(el);
+}
+function _posKey(el){
+  const parts=[];
+  let node=el;
+  while(node && node!==document.body){
+    const parent=node.parentElement; if(!parent) break;
+    const tag=node.tagName;
+    const idx=[...parent.children].filter(c=>c.tagName===tag).indexOf(node);
+    parts.unshift(tag+':'+idx);
+    if(parent.id){parts.unshift('@'+parent.id);break;}
+    node=parent;
+  }
+  return parts.join('>');
+}
+function _coletarEstado(){
+  const estado={};
+  document.querySelectorAll(
+    'input:not([type=file]):not([type=hidden]):not([type=checkbox]),textarea,select'
+  ).forEach(el=>{
+    const key=_stableKey(el);
+    if(key) estado[key]=el.value;
+  });
+  // checkboxes Tipo Despacho S1
+  ['ms_piv','ms_pii','ms_piii','ms_p4'].forEach(msId=>{
+    const wrap=document.getElementById(msId); if(!wrap) return;
+    const checked=[...wrap.querySelectorAll('input[type="checkbox"]:checked')].map(c=>c.value);
+    estado['__ms__'+msId]=checked.join(',');
+  });
+  // S4 — células (data-val + comentário)
+  const s4cells=[];
+  document.querySelectorAll('.s4c').forEach((el,i)=>{
+    s4cells.push({i,v:el.dataset.val||'',c:el.dataset.comment||''});
+  });
+  estado['__s4__']=JSON.stringify(s4cells);
+  // S2 — ocorrências por usina (suporte a múltiplas linhas)
+  const s2snap={};
+  ['u_piv','u_pii','u_piii','u_p4'].forEach(bid=>{
+    const blk=document.getElementById(bid); if(!blk) return;
+    s2snap[bid]=[...blk.querySelectorAll('.ocorrencia textarea')].map(ta=>ta.value);
+  });
+  estado['__s2__']=JSON.stringify(s2snap);
+  // S6 — linhas da tabela
+  const tb6=document.getElementById('tb_s6');
+  if(tb6){
+    const rows6=[];
+    tb6.querySelectorAll('tr').forEach(tr=>{
+      const vals=[...tr.querySelectorAll('input,textarea,select')].map(el=>el.value);
+      if(vals.some(v=>v.trim())) rows6.push(vals);
+    });
+    estado['__s6__']=JSON.stringify(rows6);
+  }
+  // S8 — linhas da tabela
+  const tb8c=document.getElementById('tb_s8');
+  if(tb8c){
+    const rows8=[];
+    tb8c.querySelectorAll('tr').forEach(tr=>{
+      const vals=[...tr.querySelectorAll('input,textarea,select')].map(el=>el.value);
+      if(vals.some(v=>v.trim())) rows8.push(vals);
+    });
+    estado['__s8__']=JSON.stringify(rows8);
+  }
+  // S3 SI — linhas de intervenções vigentes
+  const tbSI=document.getElementById('tb-si');
+  if(tbSI){
+    const rowsSI=[];
+    tbSI.querySelectorAll('tr').forEach(tr=>{
+      const vals=[
+        tr.querySelector('.col-num input')?.value||'',
+        tr.querySelector('.col-equip input')?.value||'',
+        tr.querySelector('.col-serv textarea')?.value||'',
+        tr.querySelector('.col-prog input')?.value||'',
+      ];
+      if(vals.some(v=>v.trim())) rowsSI.push(vals);
+    });
+    estado['__s3si__']=JSON.stringify(rowsSI);
+  }
+  return estado;
+}
+
+function _labelFor(el){
+  /* tenta extrair uma label legível para o campo */
+  const td = el.closest('td');
+  if(td){
+    const tr = td.closest('tr');
+    // pega texto das células anteriores da mesma linha
+    const cells = [...tr.querySelectorAll('td')];
+    const idx = cells.indexOf(td);
+    const labels = cells.slice(0, idx).map(c=>c.textContent.trim()).filter(Boolean);
+    if(labels.length) return labels.join(' › ');
+  }
+  const lbl = el.closest('label') || document.querySelector(`label[for="${el.id}"]`);
+  if(lbl) return lbl.textContent.trim();
+  const sec = el.closest('.c-section,.sec-card');
+  const hdr = sec?.querySelector('.sec-title');
+  return (hdr ? hdr.textContent.trim()+' › ' : '') + (el.id || el.name || '');
+}
+
+function _secaoFor(el){
+  const sec = el.closest('.c-section');
+  if(!sec) return '';
+  const hdr = sec.querySelector('.sec-title');
+  return hdr ? hdr.textContent.trim() : sec.id || '';
+}
+
+function salvarEstado(){
+  const estado = _coletarEstado();
+  const d = new Date();
+  const stamp = String(d.getDate()).padStart(2,'0')+String(d.getMonth()+1).padStart(2,'0')+d.getFullYear();
+  const hhmm  = String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
+
+  /* ── 1. JSON para reimporte ── */
+  estado['__versao__'] = document.getElementById('ver-chip')?.textContent||'v1';
+  estado['__ts__']     = d.toISOString();
+  const jsonBlob = new Blob([JSON.stringify(estado, null, 2)], {type:'application/json'});
+  const aJ = document.createElement('a');
+  aJ.href = URL.createObjectURL(jsonBlob);
+  aJ.download = `OM_estado_${stamp}_${hhmm}.json`;
+  aJ.click();
+  URL.revokeObjectURL(aJ.href);
+
+  // CSV removido — JSON é a evidência oficial
+}
+
+/* ═══ CARREGAR: detecta .json ou .csv automaticamente ══════════════════ */
+function carregarEstado(fileInput){
+  const file = fileInput.files[0]; if(!file) return;
+  const isCsv = file.name.toLowerCase().endsWith('.csv');
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    try{
+      if(isCsv){
+        _carregarDadosCSV(e.target.result);
+      } else {
+        _carregarJSON(e.target.result);
+      }
+    } catch(err){
+      alert('❌ Erro ao carregar arquivo: ' + err.message);
+    }
+    fileInput.value='';
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function fmtPctF(inp){
+  inp.value = inp.value.replace('%','').trim();
+  if(inp.value==='0,0'||inp.value==='0') inp.value='';
+}
+function fmtPctB(inp){
+  const raw = inp.value.replace('%','').trim();
+  if(!raw){ inp.value='0,0%'; return; }
+  const n = parseFloat(raw.replace(',','.'));
+  if(isNaN(n)){ inp.value='0,0%'; return; }
+  inp.value = n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+}
+function _aplicarEstado(estado){
+  let ok=0,skip=0;
+  document.querySelectorAll(
+    'input:not([type=file]):not([type=hidden]):not([type=checkbox]),textarea,select'
+  ).forEach(el=>{
+    const key=_stableKey(el);
+    let val=estado[key];
+    // Fallback: se elemento ganhou id em versão mais recente, tenta caminho posicional
+    if(val===undefined && el.id) val=estado[_posKey(el)];
+    if(val!==undefined){
+      el.value=val;
+      if(el.tagName==='SELECT'&&el.classList.contains('sel-status')) paintStatus&&paintStatus(el);
+      el.dispatchEvent(new Event('input',{bubbles:true}));
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+      if(el.dataset.fmt==='pct') fmtPctB(el);
+      else if(typeof fmtS7b==='function'&&el.dataset.fmt) fmtS7b(el);
+      ok++;
+    } else { skip++; }
+  });
+  // restaura checkboxes Tipo Despacho S1
+  ['ms_piv','ms_pii','ms_piii','ms_p4'].forEach(msId=>{
+    const key='__ms__'+msId;
+    if(estado[key]===undefined) return;
+    const wrap=document.getElementById(msId); if(!wrap) return;
+    const vals=estado[key]?estado[key].split(',').filter(Boolean):[];
+    wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+      cb.checked=vals.includes(cb.value);
+    });
+    updMs(msId);
+    ok++;
+  });
+  // S2 — restaura ocorrências por usina
+  if(estado['__s2__']){
+    try{
+      const s2data=JSON.parse(estado['__s2__']);
+      ['u_piv','u_pii','u_piii','u_p4'].forEach(bid=>{
+        const blk=document.getElementById(bid); if(!blk) return;
+        const rows=s2data[bid]||[];
+        blk.querySelectorAll('.ocorrencia').forEach(r=>r.remove());
+        const btn=blk.querySelector('.btn-addl');
+        const toAdd=rows.length?rows:[''];
+        toAdd.forEach(txt=>{
+          const dv=document.createElement('div'); dv.className='ocorrencia';
+          dv.innerHTML=`<textarea>${txt}</textarea><button class="btn-rm" onclick="delOc(this)">🗑</button>`;
+          blk.insertBefore(dv,btn);
+        });
+      });
+      ok++;
+    } catch(e){ console.error('S2 restore error:',e); }
+  }
+  // S4 — restaura células
+  if(estado['__s4__']){
+    try{
+      const cells=JSON.parse(estado['__s4__']);
+      const allS4=document.querySelectorAll('.s4c');
+      const MAP={'0':{cls:'s4-0',txt:'●'},'1':{cls:'s4-1',txt:'●'},'2':{cls:'s4-2',txt:'●'},'3':{cls:'s4-3',txt:'▲'}};
+      cells.forEach(({i,v,c})=>{
+        const el=allS4[i]; if(!el) return;
+        el.dataset.val=v; el.dataset.comment=c||'';
+        const sym=el.querySelector('.s4-sym');
+        if(sym){
+          sym.className='s4-sym';
+          if(v!==''&&MAP[v]){sym.classList.add(MAP[v].cls);sym.textContent=MAP[v].txt;}
+          else{sym.classList.add('s4-empty');sym.textContent='—';}
+        }
+      });
+      ok++;
+    } catch(e){}
+  }
+  // S6 — restaura linhas
+  const tb6=document.getElementById('tb_s6');
+  if(tb6){
+    const selOpts=`${[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('')}`;
+    const _rebuildS6=(rows6)=>{
+      if(!rows6||!rows6.length) return false;
+      tb6.innerHTML='';
+      rows6.forEach(vals=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML='<td><input></td><td><input></td>'
+          +'<td><select>'+selOpts+'</select></td>'
+          +'<td class="left"><textarea maxlength="100"></textarea></td>'
+          +'<td class="left"><input></td><td><input maxlength="4"></td>'
+          +'<td><button class="btn-del" onclick="delRow(this)">🗑</button></td>';
+        tb6.appendChild(tr);
+        [...tr.querySelectorAll('input,textarea,select')].forEach((el,i)=>{if(vals[i]!==undefined)el.value=vals[i];});
+      });
+      return true;
+    };
+    if(estado['__s6__']){
+      try{
+        if(_rebuildS6(JSON.parse(estado['__s6__']))) ok++;
+      } catch(e){ console.error('S6 restore error:',e); }
+    } else {
+      // Fallback: coleta linhas por chaves posicionais (JSON antigo sem __s6__)
+      const rows6=[]; let ri=0;
+      while(true){
+        const key0=`@tb_s6>TR:${ri}>TD:0>INPUT:0`;
+        if(estado[key0]===undefined) break;
+        const vals=[0,1,2,3,4,5].map(ci=>{
+          const sel=ci===2?`@tb_s6>TR:${ri}>TD:${ci}>SELECT:0`
+                   :ci===3?`@tb_s6>TR:${ri}>TD:${ci}>TEXTAREA:0`
+                           :`@tb_s6>TR:${ri}>TD:${ci}>INPUT:0`;
+          return estado[sel]??'';
+        });
+        rows6.push(vals); ri++;
+      }
+      if(_rebuildS6(rows6)) ok++;
+    }
+  }
+  // S8 — restaura linhas
+  if(estado['__s8__']){
+    try{
+      const rows8=JSON.parse(estado['__s8__']);
+      const tb8=document.getElementById('tb_s8');
+      if(tb8&&rows8.length){
+        tb8.innerHTML='';
+        rows8.forEach(vals=>{
+          const d={id:vals[0],st:vals[1],kks:vals[2],desc:vals[3],ord:vals[4],resp:vals[5],ab:vals[6],term:vals[7]};
+          const tr=document.createElement('tr');
+          tr.innerHTML=s8Row(d);
+          tb8.appendChild(tr);
+          const abInp=tr.cells[6].querySelector('input');
+          if(abInp) calcDias(abInp);
+        });
+        ok++;
+      }
+    } catch(e){}
+  }
+  // S3 SI — restaura linhas de intervenções vigentes
+  if(estado['__s3si__']){
+    try{
+      const rowsSI=JSON.parse(estado['__s3si__']);
+      const tbSI=document.getElementById('tb-si');
+      if(tbSI&&rowsSI.length){
+        tbSI.innerHTML='';
+        rowsSI.forEach(vals=>{
+          const tr=siRow();
+          tbSI.appendChild(tr);
+          const fields=[
+            tr.querySelector('.col-num input'),
+            tr.querySelector('.col-equip input'),
+            tr.querySelector('.col-serv textarea'),
+            tr.querySelector('.col-prog input'),
+          ];
+          fields.forEach((el,i)=>{ if(el&&vals[i]!==undefined) el.value=vals[i]; });
+        });
+        ok++;
+      }
+    } catch(e){ console.error('S3 SI restore error:',e); }
+  }
+  calcMwh&&calcMwh();
+  updSemana&&updSemana();
+  return {ok,skip};
+}
+function _carregarJSON(txt){
+  const estado=JSON.parse(txt);
+  const {ok,skip}=_aplicarEstado(estado);
+  alert('✅ JSON carregado — '+ok+' campos restaurados.'+(skip?' ('+skip+' sem correspondência)':''));
+}
+
+function _carregarCSV(txt){
+  const clean=txt.replace(/^\uFEFF/,'');
+  const rows=clean.split(/\r?\n/).filter(Boolean);
+  const parseCell=v=>v.trim().replace(/^"|"$/g,'').replace(/""/g,'"');
+  let dataStart=0;
+  for(let i=0;i<rows.length;i++){
+    if(/Chave|chave/.test(rows[i])){dataStart=i+1;break;}
+    if(rows[i].trim()===''||rows[i].trim()==='""') dataStart=i+1;
+  }
+  const mapa={};
+  for(let i=dataStart;i<rows.length;i++){
+    const cols=rows[i].match(/("(?:[^"]|"")*"|[^,]*)/g)||[];
+    if(cols.length<4) continue;
+    const chave=parseCell(cols[2]);
+    const valor=parseCell(cols[3]);
+    if(chave&&!chave.startsWith('__')) mapa[chave]=valor;
+  }
+  const {ok,skip}=_aplicarEstado(mapa);
+  alert('✅ CSV carregado — '+ok+' campos restaurados.'+(skip?' ('+skip+' sem correspondência)':''));
+}
+
+/* ═══ CARREGAR DADOS CSV (novo formato estruturado) ════════════════════════ */
+function _carregarDadosCSV(txt){
+  const p=v=>v?v.trim().replace(/^"|"$/g,'').replace(/""/g,'"'):'';
+  const lines=txt.split(/\r?\n/);
+
+  const MWH_IDS =['mwh_tg31','mwh_tg32','mwh_tg21','mwh_tg22','mwh_tv28',
+                  'mwh_tg51','mwh_tg52','mwh_tv58',
+                  'mwh_tv18','mwh_tg12','mwh_ug10',
+                  'mwh_bag11','mwh_bag21','mwh_bag31'];
+  const COND_IDS=['cond_tg31','cond_tg32','cond_tg21','cond_tg22','cond_tv28',
+                  'cond_tg51','cond_tg52','cond_tv58',
+                  'cond_tv18','cond_tg12','cond_ug10',
+                  'cond_bag11','cond_bag21','cond_bag31'];
+  const AVFIS_IDS=['avfis_tg31','avfis_tg32','avfis_tg21','avfis_tg22','avfis_tv28',
+                   'avfis_tg51','avfis_tg52','avfis_tv58',
+                   'avfis_tv18','avfis_tg12','avfis_ug10',
+                   'avfis_bag11','avfis_bag21','avfis_bag31'];
+  const AVONS_IDS=['avons_pi','avons_pii','avons_piii','avons_piv','avons_pv','avons_acum'];
+  const S7P_IDS  =['s7_cap_rio','s7_cap_poc','s7_clar','s7_desmin_piv','s7_desmin_pii','s7_desmin_piii'];
+  const S7CL_IDS =['s7_tr_piv','s7_tr_pii','s7_tr_pvi'];
+  const S7CD_IDS =['s7_cd_piv','s7_cd_pii','s7_cd_piii'];
+  const S7TQ_IDS =['s7_tq_ab','s7_tq_pot','s7_tq_cl_pii1','s7_tq_cl_pii2','s7_tq_cl_pv',
+                   's7_tq_sv_pi','s7_tq_sv_pii','s7_tq_sv_pv','s7_tq_sv_pvi',
+                   's7_tq_dm_pi','s7_tq_dm_pii','s7_tq_dm_pv1','s7_tq_dm_pvi','s7_tq_dm_pv2'];
+
+  function setEl(id,val){
+    const el=document.getElementById(id); if(!el||val===undefined||val==='') return;
+    if(el.type==='date'&&/^\d{2}\/\d{2}\/\d{4}$/.test(val)){
+      const [d,m,y]=val.split('/'); val=`${y}-${m}-${d}`;
+    }
+    el.value=val;
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+    el.dispatchEvent(new Event('change',{bubbles:true}));
+    if(el.dataset.fmt==='pct') fmtPctB(el);
+    else if(el.dataset.fmt) fmtS7b(el);
+  }
+  function setIds(ids,vals){ ids.forEach((id,i)=>setEl(id,vals[i])); }
+
+  const s2={piv:[],pii:[],piii:[],p4:[]};
+  const s6rows=[];
+  let ok=0;
+
+  for(const line of lines){
+    const raw=line.trim();
+    if(!raw||raw.startsWith('#')) continue;
+    const cols=raw.split(';').map(p);
+    if(cols.length<2) continue;
+    const tipo=cols[0].toUpperCase();
+    const campo=(cols[1]||'').toLowerCase();
+    const vals=cols.slice(2);
+
+    switch(tipo){
+      case 'S0':
+        setEl(cols[1],vals[0]);
+        if(campo==='datreu') updSemana&&updSemana();
+        ok++; break;
+      case 'S1':
+        if(campo==='mwh'){ setIds(MWH_IDS,vals); ok++; }
+        else if(campo==='cond'){ setIds(COND_IDS,vals); ok++; }
+        else if(campo.startsWith('despacho_')){
+          const msId='ms_'+campo.replace('despacho_','');
+          const wrap=document.getElementById(msId); if(!wrap) break;
+          wrap.querySelectorAll('input[type="checkbox"]').forEach(cb=>{
+            cb.checked=vals.some(v=>v.trim()===cb.value);
+          });
+          updMs(msId); ok++;
+        } else { setEl(cols[1],vals[0]); ok++; }
+        break;
+      case 'S2':
+        if(s2[campo]!==undefined&&vals[0]) s2[campo].push(vals[0]);
+        break;
+      case 'S3':
+        if(campo==='avfis'){ setIds(AVFIS_IDS,vals); ok++; }
+        else if(campo==='avons'){ setIds(AVONS_IDS,vals); ok++; }
+        break;
+      case 'S6':
+        s6rows.push(cols.slice(1)); break;
+      case 'S7':
+        if(campo==='prod')           { setIds(S7P_IDS,vals);  ok++; }
+        else if(campo==='cons_clar') { setIds(S7CL_IDS,vals); ok++; }
+        else if(campo==='cons_cond') { setIds(S7CD_IDS,vals); ok++; }
+        else if(campo==='tanques')   { setIds(S7TQ_IDS,vals); ok++; }
+        break;
+    }
+  }
+
+  /* S2 — reconstrói ocorrências por usina */
+  [['piv','u_piv'],['pii','u_pii'],['piii','u_piii'],['p4','u_p4']].forEach(([key,bid])=>{
+    const blk=document.getElementById(bid); if(!blk) return;
+    blk.querySelectorAll('.ocorrencia').forEach(r=>r.remove());
+    const btn=blk.querySelector('.btn-addl');
+    (s2[key]||[]).forEach(txt=>{
+      const d=document.createElement('div'); d.className='ocorrencia';
+      d.innerHTML=`<textarea>${txt}</textarea><button class="btn-rm" onclick="delOc(this)">🗑</button>`;
+      blk.insertBefore(d,btn);
+    });
+    if(s2[key]&&s2[key].length) ok++;
+  });
+
+  /* S6 — reconstrói tabela */
+  if(s6rows.length){
+    const tb6=document.getElementById('tb_s6');
+    if(tb6){
+      tb6.innerHTML='';
+      const selOpts=`${[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('')}`;
+      s6rows.forEach(vals=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML='<td><input></td><td><input></td>'
+          +'<td><select>'+selOpts+'</select></td>'
+          +'<td class="left"><textarea maxlength="100"></textarea></td>'
+          +'<td class="left"><input></td><td><input maxlength="4"></td>'
+          +'<td><button class="btn-del" onclick="delRow(this)">🗑</button></td>';
+        tb6.appendChild(tr);
+        [...tr.querySelectorAll('input,textarea,select')].forEach((el,i)=>{
+          if(vals[i]!==undefined&&vals[i]!=='') el.value=vals[i];
+        });
+      });
+      ok++;
+    }
+  }
+
+  calcMwh&&calcMwh();
+  updSemana&&updSemana();
+  alert('✅ Dados CSV carregados — '+ok+' blocos importados.');
+}
+
+function addOc(bid){
+  const el=document.getElementById(bid); if(!el) return;
+  const d=document.createElement('div'); d.className='ocorrencia';
+  d.innerHTML=`<textarea></textarea><button class="btn-rm" onclick="delOc(this)">🗑</button>`;
+  el.insertBefore(d, el.querySelector('.btn-addl'));
+}
+function delOc(btn){ btn.parentElement.remove(); }
+function delRow(btn){ btn.closest('tr').remove(); }
+
+/* ── S3 SI — Intervenções Vigentes ── */
+function maskNumSI(inp){
+  const d=inp.value.replace(/\D/g,'').substring(0,10);
+  let r=d.substring(0,Math.min(2,d.length));
+  if(d.length>2) r+='.'+d.substring(2,Math.min(5,d.length));
+  if(d.length>5) r+='.'+d.substring(5,Math.min(8,d.length));
+  if(d.length>8) r+='-'+d.substring(8,10);
+  inp.value=r;
+}
+function maskProgSI(inp){
+  const d=inp.value.replace(/\D/g,'').substring(0,20);
+  const seg=(from,to)=>d.length>from?d.substring(from,Math.min(to,d.length)):'';
+  let r=seg(0,2);
+  if(d.length>2)  r+='/'+seg(2,4);
+  if(d.length>4)  r+='/'+seg(4,6);
+  if(d.length>6)  r+=' '+seg(6,8);
+  if(d.length>8)  r+=':'+seg(8,10);
+  if(d.length>10) r+=' a '+seg(10,12);
+  if(d.length>12) r+='/'+seg(12,14);
+  if(d.length>14) r+='/'+seg(14,16);
+  if(d.length>16) r+=' '+seg(16,18);
+  if(d.length>18) r+=':'+seg(18,20);
+  inp.value=r;
+}
+function siRow(){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td class="col-num"><input type="text" maxlength="13" placeholder="XX.XXX.XXX-XX" oninput="maskNumSI(this)"></td>
+    <td class="col-equip"><input type="text" placeholder="Descrição do equipamento"></td>
+    <td class="col-serv"><textarea placeholder="Descrição do serviço..."></textarea></td>
+    <td class="col-prog"><input type="text" maxlength="31" placeholder="dd/mm/aa hh:mm a dd/mm/aa hh:mm" oninput="maskProgSI(this)"></td>
+    <td class="col-del"><button class="btn-del" onclick="this.closest('tr').remove()" title="Remover linha">🗑</button></td>`;
+  return tr;
+}
+function addSIRow(){
+  const tb=document.getElementById('tb-si'); if(!tb) return;
+  tb.appendChild(siRow());
+}
+
+function addS6(){
+  const tb=document.getElementById('tb_s6'); if(!tb) return;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input></td><td><input></td>
+    <td><select>${[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('')}</select></td>
+    <td class="left"><textarea maxlength="100"></textarea></td>
+    <td class="left"><input></td><td><input maxlength="4"></td>
+    <td><button class="btn-del" onclick="delRow(this)">🗑</button></td>`;
+  tb.appendChild(tr);
+}
+/* ── S8 helpers ── */
+function s8StatusSel(sel=''){
+  const opts=[
+    {v:'',l:'— selecione —'},
+    {v:'Aguardando revalidação',l:'Aguardando revalidação'},
+    {v:'Aprovar revalidação',   l:'Aprovar revalidação'},
+    {v:'Implementada',          l:'Implementada'}
+  ].map(o=>`<option value="${o.v}"${o.v===sel?' selected':''}>${o.l}</option>`).join('');
+  const sc=sel==='Aguardando revalidação'?'st-aguardando':sel==='Aprovar revalidação'?'st-aprovar':sel==='Implementada'?'st-impl':'';
+  return `<select class="sel-status ${sc}" onchange="paintStatus(this)">${opts}</select>`;
+}
+function paintStatus(sel){
+  sel.className='sel-status';
+  if(sel.value==='Aguardando revalidação') sel.classList.add('st-aguardando');
+  else if(sel.value==='Aprovar revalidação') sel.classList.add('st-aprovar');
+  else if(sel.value==='Implementada') sel.classList.add('st-impl');
+}
+function selIdConecta(inp){
+  const pos=inp.value.indexOf('X');
+  if(pos!==-1) inp.setSelectionRange(pos,inp.value.length);
+}
+function s8Row(d={}){
+  return `
+    <td class="col-id"><input value="${d.id||'DT.PAR.XXX.XXXX'}" onfocus="selIdConecta(this)" style="font-family:'IBM Plex Mono',monospace;font-size:9px"></td>
+    <td class="col-st">${s8StatusSel(d.st||'')}</td>
+    <td class="col-kks"><input value="${d.kks||''}"></td>
+    <td class="col-desc left"><input value="${d.desc||''}"></td>
+    <td class="col-ord"><input value="${d.ord||''}"></td>
+    <td class="col-resp"><textarea>${d.resp||''}</textarea></td>
+    <td class="col-data"><input type="text" value="${d.ab||''}" placeholder="dd/mm/aaaa hh:mm" onblur="calcDias(this)"></td>
+    <td class="col-data"><input type="text" value="${d.term||''}" placeholder="dd/mm/aaaa hh:mm"></td>
+    <td class="col-dias"><input readonly value="${d.dias||''}" style="background:#f8fafc;text-align:center"></td>
+    <td class="col-del"><button class="btn-del" onclick="delRow(this)">🗑</button></td>`;
+}
+function addS8(){
+  const tb=document.getElementById('tb_s8'); if(!tb) return;
+  const tr=document.createElement('tr');
+  tr.innerHTML=s8Row();
+  tb.appendChild(tr);
+}
+function parseDataBR(v){
+  if(!v) return null;
+  const p=v.split(' '), d=p[0].split('/');
+  if(d.length!==3) return null;
+  const h=p[1]?p[1].split(':'):['0','0'];
+  return new Date(+d[2],+d[1]-1,+d[0],+h[0],+h[1]);
+}
+
+/* ── S8: dados pré-carregados ── */
+function loadS8Data(){
+  const tb=document.getElementById('tb_s8'); if(!tb) return;
+  const DATA=[
+    {id:`DT.PAR.121.2026`,st:`Implementada`,kks:`00GNK23AP002C`,desc:`BOMBA DESCARTE EFLUENTE`,ord:`4614739`,resp:`Operadores Geração Parnaíba GM`,ab:`25/12/2024 17:48`,term:`29/04/2026 19:00`},
+    {id:`DT.PAR.054.2025`,st:`Implementada`,kks:`32LBC10AA301`,desc:`VLV CORTE CRH 32LBC10AA301`,ord:`4597087`,resp:`Operadores Geração Parnaíba GM`,ab:`09/02/2025 08:30`,term:`31/05/2026 12:00`},
+    {id:`DT.PAR.308.2025`,st:`Implementada`,kks:`58PAC11CY104`,desc:`SENSOR VIBRAÇÃO "X" MANCAL LA MOTOR 58PAC11`,ord:`4669864`,resp:`Operadores Geração Parnaíba GM`,ab:`30/06/2025 18:50`,term:`30/04/2026 22:00`},
+    {id:`DT.PAR.471.2025`,st:`Aguardando revalidação`,kks:`00GMA33CL051`,desc:`TRANSM NÍVEL PIT ÁGUA TRATADA SEPARA`,ord:`4705260`,resp:`Operadores Geração Parnaíba GM`,ab:`22/12/2025 12:19`,term:`15/04/2026 04:48`},
+    {id:`DT.PAR.473.2025`,st:`Implementada`,kks:`00BRU11`,desc:`BANCO DE BATERIAS`,ord:`4746547`,resp:`Operadores Geração Parnaíba GM`,ab:`23/12/2025 08:00`,term:`22/04/2026 12:20`},
+    {id:`DT.PAR.477.2025`,st:`Implementada`,kks:`BEY903`,desc:`BANCO DE BATERIAS RETIFICADORES`,ord:`4703072`,resp:`Operadores Geração Parnaíba GM`,ab:`23/12/2025 15:51`,term:`29/04/2026 04:46`},
+    {id:`DT.PAR.487.2025`,st:`Implementada`,kks:`32SAE12AN001`,desc:`CONJUNTO MTR-VENTILADOR COMP CARGA`,ord:`4495317`,resp:`Operadores Geração Parnaíba GM`,ab:`31/12/2025 10:00`,term:`30/04/2026 17:30`},
+    {id:`DT.PAR.016.2026`,st:`Implementada`,kks:`10BTL20`,desc:`RETIFICADOR CARREGADOR DE BATERIAS`,ord:`4667090`,resp:`Operadores Geração Parnaíba GM`,ab:`17/01/2026 12:00`,term:`22/04/2026 19:00`},
+    {id:`DT.PAR.037.2026`,st:`Implementada`,kks:`28LCB30AP001`,desc:`BBA EXTRAÇÃO DE CONDENSADO`,ord:`4730959`,resp:`Operadores Geração Parnaíba GM`,ab:`30/01/2026 08:51`,term:`05/07/2026 16:34`},
+    {id:`DT.PAR.049.2026`,st:`Implementada`,kks:`ZAA901-C900`,desc:`AQUECEDOR DE GÁS`,ord:`4753153`,resp:`Operadores Geração Parnaíba GM`,ab:`11/02/2026 14:30`,term:`27/05/2026 12:00`},
+    {id:`DT.PAR.065.2026`,st:`Implementada`,kks:`21SGJ10CT301B`,desc:`DETECTOR FOGO COMPARTIMENTO TURBINA`,ord:`4703072`,resp:`Operadores Geração Parnaíba GM`,ab:`19/02/2026 11:10`,term:`31/05/2026 12:00`},
+    {id:`DT.PAR.070.2026`,st:`Implementada`,kks:`52BAT01`,desc:`TRANSFORMADOR PRINCIPAL GERADOR 52`,ord:`4730959`,resp:`Operadores Geração Parnaíba GM`,ab:`20/02/2026 16:40`,term:`30/05/2026 00:00`},
+    {id:`DT.PAR.123.2026`,st:`Implementada`,kks:`50PAS11AP001`,desc:`BB ALIM MAKE UP TORRE RESFRIAMENTO`,ord:`4676156`,resp:`Operadores Geração Parnaíba GM`,ab:`03/04/2026 22:30`,term:`30/04/2026 12:00`},
+    {id:`DT.PAR.144.2026`,st:`Implementada`,kks:`10GKB10AP001`,desc:`BOMBA DE ÁGUA POTÁVEL`,ord:`10251484`,resp:`Roberto Joao De Oliveira`,ab:`17/04/2026 08:10`,term:`01/06/2026 07:10`}
+  ];
+  tb.innerHTML='';
+  DATA.forEach(d=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=s8Row(d);
+    tb.appendChild(tr);
+    const abInp=tr.cells[6].querySelector('input');
+    if(abInp) calcDias(abInp);
+  });
+}
+function calcDias(el){
+  const linha=el.closest('tr');
+  const campo=linha.cells[8].querySelector('input');
+  const ab=parseDataBR(el.value);
+  if(!ab){ campo.value=''; return; }
+  const ref=new Date(); ref.setDate(ref.getDate()-1); ref.setHours(0,0,0,0);
+  const diff=Math.floor((ref-ab)/86400000);
+  campo.value=diff>=0?diff:'';
+}
+
+/* ═══ S7 FORMATAÇÃO E VALIDAÇÃO ════════════════════════ */
+function _parsePT(v){return parseFloat(String(v).replace(/\./g,'').replace(',','.'))||0;}
+function _fmtPT(n){return n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});}
+
+function fmtS7f(inp){                        /* onfocus — remove formatação */
+  const v=_parsePT(inp.value);
+  inp.value=v===0?'':String(v).replace('.',',');
+  inp.classList.remove('s7-ok','s7-err');
+}
+function fmtS7b(inp){                        /* onblur — aplica formatação */
+  const v=_parsePT(inp.value.trim()||'0');
+  inp.value=_fmtPT(v);
+  if(inp.dataset.min!==undefined) valS7(inp);
+}
+function valS7(inp){
+  const raw=inp.value.trim();
+  if(raw===''){inp.classList.remove('s7-ok','s7-err');return;}
+  const v=_parsePT(raw);
+  if(isNaN(v)){inp.classList.remove('s7-ok','s7-err');return;}
+  const min=parseFloat(inp.dataset.min);
+  const max=parseFloat(inp.dataset.max);
+  const gt =inp.dataset.gt==='1';   /* consumo: quanto menor melhor */
+  let ok;
+  if(gt){                                             /* quanto menor melhor — data-gt=1 */
+    inp.classList.remove('s7-ok');                    /* abaixo do máx → neutro, sem cor */
+    inp.classList.toggle('s7-err', v>max);            /* só vermelho se ultrapassar o máx */
+  } else if(min===max){                               /* valor fixo ±5% sem data-gt */
+    const ok=(v>=min*0.95&&v<=max*1.05);
+    inp.classList.toggle('s7-ok', ok);
+    inp.classList.toggle('s7-err',!ok);
+  } else {                                            /* faixa normal */
+    const ok=(v>=min&&v<=max);
+    inp.classList.toggle('s7-ok', ok);
+    inp.classList.toggle('s7-err',!ok);
+  }
+}
+
+
+/* ═══ COMENTÁRIOS S4 ════════════════════════════════════ */
+let cmActiveCell = null;
+
+function openComment(cell, e){
+  e.stopPropagation(); e.preventDefault();
+  cmActiveCell = cell;
+  const grid = cell.closest('.s4-grid');
+  const gridChildren = [...grid.children];
+  const cellIdx = gridChildren.indexOf(cell.parentElement);
+  const col = cellIdx % 11;
+  let kksText = '?';
+  const kksEl = gridChildren[cellIdx - col];
+  if(kksEl) kksText = kksEl.textContent.trim();
+  let dateText = '?';
+  for(let i = cellIdx - 1; i >= 0; i--){
+    const el = gridChildren[i];
+    if(!el) continue;
+    if(i % 11 === col && el.style && el.style.background &&
+      (el.style.background.includes('eef2f9') || el.style.background.includes('e8ecf4'))){
+      dateText = el.textContent.trim(); break;
+    }
+  }
+  document.getElementById('cm-kks').textContent  = kksText;
+  document.getElementById('cm-date').textContent = dateText;
+  const ta = document.getElementById('cm-text');
+  ta.value = cell.dataset.comment || '';
+  document.getElementById('cm-count').textContent = ta.value.length;
+  document.getElementById('comment-modal').classList.add('show');
+  setTimeout(()=>ta.focus(), 100);
+}
+document.getElementById('cm-text').addEventListener('input', function(){
+  document.getElementById('cm-count').textContent = this.value.length;
+});
+function saveComment(){
+  if(!cmActiveCell) return;
+  const text = document.getElementById('cm-text').value.trim();
+  cmActiveCell.dataset.comment = text;
+  if(text){ cmActiveCell.classList.add('has-comment'); cmActiveCell.setAttribute('data-comment', text); }
+  else     { cmActiveCell.classList.remove('has-comment'); cmActiveCell.removeAttribute('data-comment'); }
+  closeComment();
+}
+function clearComment(){
+  if(!cmActiveCell) return;
+  document.getElementById('cm-text').value = '';
+  document.getElementById('cm-count').textContent = '0';
+  cmActiveCell.dataset.comment = '';
+  cmActiveCell.classList.remove('has-comment');
+  cmActiveCell.removeAttribute('data-comment');
+  closeComment();
+}
+function closeComment(){
+  document.getElementById('comment-modal').classList.remove('show');
+  cmActiveCell = null;
+}
+document.getElementById('comment-modal').addEventListener('click', function(e){
+  if(e.target===this) closeComment();
+});
+
+/* ─── FORMATO BR ── */
+function parseBR(v){
+  return parseFloat((v||'0').toString().replace(/\./g,'').replace(',','.')) || 0;
+}
+function toBR1(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+
+/* ─── CÁLCULOS S1 ── */
+function calcMwh(){
+  const grupos=[
+    {cls:'mwh-piv', rid:'real_piv', pid:'prog_piv'},
+    {cls:'mwh-pii', rid:'real_pii', pid:'prog_pii'},
+    {cls:'mwh-piii',rid:'real_piii',pid:'prog_piii'},
+    {cls:'mwh-p4',  rid:'real_p4',  pid:'prog_p4'},
+  ];
+  let total=0;
+  grupos.forEach(g=>{
+    let s=0; document.querySelectorAll('.'+g.cls).forEach(c=>s+=parseBR(c.value));
+    total+=s;
+    const rel=document.getElementById(g.rid);
+    const prg=document.getElementById(g.pid);
+    if(rel){
+      rel.value=toBR1(s);
+      const hasP=prg&&prg.value&&prg.value!=='0,0';
+      const p=hasP?parseBR(prg.value):0;
+      rel.style.background=hasP?(s>=p?'#f0fdf4':'#fef2f2'):'#f0f9ff';
+      rel.style.color=hasP?(s>=p?'#16a34a':'#dc2626'):'var(--navy)';
+    }
+  });
+  const tm=document.getElementById('totalMwh');
+  if(tm) tm.value=toBR1(total);
+  let pt=0,anyP=false;
+  ['prog_piv','prog_pii','prog_piii','prog_p4'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&el.value&&el.value!=='0,0'){pt+=parseBR(el.value);anyP=true;}
+  });
+  const tp=document.getElementById('totalProg');
+  if(tp) tp.value=anyP?toBR1(pt):'0,0';
+}
+
+/* ─── LEGENDA TIPO DESPACHO S1 ── */
+const SIGLAS_MAP = {
+  'REL':'Restrição Elétrica','FOM':'Fora de Ordem de Mérito',
+  'OME':'Ordem de Mérito','INF':'Inflexibilidade',
+  'EXP':'Exportação','GEN':'Garantia Energética',
+  'PCI':'Perda de Consumo Interno de Exportação',
+  'GFM':'Geração Forçada por Motivo','GSB':'Geração Substituta',
+  'ERP':'Emissão de Relatório de Pré-despacho',
+  'UCM':'Unit Commitment','RRO':'Redespacho por Restrição Operativa',
+};
+function updLegendaTD(){
+  const visiveis=new Set();
+  ['ms_piv','ms_pii','ms_piii','ms_p4'].forEach(id=>{
+    const wrap=document.getElementById(id); if(!wrap) return;
+    wrap.querySelectorAll('input[type="checkbox"]:checked').forEach(cb=>visiveis.add(cb.value));
+  });
+  const leg=document.getElementById('td-legend');
+  const grid=document.getElementById('td-legend-grid');
+  if(!leg||!grid) return;
+  if(visiveis.size===0){leg.style.display='none';return;}
+  leg.style.display='block';
+  grid.innerHTML=[...visiveis].sort().map(s=>
+    `<div class="td-leg-item"><strong>${s}</strong>: ${SIGLAS_MAP[s]||s}</div>`
+  ).join('');
+}
+
+/* ═══ INIT ════════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded',()=>{
+  render();
+  initDate();
+});
+</script>
+
+<!-- ── TOAST de feedback da publicação ── -->
+<div id="toast-pub"></div>
+
+<style>
+#wa-modal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:flex-end;justify-content:center}
+#wa-modal.open{display:flex}
+#wa-sheet{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;box-shadow:0 -4px 24px rgba(0,0,0,.18)}
+#wa-sheet h3{font-size:15px;font-weight:700;color:#1a2340;margin-bottom:4px}
+#wa-sheet p{font-size:12px;color:#5a6482;margin-bottom:16px}
+.wa-btn{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;margin-bottom:10px;background:#f0faf4;border:1px solid #b7e4c7;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;color:#1a5c35;text-decoration:none}
+.wa-btn svg{flex-shrink:0}
+.wa-btn:last-of-type{margin-bottom:0}
+#wa-fechar{margin-top:14px;width:100%;padding:12px;background:none;border:1px solid #e0e5f0;border-radius:10px;font-size:13px;color:#5a6482;cursor:pointer}
+</style>
+
+<!-- Modal WhatsApp -->
+<div id="wa-modal">
+  <div id="wa-sheet">
+    <h3>Compartilhar via WhatsApp</h3>
+    <p>Dashboard atualizado. Selecione quem deseja notificar:</p>
+    <div id="wa-contatos"></div>
+    <button id="wa-fechar" onclick="fecharModalWA()">Fechar</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  PUBLICAR NO DRIVE
+//  Substitua WEBAPP_URL pela URL gerada ao implantar o Apps Script
+// ═══════════════════════════════════════════════════════════════════════════
+const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx6dFEhaQRt3MmGi-l3BUWQoH-oDGhNklxxnh7eqEZ0NIJ5jL7wX0YeZ4DcmpDtnEM/exec';
+
+const DASHBOARD_URL = 'https://araujofa1974-code.github.io/om-parnaiba-dashboard/dashboard_mobile_v2.html';
+
+// ── CONTATOS WHATSAPP ─────────────────────────────────────────────────────
+// Formato do número: código do país + DDD + número (sem espaços ou símbolos)
+// Exemplo Brasil: 55 + 86 + 999999999 → '5586999999999'
+const CONTATOS_WA = [
+  { nome: 'Tiago Medeiros', numero: '5521981717210' },
+  { nome: 'Murilo Prates',  numero: '5551994237887' },
+  { nome: 'Fábio Araújo',   numero: '5531999222652' },
+  { nome: 'Pedro Werner',   numero: '5585999445865' },
+  { nome: 'João Morais',    numero: '5598981198088' },
+  { nome: 'Aquiles Silva',  numero: '5531988668520' },
+  { nome: 'Michel Seixas',  numero: '5521995916888' },
+  { nome: 'Naelton Silva',  numero: '5586995707824' },
+  { nome: 'Thiago Lima',    numero: '5598981428811' },
+  { nome: 'Vinicius Pinafo',   numero: '5527999942830' },
+  { nome: 'Giuliano Gonçalves',numero: '5521997554416' },
+  { nome: 'Ramon Lobo',        numero: '5599991556372' },
+];
+// ─────────────────────────────────────────────────────────────────────────
+
+function _validarCampos() {
+  const erros = [];
+  const num = id => { const el = document.getElementById(id); return el ? parseBR(el.value) : 0; };
+
+  // S0 — Data da Reunião
+  const datEl = document.getElementById('datReu');
+  if (!datEl || !datEl.value) erros.push('S0 • Data da Reunião não preenchida');
+
+  // S1 — Geração e Gás
+  if (num('totalMwh') <= 0)  erros.push('S1 • Geração Total Real (MWh) = 0');
+  if (num('totalProg') <= 0) erros.push('S1 • Geração Programada (MWh) = 0');
+  if (num('consumoGN') <= 0) erros.push('S1 • Consumo de Gás Natural = 0');
+  if (num('progGN')    <= 0) erros.push('S1 • GN Programado = 0');
+  if (num('tempAmb')   <= 0) erros.push('S1 • Temperatura Ambiente = 0');
+
+  // S3 — Disponibilidade Física (todos os UGs)
+  const avfisIds = [
+    'avfis_tg31','avfis_tg32','avfis_tg21','avfis_tg22','avfis_tv28',
+    'avfis_tg51','avfis_tg52','avfis_tv58',
+    'avfis_tv18','avfis_tg12','avfis_ug10',
+    'avfis_bag11','avfis_bag21','avfis_bag31'
+  ];
+  const avfisZero = avfisIds.filter(id => num(id) <= 0);
+  if (avfisZero.length === avfisIds.length) {
+    erros.push('S3 • Disponibilidade Física — todos os UGs estão em 0%');
+  } else if (avfisZero.length > 0) {
+    erros.push('S3 • Disponibilidade Física — UG(s) sem valor: ' +
+      avfisZero.map(i => i.replace('avfis_', '').toUpperCase()).join(', '));
+  }
+
+  // S7 — Tratamento de Água
+  const s7Ids = [
+    's7_cap_rio','s7_cap_poc','s7_clar',
+    's7_desmin_piv','s7_desmin_pii','s7_desmin_piii',
+    's7_tr_piv','s7_tr_pii','s7_tr_pvi',
+    's7_cd_piv','s7_cd_pii','s7_cd_piii',
+    's7_tq_ab','s7_tq_pot',
+    's7_tq_cl_pii1','s7_tq_cl_pii2','s7_tq_cl_pv',
+    's7_tq_sv_pi','s7_tq_sv_pii','s7_tq_sv_pv','s7_tq_sv_pvi',
+    's7_tq_dm_pi','s7_tq_dm_pii','s7_tq_dm_pv1','s7_tq_dm_pvi','s7_tq_dm_pv2'
+  ];
+  const s7Zero = s7Ids.filter(id => num(id) <= 0);
+  if (s7Zero.length === s7Ids.length) {
+    erros.push('S7 • Tratamento de Água — todos os campos estão em 0');
+  } else if (s7Zero.length > 0) {
+    erros.push('S7 • Tratamento de Água — ' + s7Zero.length + ' campo(s) sem valor: ' +
+      s7Zero.map(i => i.replace('s7_', '')).join(', '));
+  }
+
+  return erros;
+}
+
+function publicarNoDrive() {
+  const btn = document.getElementById('btn-pub');
+
+  const erros = _validarCampos();
+  if (erros.length > 0) {
+    alert('⚠️ Não é possível publicar!\n\nCampos obrigatórios não preenchidos:\n\n• ' + erros.join('\n• '));
+    return;
+  }
+
+  const estado = _coletarEstado();
+  const d = new Date();
+  estado['__versao__'] = document.getElementById('ver-chip')?.textContent || 'v1';
+  estado['__ts__']     = d.toISOString();
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Publicando...';
+
+  fetch(WEBAPP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(estado)
+  })
+  .then(() => {
+    showToast('✅ Publicado! Dashboard atualizado.', '#22a66a');
+    btn.textContent = '✅ Publicado';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.textContent = '☁️ Publicar';
+    }, 3000);
+    abrirModalWA(estado);
+  })
+  .catch(err => {
+    showToast('❌ Erro ao publicar: ' + err.message, '#e04444');
+    btn.disabled = false;
+    btn.textContent = '☁️ Publicar';
+  });
+}
+
+function abrirModalWA(estado) {
+  const diaObsEl = document.getElementById('diaObs');
+  const dataFmt = (diaObsEl && diaObsEl.value)
+    ? diaObsEl.value
+    : new Date().toLocaleDateString('pt-BR');
+
+  const mensagem =
+    `🔔 *Dashboard O&M Parnaíba atualizado!*\n` +
+    `📅 Dia de referência: ${dataFmt}\n` +
+    `📊 Acesse: ${DASHBOARD_URL}`;
+
+  const container = document.getElementById('wa-contatos');
+  container.innerHTML = '';
+
+  CONTATOS_WA.forEach(c => {
+    const url = `https://wa.me/${c.numero}?text=${encodeURIComponent(mensagem)}`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.className = 'wa-btn';
+    a.innerHTML = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="#25D366">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.571a.75.75 0 0 0 .93.909l5.875-1.54A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.75a9.721 9.721 0 0 1-4.964-1.357l-.355-.212-3.684.967.982-3.588-.232-.369A9.722 9.722 0 0 1 2.25 12C2.25 6.615 6.615 2.25 12 2.25S21.75 6.615 21.75 12 17.385 21.75 12 21.75z"/>
+      </svg>
+      ${c.nome}`;
+    container.appendChild(a);
+  });
+
+  document.getElementById('wa-modal').classList.add('open');
+}
+
+function fecharModalWA() {
+  document.getElementById('wa-modal').classList.remove('open');
+}
+
+// Fecha o modal ao clicar fora do sheet
+document.getElementById('wa-modal').addEventListener('click', function(e) {
+  if(e.target === this) fecharModalWA();
+});
+
+function showToast(msg, cor) {
+  const t = document.getElementById('toast-pub');
+  t.textContent = msg;
+  t.style.background = cor || '#1e293b';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+</body>
+</html>
