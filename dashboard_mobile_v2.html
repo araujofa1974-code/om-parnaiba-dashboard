@@ -448,7 +448,7 @@ function buildVisao(d){
       <div class="kpi-card c-teal">
         <span class="kpi-ico">🔥</span>
         <div class="kpi-lbl">Gás Natural</div>
-        <div class="kpi-val">${d.consumoGN?fmtN(d.consumoGN,0):'—'}<span class="kpi-unit">Nm³/d</span>${gnPct!=null?`<span style="font-size:16px;font-weight:800;color:${Math.abs(gnPct-100)<=5?'var(--accent-green)':'var(--accent-red)'};margin-left:8px">${Math.abs(gnPct-100)<=5?'▲':'▼'} ${gnPctTxt}</span>`:''}</div>
+        <div class="kpi-val">${d.consumoGN?fmtN(d.consumoGN,0):'—'}<span class="kpi-unit">Nm³/d</span>${gnPct!=null?`<span style="font-size:16px;font-weight:800;color:${gnColor};margin-left:8px">${pCls(gnPct)==='good'?'▲':'▼'} ${gnPctTxt}</span>`:''}</div>
         <div class="kpi-sub">Prog: ${d.progGN?fmtN(d.progGN,0)+' Nm³/d':'—'}</div>
       </div>
       <div class="kpi-card c-green">
