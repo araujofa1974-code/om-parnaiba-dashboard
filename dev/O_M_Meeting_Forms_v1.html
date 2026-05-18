@@ -309,12 +309,12 @@ table.dt .col-st    {width:148px}
 table.dt .col-kks   {width:100px}
 table.dt .col-desc  {min-width:240px}
 table.dt .col-ord   {width:72px}
-table.dt .col-resp  {width:110px}
+table.dt .col-resp  {width:160px}
 table.dt .col-data  {width:126px}
 table.dt .col-dias  {width:44px}
 table.dt .col-del   {width:28px}
 table.dt .col-desc input{text-align:left}
-table.dt .col-resp select{width:100%;font-size:10px;padding:2px 3px;border:1px solid #cbd5e1;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;background:#fff}
+table.dt .col-resp select{width:100%;font-size:10px;padding:2px 3px;border:1px solid #cbd5e1;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;background:#fff;white-space:normal;word-break:break-word;height:auto}
 table.dt .col-resp textarea{
   width:100%;min-height:34px;font-size:10px;padding:2px 5px;
   border:1px solid #cbd5e1;border-radius:3px;
@@ -2019,9 +2019,9 @@ function s8Row(d={}){
     <td class="col-kks"><input value="${d.kks||''}"></td>
     <td class="col-desc left"><input value="${d.desc||''}"></td>
     <td class="col-ord"><input value="${d.ord||''}"></td>
-    <td class="col-resp"><select style="width:100%;font-size:10px;padding:2px 3px;border:1px solid #cbd5e1;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;background:#fff">
+    <td class="col-resp"><select>
       <option value="">—</option>
-      ${['Operadores G. Parnaíba GM','Coordenador G. Parnaíba GM','Gerente G. Parnaíba GM'].map(o=>'<option value="'+o+'"'+(d.resp===o?' selected':'')+'>'+o+'</option>').join('')}
+      ${['Operadores G. Parnaíba GM','Coordenador G. Parnaíba GM','Gerente G. Parnaíba GM'].map(o=>'<option value="'+o+'" title="'+o+'"'+(d.resp===o?' selected':'')+'>'+o+'</option>').join('')}
     </select></td>
     <td class="col-data"><input type="text" value="${d.ab||''}" placeholder="dd/mm/aaaa hh:mm" onblur="calcDias(this)"></td>
     <td class="col-data"><input type="text" value="${d.term||''}" placeholder="dd/mm/aaaa hh:mm"></td>
