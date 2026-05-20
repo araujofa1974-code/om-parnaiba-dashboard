@@ -309,12 +309,11 @@ table.dt .col-st    {width:148px}
 table.dt .col-kks   {width:100px}
 table.dt .col-desc  {min-width:240px}
 table.dt .col-ord   {width:72px}
-table.dt .col-resp  {width:160px}
+table.dt .col-resp  {width:110px}
 table.dt .col-data  {width:126px}
 table.dt .col-dias  {width:44px}
 table.dt .col-del   {width:28px}
 table.dt .col-desc input{text-align:left}
-table.dt .col-resp select{width:100%;font-size:10px;padding:2px 3px;border:1px solid #cbd5e1;border-radius:3px;font-family:'IBM Plex Sans',sans-serif;background:#fff;white-space:normal;word-break:break-word;height:auto}
 table.dt .col-resp textarea{
   width:100%;min-height:34px;font-size:10px;padding:2px 5px;
   border:1px solid #cbd5e1;border-radius:3px;
@@ -488,6 +487,8 @@ table.wt td{border:1px solid var(--bdr);padding:5px 7px;vertical-align:middle;te
   .c-section[id="cs_6"]{break-before:page}   /* S6 — nova página */
   .c-section[id="cs_7"]{break-before:page}   /* S7 — nova página */
 }
+/* ─── S5 TIMESTAMP ── */
+.s6-ts-info{display:block;font-size:8px;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;margin-top:2px;white-space:nowrap;letter-spacing:-.2px}
 </style>
 </head>
 <body>
@@ -501,7 +502,7 @@ table.wt td{border:1px solid var(--bdr);padding:5px 7px;vertical-align:middle;te
   </div>
   <div class="hdr-meta">
     <div class="hdr-chip">Semana: <strong id="hdr-semana">—</strong></div>
-    <div class="hdr-chip" id="ver-chip" style="font-family:monospace;letter-spacing:.5px">v1.1</div>
+    <div class="hdr-chip" id="ver-chip" style="font-family:monospace;letter-spacing:.5px">v1</div>
     <button class="btn-save" onclick="salvarEstado()" title="Exportar preenchimento como JSON">💾 Salvar</button>
     <button class="btn-publish" id="btn-pub" onclick="publicarNoDrive()" title="Enviar JSON para o Google Drive e atualizar dashboard">☁️ Publicar</button>
     <label class="btn-load" title="Carregar preenchimento (JSON) ou dados (CSV)">📂 Carregar<input type="file" id="file-load-inp" accept=".json,.csv" onchange="carregarEstado(this)"></label>
@@ -848,8 +849,8 @@ function secInner(id){
               <td><input></td><td><input></td>
               <td><select>${[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('')}</select></td>
               <td class="left"><textarea maxlength="100"></textarea></td>
-              <td class="left"><input></td><td><input maxlength="12" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
-              <td><button class="btn-del" onclick="delRow(this)">🗑</button></td>
+              <td class="left"><input></td><td><input maxlength="4"></td>
+              <td><button class="btn-del" onclick="delRow(this)">🗑</button><span class="s6-ts-info"></span></td>
             </tr>
           </tbody>
         </table>
@@ -1129,6 +1130,7 @@ function render(){
 
   updSidebar();
   observeSections();
+  s6IniciarGuarda();
 }
 
 /* ── garante que todas as seções estão no DOM antes de imprimir ── */
@@ -1400,6 +1402,10 @@ function resetTabela(tbody){
     r.querySelectorAll('input:not([readonly]),select,textarea').forEach(el=>{
       el.tagName==='SELECT' ? el.selectedIndex=0 : el.value='';
     });
+    delete r.dataset.s6ts;
+    const lbl=r.querySelector('.s6-ts-info');
+    if(lbl) lbl.textContent='';
+    r.removeAttribute('title');
   });
 }
 function updSidebar(){
@@ -1512,13 +1518,13 @@ function _coletarEstado(){
     s2snap[bid]=[...blk.querySelectorAll('.ocorrencia textarea')].map(ta=>ta.value);
   });
   estado['__s2__']=JSON.stringify(s2snap);
-  // S6 — linhas da tabela
+  // S6 — linhas da tabela (salva {vals, ts} para controle de expiração)
   const tb6=document.getElementById('tb_s6');
   if(tb6){
     const rows6=[];
     tb6.querySelectorAll('tr').forEach(tr=>{
       const vals=[...tr.querySelectorAll('input,textarea,select')].map(el=>el.value);
-      if(vals.some(v=>v.trim())) rows6.push(vals);
+      if(vals.some(v=>v.trim())) rows6.push({vals, ts: tr.dataset.s6ts||''});
     });
     estado['__s6__']=JSON.stringify(rows6);
   }
@@ -1702,21 +1708,30 @@ function _aplicarEstado(estado){
     const _rebuildS6=(rows6)=>{
       if(!rows6||!rows6.length) return false;
       tb6.innerHTML='';
-      rows6.forEach(vals=>{
+      rows6.forEach(item=>{
+        // Compatibilidade: formato antigo é array direto; novo é {vals, ts}
+        const vals=Array.isArray(item)?item:item.vals;
+        const ts=Array.isArray(item)?'':(item.ts||'');
         const tr=document.createElement('tr');
+        if(ts) tr.dataset.s6ts=ts;
         tr.innerHTML='<td><input></td><td><input></td>'
           +'<td><select>'+selOpts+'</select></td>'
           +'<td class="left"><textarea maxlength="100"></textarea></td>'
-          +'<td class="left"><input></td><td><input maxlength="12" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>'
-          +'<td><button class="btn-del" onclick="delRow(this)">🗑</button></td>';
+          +'<td class="left"><input></td><td><input maxlength="4"></td>'
+          +'<td><button class="btn-del" onclick="delRow(this)">🗑</button><span class="s6-ts-info"></span></td>';
         tb6.appendChild(tr);
         [...tr.querySelectorAll('input,textarea,select')].forEach((el,i)=>{if(vals[i]!==undefined)el.value=vals[i];});
+        if(ts){
+          const lbl=tr.querySelector('.s6-ts-info');
+          if(lbl) lbl.textContent=new Date(ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+          tr.title='Lançado em: '+new Date(ts).toLocaleString('pt-BR');
+        }
       });
       return true;
     };
     if(estado['__s6__']){
       try{
-        if(_rebuildS6(JSON.parse(estado['__s6__']))) ok++;
+        if(_rebuildS6(JSON.parse(estado['__s6__']))){ok++;s6ExpirarAntigas();}
       } catch(e){ console.error('S6 restore error:',e); }
     } else {
       // Fallback: coleta linhas por chaves posicionais (JSON antigo sem __s6__)
@@ -1917,7 +1932,7 @@ function _carregarDadosCSV(txt){
         tr.innerHTML='<td><input></td><td><input></td>'
           +'<td><select>'+selOpts+'</select></td>'
           +'<td class="left"><textarea maxlength="100"></textarea></td>'
-          +'<td class="left"><input></td><td><input maxlength="12" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>'
+          +'<td class="left"><input></td><td><input maxlength="4"></td>'
           +'<td><button class="btn-del" onclick="delRow(this)">🗑</button></td>';
         tb6.appendChild(tr);
         [...tr.querySelectorAll('input,textarea,select')].forEach((el,i)=>{
@@ -1987,10 +2002,59 @@ function addS6(){
   tr.innerHTML=`<td><input></td><td><input></td>
     <td><select>${[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('')}</select></td>
     <td class="left"><textarea maxlength="100"></textarea></td>
-    <td class="left"><input></td><td><input maxlength="12" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase"></td>
-    <td><button class="btn-del" onclick="delRow(this)">🗑</button></td>`;
+    <td class="left"><input></td><td><input maxlength="4"></td>
+    <td><button class="btn-del" onclick="delRow(this)">🗑</button><span class="s6-ts-info"></span></td>`;
   tb.appendChild(tr);
 }
+
+/* ─── S5 GUARD — CONTROLE DE EXPIRAÇÃO ──────────────────────────────
+ *  Cada linha de S5 recebe data-s6ts (ISO) na primeira edição.
+ *  s6ExpirarAntigas remove silenciosamente linhas lançadas antes das
+ *  06:00 do dia corrente. s6IniciarGuarda conecta os listeners e o timer.
+ * ─────────────────────────────────────────────────────────────────── */
+function s6RegistrarTs(tr){
+  if(tr.dataset.s6ts) return;
+  const now=new Date();
+  tr.dataset.s6ts=now.toISOString();
+  const lbl=tr.querySelector('.s6-ts-info');
+  if(lbl) lbl.textContent=now.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+  tr.title='Lançado em: '+now.toLocaleString('pt-BR');
+}
+function s6ExpirarAntigas(){
+  const tb6=document.getElementById('tb_s6'); if(!tb6) return;
+  const now=new Date();
+  const corte=new Date(now.getFullYear(),now.getMonth(),now.getDate(),6,0,0,0);
+  if(now<corte) return; // antes das 06h: nenhuma expiração
+  [...tb6.querySelectorAll('tr')].forEach(tr=>{
+    const ts=tr.dataset.s6ts; if(!ts) return;
+    if(new Date(ts)<corte) tr.remove();
+  });
+  // Garante ao menos uma linha vazia após limpeza
+  if(!tb6.querySelector('tr')){
+    const selOpts=[1,2,3,4,5].map(n=>`<option>${n}</option>`).join('');
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td><input></td><td><input></td>'
+      +'<td><select>'+selOpts+'</select></td>'
+      +'<td class="left"><textarea maxlength="100"></textarea></td>'
+      +'<td class="left"><input></td><td><input maxlength="4"></td>'
+      +'<td><button class="btn-del" onclick="delRow(this)">🗑</button><span class="s6-ts-info"></span></td>';
+    tb6.appendChild(tr);
+  }
+}
+function s6IniciarGuarda(){
+  const tb6=document.getElementById('tb_s6'); if(!tb6) return;
+  // Delegação: registra o timestamp na primeira interação com cada linha
+  tb6.addEventListener('input',e=>{
+    const tr=e.target.closest('tr'); if(tr) s6RegistrarTs(tr);
+  },{capture:true});
+  tb6.addEventListener('change',e=>{
+    const tr=e.target.closest('tr'); if(tr) s6RegistrarTs(tr);
+  },{capture:true});
+  // Verifica a cada minuto + ao inicializar
+  setInterval(s6ExpirarAntigas,60000);
+  s6ExpirarAntigas();
+}
+
 /* ── S8 helpers ── */
 function s8StatusSel(sel=''){
   const opts=[
@@ -2019,10 +2083,7 @@ function s8Row(d={}){
     <td class="col-kks"><input value="${d.kks||''}"></td>
     <td class="col-desc left"><input value="${d.desc||''}"></td>
     <td class="col-ord"><input value="${d.ord||''}"></td>
-    <td class="col-resp"><select>
-      <option value="">—</option>
-      ${['Operadores G. Parnaíba GM','Coordenador G. Parnaíba GM','Gerente G. Parnaíba GM'].map(o=>'<option value="'+o+'" title="'+o+'"'+(d.resp===o?' selected':'')+'>'+o+'</option>').join('')}
-    </select></td>
+    <td class="col-resp"><textarea>${d.resp||''}</textarea></td>
     <td class="col-data"><input type="text" value="${d.ab||''}" placeholder="dd/mm/aaaa hh:mm" onblur="calcDias(this)"></td>
     <td class="col-data"><input type="text" value="${d.term||''}" placeholder="dd/mm/aaaa hh:mm"></td>
     <td class="col-dias"><input readonly value="${d.dias||''}" style="background:#f8fafc;text-align:center"></td>
