@@ -476,7 +476,9 @@ function extract(j){
     acum:P(G(j,'avons_acum',_POS_AVONS[5])),
   };
   let s2={};try{s2=JSON.parse(j['__s2__']||'{}');}catch(e){}
-  let s6=[];try{s6=JSON.parse(j['__s6__']||'[]');}catch(e){}
+  let _s6raw=[];try{_s6raw=JSON.parse(j['__s6__']||'[]');}catch(e){}
+  // Normaliza: formato antigo é [[...]], novo é [{vals,ts}]
+  const s6=_s6raw.map(item=>Array.isArray(item)?{vals:item,ts:''}:{vals:item.vals||[],ts:item.ts||''});
   let s8=[];try{s8=JSON.parse(j['__s8__']||'[]');}catch(e){}
   const s7prod=S7PROD.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
   const s7cons=S7CONS.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
@@ -679,21 +681,23 @@ function render(d){
     </div>`;
   }).join('');
 
-  const s6Fil=d.s6.filter(r=>r[3]&&r[3].trim());
+  const s6Fil=d.s6.filter(r=>r.vals[3]&&r.vals[3].trim());
   if(s6Fil.length){
     document.getElementById('s6-wrap').innerHTML=`
       <table class="s6-table">
-        <thead><tr><th>Planta / Tag</th><th>Tipo</th><th>Descrição</th><th>Início</th><th>Término</th></tr></thead>
+        <thead><tr><th>Planta / Tag</th><th>Tipo</th><th>Descrição</th><th>Início</th><th>Término</th><th>Lançado</th></tr></thead>
         <tbody>${s6Fil.map(r=>{
-          const tp=parseInt(r[2])||0;
+          const tp=parseInt(r.vals[2])||0;
           const cls=tp===1?'op':tp===2?'mnt':tp===3?'pdp':'';
           const tpLbl=tp===1?'Operacional':tp===2?'Manutenção':tp===3?'PdP':'—';
+          const tsLbl=r.ts?new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
           return`<tr>
-            <td style="font-family:monospace;font-size:11px">${r[0]||r[1]||'—'}</td>
+            <td style="font-family:monospace;font-size:11px">${r.vals[0]||r.vals[1]||'—'}</td>
             <td>${cls?`<span class="s6-badge ${cls}">${tpLbl}</span>`:'—'}</td>
-            <td>${r[3]||'—'}</td>
-            <td style="white-space:nowrap;font-size:11px">${r[4]||'—'}</td>
-            <td style="white-space:nowrap;font-size:11px">${r[5]||'—'}</td>
+            <td>${r.vals[3]||'—'}</td>
+            <td style="white-space:nowrap;font-size:11px">${r.vals[4]||'—'}</td>
+            <td style="white-space:nowrap;font-size:11px">${r.vals[5]||'—'}</td>
+            <td style="white-space:nowrap;font-size:11px;opacity:.7;font-family:monospace">${tsLbl}</td>
           </tr>`;
         }).join('')}</tbody>
       </table>`;

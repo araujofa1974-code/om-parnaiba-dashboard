@@ -376,7 +376,9 @@ function extract(j){
     acum:P(G(j,'avons_acum',_POS_AVONS[5]))
   };
   let s2={};try{s2=JSON.parse(j['__s2__']||'{}');}catch(e){console.warn('[Dashboard] Falha ao parsear __s2__:',e);}
-  let s6=[];try{s6=JSON.parse(j['__s6__']||'[]');}catch(e){console.warn('[Dashboard] Falha ao parsear __s6__:',e);}
+  let _s6raw=[];try{_s6raw=JSON.parse(j['__s6__']||'[]');}catch(e){console.warn('[Dashboard] Falha ao parsear __s6__:',e);}
+  // Normaliza: formato antigo é [[...]], novo é [{vals,ts}]
+  const s6=_s6raw.map(item=>Array.isArray(item)?{vals:item,ts:''}:{vals:item.vals||[],ts:item.ts||''});
   let s8=[];try{s8=JSON.parse(j['__s8__']||'[]');}catch(e){console.warn('[Dashboard] Falha ao parsear __s8__:',e);}
   if(!j['totalMwh'] && !j['real_piv']) console.warn('[Dashboard] Campos críticos ausentes no JSON — verifique se o formulário foi preenchido e publicado corretamente.');
   const s7prod=S7PROD.map(p=>({...p,val:N(G(j,p.id,_S7pk(p.id)))}));
@@ -425,7 +427,7 @@ function buildVisao(d){
   const agua=d.s8.filter(r=>r[1]==='Aguardando revalidação').length;
   const apr=d.s8.filter(r=>r[1]==='Aprovar revalidação').length;
 
-  const urg5=d.s6.filter(r=>parseInt(r[2])===5&&(r[0]||r[1]||r[3]||r[4]));
+  const urg5=d.s6.filter(r=>parseInt(r.vals[2])===5&&(r.vals[0]||r.vals[1]||r.vals[3]||r.vals[4]));
   const ugGroups=[
     {lbl:'Parnaíba I/V',    ugs:d.ugs.filter(u=>u.pl==='piv')},
     {lbl:'Parnaíba II',     ugs:d.ugs.filter(u=>u.pl==='pii')},
@@ -476,13 +478,14 @@ function buildVisao(d){
         <span class="badge ${urg5.length?'b-red':'b-green'}">${urg5.length?urg5.length+(urg5.length>1?' itens':' item'):'Nenhuma'}</span>
       </div>
       ${urg5.length
-        ?`<div class="deact-scroll"><table class="deact-table" style="min-width:340px"><thead><tr>
-            <th>Nota</th><th>Ordem</th><th>Descrição</th><th>Local de Instalação</th>
+        ?`<div class="deact-scroll"><table class="deact-table" style="min-width:400px"><thead><tr>
+            <th>Nota</th><th>Ordem</th><th>Descrição</th><th>Local de Instalação</th><th>Lançado</th>
           </tr></thead><tbody>${urg5.map(r=>`<tr>
-            <td style="font-family:monospace;font-size:11px;font-weight:700;white-space:nowrap;color:var(--accent-red)">${r[0]||'—'}</td>
-            <td style="font-family:monospace;font-size:11px;white-space:nowrap">${r[1]||'—'}</td>
-            <td style="font-size:12px">${r[3]||'—'}</td>
-            <td style="font-size:11px;color:var(--text-secondary)">${r[4]||'—'}</td>
+            <td style="font-family:monospace;font-size:11px;font-weight:700;white-space:nowrap;color:var(--accent-red)">${r.vals[0]||'—'}</td>
+            <td style="font-family:monospace;font-size:11px;white-space:nowrap">${r.vals[1]||'—'}</td>
+            <td style="font-size:12px">${r.vals[3]||'—'}</td>
+            <td style="font-size:11px;color:var(--text-secondary)">${r.vals[4]||'—'}</td>
+            <td style="font-size:10px;color:var(--text-light);font-family:monospace;white-space:nowrap">${r.ts?new Date(r.ts).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—'}</td>
           </tr>`).join('')}</tbody></table></div>`
         :`<div style="padding:11px 13px;font-size:13px;color:var(--text-light);font-style:italic">Sem prioridades urgentes registradas — D-1</div>`}
     </div>
