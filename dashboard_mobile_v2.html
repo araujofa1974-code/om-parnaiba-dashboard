@@ -339,6 +339,7 @@ const fmtDateFull=v=>{
   return v;
 };
 const pCls=p=>p>=95?'good':p>=80?'warn':'bad';
+const pClsGN=p=>p>=95&&p<=105?'good':p>=85&&p<=115?'warn':'bad';
 
 /* ── STATE ── */
 let D=null, chartDone=false;
@@ -422,7 +423,8 @@ function buildVisao(d){
   const pctColor=pctCls==='good'?'var(--accent-green)':pctCls==='warn'?'var(--accent)':'var(--accent-red)';
   const gnPct=d.progGN>0?d.consumoGN/d.progGN*100:null;
   const gnPctTxt=gnPct!=null?fmtN(gnPct,1)+'%':'';
-  const gnColor=gnPct!=null?(pCls(gnPct)==='good'?'var(--accent-green)':pCls(gnPct)==='warn'?'var(--accent)':'var(--accent-red)'):'';
+  const gnCls=gnPct!=null?pClsGN(gnPct):'';
+  const gnColor=gnCls==='good'?'var(--accent-green)':gnCls==='warn'?'var(--accent)':'var(--accent-red)';
   const pend=d.s8.filter(r=>r[1]==='Aguardando revalidação'||r[1]==='Aprovar revalidação').length;
   const agua=d.s8.filter(r=>r[1]==='Aguardando revalidação').length;
   const apr=d.s8.filter(r=>r[1]==='Aprovar revalidação').length;
@@ -453,7 +455,7 @@ function buildVisao(d){
       <div class="kpi-card c-teal">
         <span class="kpi-ico">🔥</span>
         <div class="kpi-lbl">Gás Natural</div>
-        <div class="kpi-val">${d.consumoGN?fmtN(d.consumoGN,0):'—'}<span class="kpi-unit">Nm³/d</span>${gnPct!=null?`<span style="font-size:16px;font-weight:800;color:${gnColor};margin-left:8px">${pCls(gnPct)==='good'?'▲':'▼'} ${gnPctTxt}</span>`:''}</div>
+        <div class="kpi-val">${d.consumoGN?fmtN(d.consumoGN,0):'—'}<span class="kpi-unit">Nm³/d</span>${gnPct!=null?`<span style="font-size:16px;font-weight:800;color:${gnColor};margin-left:8px">${gnPct>100?'▲':'▼'} ${gnPctTxt}</span>`:''}</div>
         <div class="kpi-sub">Prog: ${d.progGN?fmtN(d.progGN,0)+' Nm³/d':'—'}</div>
       </div>
       <div class="kpi-card c-green">
