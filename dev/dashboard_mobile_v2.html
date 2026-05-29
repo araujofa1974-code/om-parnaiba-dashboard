@@ -767,12 +767,14 @@ function getJsonUrl() {
   return `${GITHUB_BASE}/Dados_${dd}${mm}${aaaa}.json`;
 }
 
-function carregarDoDrive(){
+function carregarDoDrive(tentativa){
+  tentativa = tentativa || 1;
+  const MAX_TENTATIVAS = 3, INTERVALO_S = 60;
   const msg      = document.getElementById('load-msg');
   const spinner  = document.getElementById('load-spinner');
   const errEl    = document.getElementById('load-err');
   const btnRetry = document.getElementById('btn-retry');
-  if(msg){ msg.style.display='block'; msg.textContent='Buscando dados...'; }
+  if(msg){ msg.style.display='block'; msg.textContent= tentativa > 1 ? `Tentativa ${tentativa}/${MAX_TENTATIVAS}…` : 'Buscando dados…'; }
   if(spinner) spinner.style.display='block';
   if(errEl)   errEl.style.display='none';
   if(btnRetry) btnRetry.style.display='none';
@@ -784,10 +786,22 @@ function carregarDoDrive(){
     })
     .then(json => { render(extract(json)); })
     .catch(() => {
-      if(spinner) spinner.style.display='none';
-      if(msg)     msg.style.display='none';
-      if(errEl)   errEl.style.display='block';
-      if(btnRetry) btnRetry.style.display='block';
+      if(tentativa < MAX_TENTATIVAS){
+        let secs = INTERVALO_S;
+        if(spinner) spinner.style.display='block';
+        if(errEl)   errEl.style.display='none';
+        if(btnRetry) btnRetry.style.display='none';
+        const tick = setInterval(() => {
+          secs--;
+          if(msg){ msg.style.display='block'; msg.textContent=`Dados não disponíveis. Nova tentativa em ${secs}s…`; }
+          if(secs <= 0){ clearInterval(tick); carregarDoDrive(tentativa + 1); }
+        }, 1000);
+      } else {
+        if(spinner) spinner.style.display='none';
+        if(msg)     msg.style.display='none';
+        if(errEl)   errEl.style.display='block';
+        if(btnRetry) btnRetry.style.display='block';
+      }
     });
 }
 
