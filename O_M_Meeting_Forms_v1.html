@@ -2423,6 +2423,16 @@ function publicarNoDrive() {
     return;
   }
 
+  const diaObsVal = (document.getElementById('diaObs')?.value || '').trim();
+  if (diaObsVal) {
+    const d1 = new Date(); d1.setDate(d1.getDate() - 1);
+    const esperado = `${String(d1.getDate()).padStart(2,'0')}/${String(d1.getMonth()+1).padStart(2,'0')}/${d1.getFullYear()}`;
+    if (diaObsVal !== esperado) {
+      const ok = confirm(`⚠️ O campo "Dia de Observação" está como ${diaObsVal}, mas D-1 de hoje é ${esperado}.\n\nPublicar mesmo assim?`);
+      if (!ok) return;
+    }
+  }
+
   const estado = _coletarEstado();
   const d = new Date();
   estado['__versao__'] = document.getElementById('ver-chip')?.textContent || 'v1';
