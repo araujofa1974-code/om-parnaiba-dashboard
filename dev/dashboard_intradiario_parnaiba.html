@@ -1872,7 +1872,7 @@ function updateStatusBar(events) {
     <span>·</span>
     <span>${partidas} partida(s) · ${desls} desligamento(s) programado(s)</span>
     <span>·</span>
-    <span>Fonte: ${G.sourceRaw===SITOP_RAW_DATA?'SITOP demo':'PIM Way2'} · ${(G.sourceRaw||SITOP_RAW_DATA).date||''} · Resolução ${G.resolution} min</span>
+    <span>Fonte: ${G.sourceRaw===SITOP_RAW_DATA?'Demo':'PIM Way2'} · ${document.getElementById('sel-date').value} · Resolução ${G.resolution} min</span>
     <span>·</span>
     <span>Atualizado: ${new Date().toLocaleTimeString('pt-BR',{hour12:false})}</span>
   `;
