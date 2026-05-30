@@ -500,7 +500,6 @@
     <label>Data</label>
     <input type="date" id="sel-date">
     <button class="btn btn-primary btn-sm" id="btn-carregar-pim" onclick="fetchFromPIM()">Carregar PIM</button>
-    <button class="btn btn-ghost btn-sm" onclick="loadDemoData()">Demo SITOP</button>
   </div>
   <div class="ctrl-group">
     <label>Planta</label>
@@ -523,7 +522,7 @@
 
 <main>
   <div class="demo-banner" id="demo-banner" style="display:none">
-    ℹ Dados SITOP · 25/05/2026 — FL.PRN.OPR.069. Conecte ao endpoint Way2 para dados em tempo real.
+    ℹ Dados de demonstração — sem conexão com o PIM Way2.
   </div>
 
   <!-- KPIs -->
@@ -1929,8 +1928,9 @@ async function fetchFromPIM() {
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Sempre inicia com a data de hoje
-  document.getElementById('sel-date').value = new Date().toISOString().slice(0, 10);
+  // Inicia com D-1 (ontem)
+  const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  document.getElementById('sel-date').value = ontem;
 
   if (GAS_PROXY_URL) {
     fetchFromPIM();
@@ -1938,9 +1938,8 @@ window.addEventListener('DOMContentLoaded', ()=>{
     loadDemoData();
   }
 
-  // Auto-refresh a cada 30 min; avança data se virou meia-noite
+  // Auto-refresh a cada 30 min — mantém a data selecionada
   setInterval(() => {
-    document.getElementById('sel-date').value = new Date().toISOString().slice(0, 10);
     if (GAS_PROXY_URL) fetchFromPIM();
   }, 1800000);
 });
