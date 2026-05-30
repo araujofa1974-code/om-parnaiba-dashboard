@@ -726,7 +726,7 @@ setInterval(()=>{
 
 
 // ── CARREGA E AGREGA DADOS ────────────────────────────────────────────────
-// Lê de G.sourceRaw (API ou SITOP demo). PDP sempre do SITOP_RAW_DATA.
+// Lê de G.sourceRaw (API ou SITOP demo). PDP vem do proxy (json.pdp) ou do SITOP_RAW_DATA.
 function loadSitopData(resMin) {
   const base = G.sourceRaw || SITOP_RAW_DATA;
   const n30  = base.labels.length;  // 48 slots de 30 min
@@ -1907,12 +1907,13 @@ async function fetchFromPIM() {
     const json = await resp.json();
     if (json.error) throw new Error(json.error);
 
-    // Monta estrutura compatível com SITOP_RAW_DATA (sem pdp/pdpTotal — usa embedded)
     G.sourceRaw = {
-      date:   json.date,
-      labels: json.labels,
-      data:   json.data,
-      pdp:    SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdp     : {},
+      date:     json.date,
+      labels:   json.labels,
+      data:     json.data,
+      pdp:      (json.pdp && Object.keys(json.pdp).length)
+                  ? json.pdp
+                  : (SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdp : {}),
       pdpTotal: SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdpTotal : [],
     };
 
