@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complexo Parnaíba · Análise Intradiária</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0b0f1a;
+    --surface:   #111827;
+    --surface2:  #1a2235;
+    --border:    #1e2d45;
+    --accent:    #1d9e75;
+    --accent2:   #f0c040;
+    --danger:    #e05555;
+    --muted:     #4a6080;
+    --text:      #cdd9ea;
+    --text2:     #7a95b8;
+    --white:     #ffffff;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    /* unidade cores */
+    --c31: #3b9eff; --c32: #7ecfff;
+    --c21: #1d9e75; --c22: #5dd6a8;
+    --c51: #f0a040; --c52: #f0c040;
+    --c12: #c77dff;
+    --ctv: #ff6b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    min-height: 100vh;
+  }
+
+  /* ── TOP BAR ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: .04em;
+    color: var(--white);
+  }
+  .logo span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  #clock {
+    font-size: 12px; color: var(--accent); letter-spacing: .08em;
+  }
+  #data-source-badge {
+    font-size: 10px; padding: 3px 8px;
+    background: rgba(29,158,117,.15);
+    color: var(--accent);
+    border: 1px solid rgba(29,158,117,.4);
+    border-radius: 4px;
+    letter-spacing: .06em;
+  }
+
+  /* ── CONTROLES ── */
+  .controls {
+    padding: 12px 16px;
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .ctrl-group { display: flex; align-items: center; gap: 6px; }
+  .ctrl-group label { font-size: 11px; color: var(--text2); letter-spacing: .05em; text-transform: uppercase; }
+  input[type=date], select {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 5px 10px; border-radius: 4px;
+    font-family: var(--font-mono); font-size: 12px; cursor: pointer;
+  }
+  input[type=date]:focus, select:focus { outline: none; border-color: var(--accent); }
+  .btn {
+    padding: 6px 14px; border-radius: 4px; border: none; cursor: pointer;
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: .04em;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .8; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+
+  /* ── MAIN ── */
+  main { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    position: relative; overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--kpi-color, var(--accent));
+  }
+  .kpi-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+  .kpi-value { font-family: var(--font-head); font-size: 22px; font-weight: 700; color: var(--white); line-height: 1; }
+  .kpi-sub { font-size: 10px; color: var(--text2); margin-top: 3px; }
+  .kpi-delta { font-size: 11px; font-weight: 500; }
+  .kpi-delta.up   { color: var(--accent); }
+  .kpi-delta.down { color: var(--danger); }
+
+  /* ── CHART CARD ── */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .chart-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+  }
+  .chart-title {
+    font-family: var(--font-head); font-weight: 700; font-size: 13px;
+    color: var(--white); letter-spacing: .03em;
+  }
+  .chart-subtitle { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .legend-inline { display: flex; flex-wrap: wrap; gap: 10px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); cursor: pointer; }
+  .leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ── TRIPS TABLE ── */
+  .trips-section { }
+  .section-title {
+    font-family: var(--font-head); font-weight: 700; font-size: 13px;
+    color: var(--white); letter-spacing: .03em; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .badge-count {
+    background: var(--danger); color: #fff;
+    font-size: 10px; padding: 1px 7px; border-radius: 10px;
+    font-family: var(--font-mono); font-weight: 500;
+  }
+  .badge-ok {
+    background: rgba(29,158,117,.2); color: var(--accent);
+    font-size: 10px; padding: 1px 7px; border-radius: 10px;
+    font-family: var(--font-mono);
+  }
+  .ev-list { display: flex; flex-direction: column; }
+  .ev-entry {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 11px 14px; border-bottom: 1px solid rgba(30,45,69,.6);
+    cursor: default;
+  }
+  .ev-entry:last-child { border-bottom: none; }
+  .ev-entry:hover { background: var(--surface2); }
+  .ev-hora {
+    font-size: 12px; font-weight: 500; color: var(--text2);
+    letter-spacing: .06em; min-width: 46px; padding-top: 2px; flex-shrink: 0;
+  }
+  .ev-icon { font-size: 13px; flex-shrink: 0; padding-top: 2px; }
+  .ev-body { flex: 1; min-width: 0; }
+  .ev-title { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .ev-title.is-trip  { color: var(--danger); font-weight: 600; }
+  .ev-title.is-red   { color: var(--accent2); }
+  .ev-title.is-elev  { color: var(--accent); }
+  .ev-title.is-desl  { color: var(--text2); }
+  .ev-detail { font-size: 11px; color: var(--text2); margin-top: 3px; letter-spacing: .02em; }
+  .tag-unit { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; font-weight: 500; }
+  .severity-trip   { background: rgba(224,85,85,.2);    color: var(--danger); border: 1px solid rgba(224,85,85,.4); }
+  .severity-queda  { background: rgba(240,192,64,.15);  color: var(--accent2); border: 1px solid rgba(240,192,64,.4); }
+  .severity-abaixo { background: rgba(255,140,0,.15);   color: #ff8c00;        border: 1px solid rgba(255,140,0,.4); }
+  .severity-ok     { background: rgba(29,158,117,.15);  color: var(--accent);  border: 1px solid rgba(29,158,117,.4); }
+  .severity-desl   { background: rgba(74,96,128,.2);    color: var(--text2);   border: 1px solid rgba(74,96,128,.4); }
+  .delta-down { color: var(--danger); }
+  .delta-up   { color: var(--accent); }
+
+  /* ── MINI SPARKLINES ── */
+  .sparks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .spark-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .spark-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .spark-name { font-size: 11px; font-weight: 500; color: var(--white); }
+  .spark-now { font-family: var(--font-head); font-size: 18px; font-weight: 700; }
+  .spark-unit { font-size: 10px; color: var(--text2); }
+  canvas.spark { width: 100%; height: 75px; }
+  canvas.spark-lg { width: 100%; height: 80px; }
+  #sparks-grid { display: flex; flex-direction: column; gap: 14px; }
+  .sparks-sub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+  }
+  .spark-plant-card { border-left: 3px solid var(--plant-color, var(--accent)); }
+  .spark-plant-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 6px 0 8px; opacity: .5;
+  }
+  #spark-tooltip {
+    position: fixed; pointer-events: none; z-index: 9999;
+    opacity: 0; transition: opacity .15s;
+    background: #1a2235; border: 1px solid #1e2d45; border-radius: 6px;
+    padding: 7px 10px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: #cdd9ea; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  }
+  .stt-hora { color: #7a95b8; margin-bottom: 5px; font-size: 10px; }
+  .stt-row  { display: flex; justify-content: space-between; gap: 16px; color: #7a95b8; }
+  .stt-row span { color: #cdd9ea; font-weight: 600; }
+  .stt-dev  { margin-top: 5px; padding-top: 5px; border-top: 1px solid #1e2d45; font-weight: 600; }
+
+  /* ── STATUS LINE ── */
+  .status-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-size: 10px; color: var(--text2); letter-spacing: .04em;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .dot-green { background: var(--accent); }
+  .dot-red   { background: var(--danger); }
+  .dot-yellow{ background: var(--accent2); }
+
+  /* ── TOOLTIP CUSTOMIZADO ── */
+  .custom-tooltip {
+    background: var(--surface2) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 6px !important;
+    font-family: var(--font-mono) !important;
+    font-size: 11px !important;
+    color: var(--text) !important;
+    padding: 8px 12px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4) !important;
+  }
+
+  /* ── RESPONSIVO ── */
+  @media (max-width: 600px) {
+    .kpi-strip { grid-template-columns: repeat(2,1fr); }
+    .sparks-grid { grid-template-columns: repeat(2,1fr); }
+    .sparks-sub-grid { grid-template-columns: repeat(2,1fr); }
+    .controls { flex-direction: column; align-items: flex-start; }
+    .chart-header { flex-direction: column; }
+  }
+
+  /* ── ANIMAÇÕES ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .kpi, .chart-card, .spark-card {
+    animation: fadeUp .4s ease both;
+  }
+  .kpi:nth-child(1) { animation-delay: .05s; }
+  .kpi:nth-child(2) { animation-delay: .10s; }
+  .kpi:nth-child(3) { animation-delay: .15s; }
+  .kpi:nth-child(4) { animation-delay: .20s; }
+  .kpi:nth-child(5) { animation-delay: .25s; }
+  .kpi:nth-child(6) { animation-delay: .30s; }
+
+  /* ── MODO DEMO ── */
+  .demo-banner {
+    background: rgba(240,192,64,.1);
+    border: 1px solid rgba(240,192,64,.3);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 11px; color: var(--accent2);
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  /* ── PAINEL HEAT RATE ── */
+  .hr-section-title {
+    font-family: var(--font-head); font-weight: 700; font-size: 13px;
+    color: var(--white); letter-spacing: .03em;
+    margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+  }
+  .hr-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .hr-plant-group { display: flex; flex-direction: column; gap: 8px; }
+  .hr-cards-row {
+    display: grid;
+    gap: 10px;
+  }
+  .hr-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    position: relative; overflow: hidden;
+  }
+  .hr-card-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .hr-unit-name {
+    font-family: var(--font-head); font-weight: 700; font-size: 14px;
+  }
+  .hr-status-pill {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    font-weight: 500; letter-spacing: .05em;
+  }
+  .hr-pill-good   { background: rgba(29,158,117,.2);  color: #1d9e75; border:1px solid rgba(29,158,117,.4); }
+  .hr-pill-warn   { background: rgba(240,192,64,.15); color: #f0c040; border:1px solid rgba(240,192,64,.4); }
+  .hr-pill-bad    { background: rgba(224,85,85,.2);   color: #e05555; border:1px solid rgba(224,85,85,.4);  }
+  .hr-pill-off    { background: rgba(74,96,128,.15);  color: #4a6080; border:1px solid rgba(74,96,128,.3);  }
+  .hr-values {
+    display: flex; gap: 18px; margin-bottom: 10px; align-items: baseline;
+  }
+  .hr-real-val {
+    font-family: var(--font-head); font-size: 26px; font-weight: 800; line-height: 1;
+  }
+  .hr-real-unit { font-size: 10px; color: var(--text2); margin-left: 2px; }
+  .hr-proj-block { display: flex; flex-direction: column; }
+  .hr-proj-label { font-size: 9px; color: var(--text2); text-transform: uppercase; letter-spacing:.05em; }
+  .hr-proj-val   { font-size: 13px; color: var(--text2); font-weight: 500; }
+  .hr-desvio-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+  }
+  .hr-desvio-label { font-size: 10px; color: var(--text2); }
+  .hr-desvio-val   { font-size: 12px; font-weight: 600; }
+  .hr-desvio-pos { color: #e05555; }  /* HR maior = pior */
+  .hr-desvio-neg { color: #1d9e75; }  /* HR menor = melhor */
+  .hr-desvio-zero{ color: var(--text2); }
+  /* barra de desvio */
+  .hr-bar-wrap {
+    height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden;
+  }
+  .hr-bar-fill {
+    height: 100%; border-radius: 3px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .hr-footnote {
+    font-size: 9px; color: var(--muted); margin-top: 7px;
+    display: flex; justify-content: space-between;
+  }
+  /* faixa colorida lateral */
+  .hr-card::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background: var(--hr-accent, var(--accent));
+  }
+  @media (max-width:600px) {
+    .hr-real-val { font-size: 20px; }
+    .hr-cards-row, .fcfu-cards-row { grid-template-columns: 1fr !important; }
+  }
+
+
+  /* ── PAINEL FC / FU ── */
+  .fcfu-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .fcfu-plant-group { display: flex; flex-direction: column; gap: 8px; }
+  .fcfu-cards-row {
+    display: grid;
+    gap: 10px;
+  }
+  .fcfu-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    position: relative; overflow: hidden;
+  }
+  .fcfu-card::before {
+    content:''; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background: var(--fcfu-accent, #4a6080);
+  }
+  .fcfu-top {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .fcfu-name {
+    font-family: var(--font-head); font-weight: 700; font-size: 14px;
+  }
+  .fcfu-status {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    font-weight: 500; letter-spacing: .05em;
+  }
+  .fcfu-row {
+    display: flex; gap: 12px; margin-bottom: 10px;
+  }
+  .fcfu-block { flex: 1; }
+  .fcfu-block-label {
+    font-size: 9px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin-bottom: 2px;
+  }
+  .fcfu-block-val {
+    font-family: var(--font-head); font-size: 22px; font-weight: 800; line-height: 1;
+  }
+  .fcfu-block-sub { font-size: 10px; color: var(--text2); margin-top: 2px; }
+  /* barra bipartida: perda_despacho | perda_operação | gerado */
+  .fcfu-bar-wrap {
+    height: 8px; border-radius: 4px; overflow: hidden;
+    background: var(--surface2);
+    display: flex; margin-bottom: 6px;
+  }
+  .fcfu-bar-gen   { background: var(--fcfu-accent, #1d9e75); transition: width .6s; }
+  .fcfu-bar-op    { background: #f0c04088; transition: width .6s; }   /* perda operação */
+  .fcfu-bar-desp  { background: #3b9eff33; transition: width .6s; }   /* perda despacho */
+  .fcfu-legend {
+    display: flex; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .fcfu-leg-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 9px; color: var(--text2);
+  }
+  .fcfu-leg-dot {
+    width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0;
+  }
+  .fcfu-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 8px 0;
+  }
+  .fcfu-group-header {
+    font-family: var(--font-head); font-weight: 700; font-size: 11px;
+    color: var(--text2); text-transform: uppercase; letter-spacing: .08em;
+    padding: 6px 2px 8px; border-bottom: 1px solid var(--border);
+    margin-top: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .fcfu-group-header:first-child { margin-top: 0; }
+  .fcfu-detail-row {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--text2); margin-bottom: 2px;
+  }
+  .fcfu-detail-val { color: var(--text); font-weight: 500; }
+
+
+  /* ── CARD ATENDIMENTO DESPACHO ── */
+  .ad-gauge-wrap {
+    position: relative; height: 6px;
+    background: var(--surface2); border-radius: 3px;
+    overflow: hidden; margin: 8px 0 4px;
+  }
+  .ad-gauge-fill {
+    position: absolute; left: 0; top: 0; height: 100%;
+    border-radius: 3px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  /* linha de programado (referência 100%) */
+  .ad-gauge-ref {
+    position: absolute; right: 0; top: -2px;
+    width: 2px; height: 10px;
+    background: var(--text2); border-radius: 1px;
+    opacity: .5;
+  }
+  .ad-sparkrow {
+    display: flex; gap: 2px; margin-top: 6px; align-items: flex-end; height: 32px;
+  }
+  .ad-spark-bar {
+    flex: 1; border-radius: 2px 2px 0 0;
+    min-width: 3px;
+    transition: height .3s;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">COMPLEXO <span>PARNAÍBA</span> · OPERAÇÃO INTRADIÁRIA</div>
+  <div class="header-right">
+    <span id="data-source-badge">PIM WAY2 · 30 MIN</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group">
+    <label>Data</label>
+    <input type="date" id="sel-date">
+    <button class="btn btn-primary btn-sm" id="btn-carregar-pim" onclick="fetchFromPIM()">Carregar PIM</button>
+    <button class="btn btn-ghost btn-sm" onclick="loadDemoData()">Demo SITOP</button>
+  </div>
+  <div class="ctrl-group">
+    <label>Planta</label>
+    <select id="sel-planta" onchange="renderAll()">
+      <option value="all">Todas</option>
+      <option value="P1V">Parnaíba I-V</option>
+      <option value="P2">Parnaíba II</option>
+      <option value="P3VI">Parnaíba III-VI</option>
+      <option value="P4">Parnaíba IV</option>
+    </select>
+  </div>
+  <select id="sel-res" style="display:none">
+    <option value="30" selected>30 min</option>
+  </select>
+  <select id="sel-trip-sens" style="display:none">
+    <option value="50" selected>Média (&gt;50 MW)</option>
+  </select>
+  <button class="btn btn-ghost btn-sm" onclick="loadDemoData()">SITOP · 25/05/2026</button>
+</div>
+
+<main>
+  <div class="demo-banner" id="demo-banner" style="display:none">
+    ℹ Dados SITOP · 25/05/2026 — FL.PRN.OPR.069. Conecte ao endpoint Way2 para dados em tempo real.
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-strip" id="kpi-strip">
+    <div class="kpi" style="--kpi-color:var(--accent)">
+      <div class="kpi-label">Total Bruto</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">MWh acumulado no dia</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--c31)">
+      <div class="kpi-label">Pico do dia</div>
+      <div class="kpi-value" id="kpi-pico">—</div>
+      <div class="kpi-sub" id="kpi-pico-hora">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent2)">
+      <div class="kpi-label">Mínimo do dia</div>
+      <div class="kpi-value" id="kpi-min">—</div>
+      <div class="kpi-sub" id="kpi-min-hora">—</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--danger)">
+      <div class="kpi-label">Eventos detectados</div>
+      <div class="kpi-value" id="kpi-trips">—</div>
+      <div class="kpi-sub" id="kpi-trips-sub">trips / quedas</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--c51);display:none">
+      <div class="kpi-label">FC Complexo</div>
+      <div class="kpi-value" id="kpi-fc">—</div>
+      <div class="kpi-sub" id="kpi-fc-sub">vs. capacidade nominal</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--accent)">
+      <div class="kpi-label">Atend. Despacho</div>
+      <div class="kpi-value" id="kpi-ad">—</div>
+      <div class="kpi-sub" id="kpi-ad-sub">complexo · média ponderada</div>
+    </div>
+    <div class="kpi" style="--kpi-color:var(--c12)">
+      <div class="kpi-label">Agora</div>
+      <div class="kpi-value" id="kpi-agora">—</div>
+      <div class="kpi-sub">MW último intervalo</div>
+    </div>
+  </div>
+
+  <!-- Gráfico empilhado: total complexo -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Geração total do Complexo · MW empilhado</div>
+        <div class="chart-subtitle">Parnaíba I-V · II · III-VI · IV — composição horária</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="leg-item"><div class="leg-dot" style="background:#3b9eff"></div>PRN I-V</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#f0a040"></div>PRN II</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#c77dff"></div>PRN III-VI</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#b5ead7"></div>PRN IV</div>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:200px">
+      <canvas id="stack-chart" aria-label="Geração total empilhada por planta">Gráfico de área empilhada mostrando contribuição de cada planta</canvas>
+    </div>
+  </div>
+
+  <!-- Gráfico principal: potência hora a hora -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">Potência gerada por unidade · MW</div>
+        <div class="chart-subtitle" id="main-chart-sub">Resolução: 1 hora · 25/05/2026</div>
+      </div>
+      <div class="legend-inline" id="main-legend"></div>
+    </div>
+    <div class="chart-wrap" style="height:260px">
+      <canvas id="main-chart" aria-label="Gráfico de potência por unidade ao longo do dia">Gráfico de geração horária de TG31, TG32, TG21, TG22, TG51, TG52, TG12 e TV28</canvas>
+    </div>
+  </div>
+
+  <!-- Sparklines por unidade -->
+  <div class="section-title">Perfil individual · MW ao longo do dia</div>
+  <div class="sparks-grid" id="sparks-grid"></div>
+
+
+
+  <!-- ── PAINEL ATENDIMENTO AO DESPACHO ──────────────────────────────────── -->
+  <div class="chart-card">
+    <div class="hr-section-title" style="flex-wrap:wrap;gap:6px">
+      Atendimento ao Despacho por Unidade
+      <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);font-weight:400">
+        PDP · programado vs. realizado · dia atual
+      </span>
+      <span style="font-size:10px;color:var(--text2);font-family:var(--font-mono);margin-left:auto">
+        Desvio = 1 − (gerado ÷ programado) &nbsp;|&nbsp; 0% = atendimento perfeito
+      </span>
+    </div>
+    <div class="fcfu-grid" id="fcfu-grid"></div>
+  </div>
+
+  <!-- ── PAINEL HEAT RATE ──────────────────────────────────────────────── -->
+  <div class="chart-card">
+    <div class="hr-section-title">
+      Heat Rate por unidade
+      <span style="font-size:11px;color:var(--text2);font-family:var(--font-mono);font-weight:400">
+        real vs. projeto · kJ/kWh
+      </span>
+      <span style="font-size:10px;color:var(--text2);font-family:var(--font-mono);margin-left:auto">
+        ↑ HR maior = menos eficiente &nbsp;|&nbsp; ↓ HR menor = mais eficiente
+      </span>
+    </div>
+    <div class="hr-grid" id="hr-grid"></div>
+  </div>
+
+  <!-- Tabela de eventos detectados -->
+  <div class="chart-card trips-section">
+    <div class="section-title">
+      Eventos detectados automaticamente
+      <span class="badge-count" id="badge-trips">0</span>
+    </div>
+    <div class="ev-list" id="trips-tbody">
+      <div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">Carregue dados para detectar eventos</div>
+    </div>
+  </div>
+</main>
+
+<div class="status-bar" id="status-bar">
+  <span><span class="status-dot dot-yellow"></span>AGUARDANDO DADOS</span>
+</div>
+
+<script>
+// ── CONFIGURAÇÃO DE UNIDADES ───────────────────────────────────────────────
+// ── DADOS SITOP · 25/05/2026 (FL.PRN.OPR.069) ────────────────────────────
+const SITOP_RAW_DATA = {
+  date: "2026-05-25",
+  labels: ["00:30","01:00","01:30","02:00","02:30","03:00","03:30","04:00","04:30","05:00","05:30","06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","00:00"],
+  data: {
+    TG31:   [167.3,167.2,167.4,166.8,166.4,166.8,167.0,166.3,166.5,166.4,166.3,166.9,166.8,166.4,115.2,107.8,106.6,107.7,108.7,108.2,108.0,108.1,108.0,107.1,107.2,107.1,147.9,158.3,158.4,159.1,157.8,158.2,158.0,158.9,159.6,160.3,161.0,162.0,163.1,164.1,165.1,164.9,165.7,166.6,166.9,167.5,167.6,168.2],
+    TG32:   [165.1,165.0,165.1,165.0,165.0,164.9,164.7,164.0,163.8,163.6,163.7,164.5,164.6,164.2,115.2,108.1,107.0,108.0,109.1,108.5,108.3,108.5,108.5,107.5,107.7,107.7,146.7,156.1,156.1,156.5,156.3,155.9,155.7,156.6,157.3,158.0,158.7,160.1,161.2,162.1,163.1,162.7,163.2,164.1,164.7,165.4,165.3,165.8],
+    TG21:   [167.5,167.8,167.9,168.0,167.4,167.2,167.6,167.0,167.6,167.5,167.3,167.5,167.8,167.1,114.4,107.4,106.3,107.3,108.3,107.8,107.6,107.7,107.6,106.8,106.8,106.8,148.1,158.7,160.0,158.9,158.6,158.6,158.4,159.5,160.2,160.8,161.3,19.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+    TG22:   [167.3,167.2,167.2,166.4,165.7,166.3,166.8,166.4,167.0,166.8,166.8,167.3,167.3,166.5,114.4,107.2,106.1,107.1,108.1,107.5,107.4,107.4,107.4,106.5,106.6,106.6,148.0,158.5,159.0,158.9,158.4,158.4,158.2,159.3,159.8,160.2,160.7,161.3,162.0,163.0,163.4,163.8,166.2,167.2,167.4,167.9,168.2,168.7],
+    TV28:   [364.7,364.7,364.7,364.4,364.0,364.0,364.1,363.7,363.7,363.6,363.5,363.9,363.9,364.0,307.1,290.8,291.1,292.2,293.7,293.1,293.5,292.3,292.1,291.1,291.6,292.7,331.2,355.3,356.3,356.8,356.7,356.8,357.0,357.5,358.3,358.9,359.6,286.9,263.8,264.1,265.1,265.4,266.4,267.6,268.5,269.0,269.1,269.2],
+    TG51:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+    TG52:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,12.1,100.5,100.0,101.3,100.0,98.9,99.9,100.9,100.3,100.1,100.2,100.2,99.3,99.4,99.4,99.0,102.4,102.5,106.1,164.8,165.4,165.2,166.1,166.8,167.7,168.9,170.5,171.6,172.7,173.5,173.4,173.8,174.5,174.7,175.2,175.4,176.4],
+    TV58:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+    TV18:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+    TG12:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+    UG10:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
+    BAG011: [17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,1.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.8,17.1,17.8,18.2,18.2,18.2,18.2,18.2,18.1,18.1,18.1,12.5,12.0,12.0,12.0,12.0,12.0,12.0,12.0,12.0],
+    BAG021: [17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,1.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,8.8,17.6,17.4,17.5,17.5,17.5,17.5,17.5,17.5,17.5,12.4,12.0,12.0,12.0,12.0,12.0,12.0,12.0,12.0],
+    BAG031: [17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,1.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.7,17.1,16.9,17.1,17.1,17.1,17.1,17.1,17.1,17.2,17.2,12.5,12.2,12.2,12.2,12.2,12.2,12.2,12.2,12.2]
+  },
+  pdpTotal: [1453,1453,1453,1453,1177,1177,1177,1177,1177,1177,1177,1177,1192,832,739,705,705,981,981,981,991,1016,1036,1056,1066,1066,1066,1141,1141,1175,1261,1261,1261,1261,1261,1261,1261,1261,1261,1243,1209,1209,1209,1209,1209,1209,1209,1209],
+  pdp: {
+    TG31:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
+    TG32:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
+    TG21:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
+    TG22:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
+    TV28:   [365,365,365,365,365,365,365,365,365,365,365,365,365,365,290,290,290,290,290,290,290,290,290,290,290,290,290,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365],
+    TG51:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    TG52:   [0,0,0,0,0,0,0,0,0,0,0,0,15,15,15,15,15,15,15,15,25,50,70,90,100,100,100,100,100,100,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168],
+    TV58:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    TV18:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    TG12:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    UG10:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    BAG011: [17,17,17,17,17,17,17,17,17,17,17,17,17,17,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17,17,17,17,17,17,17,17,17,17,12,12,12,12,12,12,12,12],
+    BAG021: [17,17,17,17,17,17,17,17,17,17,17,17,17,17,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17,17,17,17,17,17,17,17,17,17,12,12,12,12,12,12,12,12],
+    BAG031: [17,17,17,17,17,17,17,17,17,17,17,17,17,17,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17,17,17,17,17,17,17,17,17,17,12,12,12,12,12,12,12,12]
+  }
+};
+
+const UNITS = [
+  // nominal  = potência do teste de performance (para HR, FC técnico)
+  // instalada = potência registrada ANEEL/ONS (para FU regulatório)
+  { id:'TG31', label:'TG31', planta:'P1V', color:'#3b9eff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG31_MW',   hr_proj:9206, hr_pim:'MHV_TG31_HR',   gas_proj:2093873/4, tipo:'TG' },
+  { id:'TG32', label:'TG32', planta:'P1V', color:'#7ecfff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG32_MW',   hr_proj:9180, hr_pim:'MHV_TG32_HR',   gas_proj:2093873/4, tipo:'TG' },
+  { id:'TG21', label:'TG21', planta:'P1V', color:'#1d9e75', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG21_MW',   hr_proj:9150, hr_pim:'MHV_TG21_HR',   gas_proj:1851273/4, tipo:'TG' },
+  { id:'TG22', label:'TG22', planta:'P1V', color:'#5dd6a8', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG22_MW',   hr_proj:9206, hr_pim:'MHV_TG22_HR',   gas_proj:1851273/4, tipo:'TG' },
+  { id:'TG51', label:'TG51', planta:'P2',  color:'#f0a040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG51_MW', hr_proj:9223, hr_pim:'MHIII_TG51_HR', gas_proj:1609961/2, tipo:'TG' },
+  { id:'TG52', label:'TG52', planta:'P2',  color:'#f0c040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG52_MW', hr_proj:9179, hr_pim:'MHIII_TG52_HR', gas_proj:1609961/2, tipo:'TG' },
+  { id:'TG12', label:'TG12', planta:'P3VI',color:'#c77dff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'NV2_TG12_MW',   hr_proj:9191, hr_pim:'NV2_TG12_HR',   gas_proj:0,         tipo:'TG' },
+  { id:'TV28', label:'TV28', planta:'P1V', color:'#ff6b6b', nominal:365.32, instalada:365.0, min_op:290,    max_op:365.32,  pim_tag:'PRN_TV28_MW',   hr_proj:6451, hr_pim:'PRN_TV28_HR',   gas_proj:0,         tipo:'TV' },
+  { id:'TV58', label:'TV58', planta:'P2',  color:'#ff9f7f', nominal:181.200,instalada:181.2, min_op:180,    max_op:181.200, pim_tag:'MHIII_TV58_MW', hr_proj:6500, hr_pim:'MHIII_TV58_HR', gas_proj:0,         tipo:'TV' },
+  { id:'TV18', label:'TV18', planta:'P3VI',color:'#ffb3c6', nominal:92.254, instalada:92.2,  min_op:70.701, max_op:92.254,  pim_tag:'NV2_TV18_MW',   hr_proj:9797, hr_pim:'NV2_TV18_HR',   gas_proj:0,         tipo:'TV' },
+  { id:'UG10', label:'UG10', planta:'P3VI',color:'#a8d8ea', nominal:9.341,  instalada:9.3,   min_op:9.299,  max_op:9.341,   pim_tag:'NV2_UG10_MW',   hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'UG' },
+  { id:'BAG011',label:'BAG011',planta:'P4',  color:'#b5ead7',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG011_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
+  { id:'BAG021',label:'BAG021',planta:'P4',  color:'#c7ceea',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG021_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
+  { id:'BAG031',label:'BAG031',planta:'P4',  color:'#ffdac1',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG031_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
+];
+
+const NOMINAL_TOTAL   = UNITS.reduce((a,u)=>a+u.nominal,   0);
+const INSTALADA_TOTAL = UNITS.reduce((a,u)=>a+u.instalada, 0);
+
+// URL do Web App GAS proxy (preencher após deploy)
+const GAS_PROXY_URL = '';
+
+// ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
+let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
+let mainChart=null, stackChart=null, sparkCharts={};
+
+// ── RELÓGIO ────────────────────────────────────────────────────────────────
+setInterval(()=>{
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('pt-BR',{hour12:false});
+},1000);
+
+
+// ── CARREGA E AGREGA DADOS ────────────────────────────────────────────────
+// Lê de G.sourceRaw (API ou SITOP demo). PDP sempre do SITOP_RAW_DATA.
+function loadSitopData(resMin) {
+  const base = G.sourceRaw || SITOP_RAW_DATA;
+  const n30  = base.labels.length;  // 48 slots de 30 min
+
+  let labels = [], data = {}, pdp = {};
+
+  if (resMin <= 30) {
+    // Upsample: cada slot de 30 min é subdividido em (30/resMin) sub-slots
+    // Os valores são mantidos constantes dentro de cada janela de 30 min
+    const repeat = 30 / resMin;
+    const slots  = n30 * repeat;
+    for (let i = 0; i < n30; i++) {
+      for (let j = 0; j < repeat; j++) {
+        // label = fim do sub-slot em minutos desde meia-noite
+        const minEnd = i * 30 + (j + 1) * resMin;
+        const h = Math.floor(minEnd / 60) % 24;
+        const m = minEnd % 60;
+        labels.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+      }
+    }
+    UNITS.forEach(u => {
+      const src  = base.data[u.id] || [];
+      const srcp = base.pdp[u.id]  || [];
+      data[u.id] = []; pdp[u.id] = [];
+      for (let i = 0; i < n30; i++) {
+        for (let j = 0; j < repeat; j++) {
+          data[u.id].push(src[i]  || 0);
+          pdp[u.id].push(srcp[i] || 0);
+        }
+      }
+    });
+  } else {
+    // Downsample: média de cada grupo de (resMin/30) slots base
+    const step = resMin / 30;
+    const slots = Math.floor(n30 / step);
+    for (let i = 0; i < slots; i++)
+      labels.push(base.labels[(i + 1) * step - 1]);
+    UNITS.forEach(u => {
+      const src  = base.data[u.id] || [];
+      const srcp = base.pdp[u.id]  || [];
+      data[u.id] = []; pdp[u.id] = [];
+      for (let i = 0; i < slots; i++) {
+        let sd = 0, sp = 0;
+        for (let j = i * step; j < (i + 1) * step; j++) { sd += (src[j] || 0); sp += (srcp[j] || 0); }
+        data[u.id].push(parseFloat((sd / step).toFixed(1)));
+        pdp[u.id].push(parseFloat((sp / step).toFixed(1)));
+      }
+    });
+  }
+
+  // PDP total do complexo (aba PDP Diário — soma de todas as plantas)
+  const pdpTotal = [];
+  const srcPdpTotal = (G.sourceRaw || SITOP_RAW_DATA).pdpTotal || [];
+  if (resMin <= 30) {
+    const repeat = 30 / resMin;
+    for (let i = 0; i < n30; i++)
+      for (let j = 0; j < repeat; j++) pdpTotal.push(srcPdpTotal[i] || 0);
+  } else {
+    const step = resMin / 30;
+    for (let i = 0; i < Math.floor(n30 / step); i++) {
+      let sum = 0;
+      for (let j = i * step; j < (i + 1) * step; j++) sum += (srcPdpTotal[j] || 0);
+      pdpTotal.push(parseFloat((sum / step).toFixed(1)));
+    }
+  }
+
+  // CTM: horas com MW > 5
+  const ctm = {};
+  UNITS.forEach(u => {
+    ctm[u.id] = data[u.id].filter(v => v > 5).length * resMin / 60;
+  });
+
+  // HR: determinístico a partir do MW real
+  const hr = {};
+  UNITS.forEach(u => {
+    if (!u.hr_proj) return;
+    hr[u.id] = data[u.id].map((mw, i) => {
+      if (mw < 5) return null;
+      const h = (i * resMin + resMin / 2) / 60;               // hora central do slot
+      const tAmb = 28 + 3 * Math.sin(Math.PI * (h - 6) / 12);
+      const penalT = (tAmb - 15) * 0.004 * u.hr_proj;
+      const fc = mw / u.nominal;
+      const penalCarga = fc < 0.85 ? (0.85 - fc) * 0.12 * u.hr_proj : 0;
+      return Math.round(u.hr_proj + penalT + penalCarga);
+    });
+  });
+
+  return { labels, data, hr, ctm, pdp, pdpTotal };
+}
+
+// ── DETECÇÃO DE EVENTOS ────────────────────────────────────────────────────
+function detectEvents(labels, data, pdp, sensitivity, resMin, visUnits) {
+  const lookahead = Math.max(1, Math.round(30 / resMin));
+  const events = [];
+  visUnits.forEach(u => {
+    const series    = data[u.id];
+    const pdpSeries = pdp[u.id] || [];
+    if (!series) return;
+    const minOp = u.min_op ?? 5;
+
+    for (let i = 1; i < series.length; i++) {
+      const prev  = series[i-1];
+      const curr  = series[i];
+      const delta = curr - prev;
+      let type = null;
+
+      if (prev >= 5 && curr < 5) {
+        // Parada total — TRIP ou DESLIGAMENTO conforme PDP
+        const pdpWindow  = pdpSeries.slice(i, i + lookahead + 1);
+        const pdpCaiLogo = pdpWindow.some(v => v <= 5);
+        type = pdpCaiLogo ? 'DESLIGAMENTO' : 'TRIP';
+
+      } else if (prev < minOp && curr >= minOp) {
+        // Partida: só dispara se a usina estava de fato parada (< 5 MW) antes desta rampa.
+        // Evita confundir carga reduzida (ex: 80→100 MW) com uma partida.
+        let wasZero = false;
+        for (let j = i - 1; j >= 0; j--) {
+          if (series[j] < 5)      { wasZero = true; break; }
+          if (series[j] >= minOp) { break; }            // era operacional — não é partida
+        }
+        if (wasZero) type = 'PARTIDA';
+
+      } else if (prev >= minOp && curr >= minOp) {
+        // PDP determina o evento: 30 min antes para elevação, 30 min depois para redução.
+        // Elevação: PDP[i-1] já estava acima da geração atual → "gap" indica alvo pendente
+        // Redução:  PDP[i]   já está abaixo da geração anterior → confirma comando
+        const pdpGap = delta > 0
+          ? (pdpSeries[i-1] ?? 0) - prev   // pdp[i-1] - gen[i-1]
+          : prev - (pdpSeries[i]   ?? 0);   // gen[i-1] - pdp[i]
+        const commanded = pdpGap >= 20 && Math.abs(delta) >= 20;
+        if (commanded || Math.abs(delta) >= sensitivity) {
+          type = delta < 0 ? 'REDUÇÃO' : 'ELEVAÇÃO';
+        }
+      }
+
+      if (!type) continue;
+
+      let dur = 1;
+      if (type === 'TRIP' || type === 'DESLIGAMENTO' || type === 'REDUÇÃO') {
+        while (i + dur < series.length && series[i + dur] < prev * 0.3) dur++;
+      }
+      events.push({
+        hora: i > 0 ? labels[i-1] : labels[i],
+        unit: u, type,
+        delta: parseFloat(delta.toFixed(1)),
+        before: prev, after: curr, dur,
+        resolved: i + dur < series.length && series[i + dur] > prev * 0.7,
+      });
+    }
+  });
+  return events.sort((a,b) => a.hora.localeCompare(b.hora));
+}
+
+// ── RENDER PRINCIPAL ───────────────────────────────────────────────────────
+function renderAll() {
+  const res = parseInt(document.getElementById('sel-res').value);
+  const filtroPlanta = document.getElementById('sel-planta').value;
+  const sensitivity = parseInt(document.getElementById('sel-trip-sens').value);
+
+  G.resolution = res;
+  const {labels, data, hr, ctm, pdp, pdpTotal} = loadSitopData(res);
+  G.labels = labels; G.data = data; G.hr = hr||{}; G.ctm = ctm||{}; G.pdp = pdp||{}; G.pdpTotal = pdpTotal||[];
+
+  const visUnits = filtroPlanta==='all'
+    ? UNITS
+    : UNITS.filter(u=>u.planta===filtroPlanta);
+
+  G.events = detectEvents(labels, data, pdp, sensitivity, res, visUnits);
+
+  renderKPIs(labels, data, visUnits);
+  renderMainChart(labels, data, visUnits);
+  renderStackChart(labels, data, pdp);
+  renderSparks(labels, data, pdp, visUnits);
+  renderDespacho(labels, data, pdp, visUnits);
+  renderHR(labels, data, hr, visUnits);
+  renderEventsTable(G.events);
+  updateStatusBar(G.events);
+}
+
+// ── KPIs ───────────────────────────────────────────────────────────────────
+function renderKPIs(labels, data, visUnits) {
+  // Total acumulado (soma todas as leituras × interval_h)
+  const ih = G.resolution/60;
+  let totalMWh=0, pico=0, picoH='', minV=9999, minH='', lastV=0;
+
+  labels.forEach((lbl,i)=>{
+    let soma=0;
+    visUnits.forEach(u=>{ soma+=(data[u.id][i]||0); });
+    totalMWh += soma*ih;
+    if(soma>pico){ pico=soma; picoH=lbl; }
+    if(soma>0 && soma<minV){ minV=soma; minH=lbl; }
+    if(i===labels.length-1) lastV=soma;
+  });
+  if(minV===9999) minV=0;
+
+  const fc = Math.round(100*pico/NOMINAL_TOTAL);
+  const trips    = G.events.filter(e=>e.type==='TRIP').length;
+  const reducoes = G.events.filter(e=>e.type==='REDUÇÃO').length;
+  const desls    = G.events.filter(e=>e.type==='DESLIGAMENTO').length;
+
+  document.getElementById('kpi-total').textContent = Math.round(totalMWh).toLocaleString('pt-BR');
+  document.getElementById('kpi-pico').textContent  = Math.round(pico)+' MW';
+  document.getElementById('kpi-pico-hora').textContent = picoH;
+  document.getElementById('kpi-min').textContent   = Math.round(minV)+' MW';
+  document.getElementById('kpi-min-hora').textContent  = minH;
+  document.getElementById('kpi-trips').textContent = trips + reducoes;
+  document.getElementById('kpi-trips-sub').textContent =
+    `${trips} trips · ${reducoes} reduções · ${desls} deslig.`;
+  // FC Complexo (oculto — mantido para cálculo interno)
+  const totalPotNominal = visUnits.reduce((s,u) => s + u.nominal, 0) * 24;
+  const fc_complexo     = totalPotNominal > 0 ? Math.round(100 * totalMWh / totalPotNominal) : 0;
+  document.getElementById('kpi-fc').textContent     = fc_complexo+'%';
+  document.getElementById('kpi-fc-sub').textContent = 'gerado ÷ Σnominal × 24h';
+  // KPI de Atendimento ao Despacho é calculado em renderDespacho()
+  document.getElementById('kpi-agora').textContent  = Math.round(lastV)+' MW';
+}
+
+// ── GRÁFICO PRINCIPAL ──────────────────────────────────────────────────────
+function renderMainChart(labels, data, visUnits) {
+  if(mainChart) mainChart.destroy();
+
+  const datasets = visUnits.map(u=>({
+    label: u.label,
+    data: data[u.id],
+    borderColor: u.color,
+    backgroundColor: u.color+'22',
+    borderWidth: 1.5,
+    tension: 0.3,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    fill: false,
+  }));
+
+  // Trips das unidades visíveis, agrupados por hora
+  const mainTripsByHora = {};
+  (G.events||[]).filter(e => e.type==='TRIP' && visUnits.some(u => u.id===e.unit.id))
+    .forEach(e => { (mainTripsByHora[e.hora] = mainTripsByHora[e.hora]||[]).push(e.unit.id); });
+  const mainTripData = Object.entries(mainTripsByHora).map(([hora,ids])=>({hora, label:ids.join(', ')}));
+
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  mainChart = new Chart(ctx,{
+    type:'line',
+    plugins: [makeTripPlugin(mainTripData)],
+    data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1a2235',
+          borderColor:'#1e2d45', borderWidth:1,
+          titleColor:'#cdd9ea', bodyColor:'#7a95b8',
+          titleFont:{family:'DM Mono',size:11},
+          bodyFont:{family:'DM Mono',size:11},
+          callbacks:{
+            title: items => `${items[0].label}`,
+            label: item => ` ${item.dataset.label}: ${item.raw} MW`,
+            afterBody: items=>{
+              const total = items.reduce((s,i)=>s+(i.raw||0),0);
+              return [``, ` TOTAL: ${Math.round(total)} MW`];
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:'#1e2d4544', drawBorder:false},
+          ticks:{color:'#4a6080', font:{family:'DM Mono',size:10},
+            maxTicksLimit:13, maxRotation:0}
+        },
+        y:{
+          grid:{color:'#1e2d4544', drawBorder:false},
+          ticks:{color:'#4a6080', font:{family:'DM Mono',size:10},
+            callback:v=>v+' MW'},
+          min:0
+        }
+      }
+    }
+  });
+
+  // Legenda manual
+  const leg = document.getElementById('main-legend');
+  leg.innerHTML = visUnits.map(u=>
+    `<div class="leg-item">
+      <div class="leg-dot" style="background:${u.color}"></div>${u.label}
+    </div>`
+  ).join('');
+
+  document.getElementById('main-chart-sub').textContent =
+    `Resolução: ${G.resolution} min · ${document.getElementById('sel-date').value}`;
+}
+
+// ── GRÁFICO EMPILHADO ──────────────────────────────────────────────────────
+function renderStackChart(labels, data, pdp) {
+  if(stackChart) stackChart.destroy();
+  const grupos = [
+    { key:'P1V',  label:'PRN I-V',   color:'#3b9eff', units:['TG31','TG32','TG21','TG22','TV28'] },
+    { key:'P2',   label:'PRN II',    color:'#f0a040', units:['TG51','TG52','TV58'] },
+    { key:'P3VI', label:'PRN III-VI',color:'#c77dff', units:['TG12','TV18','UG10'] },
+    { key:'P4',   label:'PRN IV',    color:'#b5ead7', units:['BAG011','BAG021','BAG031'] },
+  ];
+  const datasets = grupos.map(g=>({
+    label: g.label,
+    data: labels.map((_,i)=>g.units.reduce((s,u)=>s+(data[u][i]||0),0)),
+    backgroundColor: g.color+'aa',
+    borderColor: g.color,
+    borderWidth: 1,
+    fill: true,
+    stack: 'plants',        // agrupa apenas as usinas entre si
+  }));
+
+  // PDP total — soma das unidades exibidas no stack (alinhado com as áreas do gráfico)
+  const allUnitIds = UNITS.map(u => u.id);
+  const pdpTotal = labels.map((_,i) => allUnitIds.reduce((s,id) => s + (pdp[id]?.[i] || 0), 0));
+  datasets.push({
+    label: 'PDP',
+    data: pdpTotal,
+    borderColor: '#ffffff99',
+    borderWidth: 2,
+    borderDash: [6, 4],
+    backgroundColor: 'transparent',
+    fill: false,
+    tension: 0,
+    pointRadius: 0,
+    stack: 'pdp',           // grupo separado — não soma com as plantas
+    order: -1,              // renderiza acima das áreas
+  });
+  // Trips de todas as unidades, agrupados por hora
+  const stackTripsByHora = {};
+  (G.events||[]).filter(e => e.type==='TRIP')
+    .forEach(e => { (stackTripsByHora[e.hora] = stackTripsByHora[e.hora]||[]).push(e.unit.id); });
+  const stackTripData = Object.entries(stackTripsByHora).map(([hora,ids])=>({hora, label:ids.join(', ')}));
+
+  const ctx = document.getElementById('stack-chart').getContext('2d');
+  stackChart = new Chart(ctx,{
+    type:'line',
+    plugins: [makeTripPlugin(stackTripData)],
+    data:{labels, datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#1a2235', borderColor:'#1e2d45', borderWidth:1,
+          titleColor:'#cdd9ea', bodyColor:'#7a95b8',
+          titleFont:{family:'DM Mono',size:11}, bodyFont:{family:'DM Mono',size:11},
+          callbacks:{
+            label: item => ` ${item.dataset.label}: ${Math.round(item.raw)} MW`,
+            footer: items => {
+              const gerado = items.filter(i=>i.dataset.label!=='PDP').reduce((s,i)=>s+i.raw,0);
+              const pdpItem = items.find(i=>i.dataset.label==='PDP');
+              const lines = [`Total gerado: ${Math.round(gerado)} MW`];
+              if(pdpItem) lines.push(`PDP: ${Math.round(pdpItem.raw)} MW`);
+              return lines;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:'#1e2d4522', drawBorder:false},
+          ticks:{color:'#4a6080', font:{family:'DM Mono',size:10}, maxTicksLimit:13, maxRotation:0}
+        },
+        y:{
+          stacked:true,
+          grid:{color:'#1e2d4522', drawBorder:false},
+          ticks:{color:'#4a6080', font:{family:'DM Mono',size:10}, callback:v=>v+' MW'},
+          min:0
+        }
+      }
+    }
+  });
+}
+
+// ── TOOLTIP EXTERNO COMPARTILHADO DOS SPARKLINES ────────────────────────────
+function sparkTooltip(context) {
+  const {chart, tooltip} = context;
+  let el = document.getElementById('spark-tooltip');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'spark-tooltip';
+    document.body.appendChild(el);
+  }
+
+  if (tooltip.opacity === 0) { el.style.opacity = '0'; return; }
+
+  const pts    = tooltip.dataPoints || [];
+  const hora   = tooltip.title?.[0] || '';
+  const gerado = pts.find(d => d.dataset.label === 'Gerado')?.raw ?? null;
+  const pdpVal = pts.find(d => d.dataset.label === 'PDP')?.raw ?? null;
+
+  let desvioHtml = '';
+  if (gerado !== null && pdpVal !== null) {
+    if (pdpVal > 0) {
+      const pct   = (gerado - pdpVal) / pdpVal * 100;
+      const color = pct >= 0 ? '#1d9e75' : '#e05555';
+      const sign  = pct >= 0 ? '+' : '';
+      desvioHtml  = `<div class="stt-dev" style="color:${color}">${sign}${pct.toFixed(1)}% vs PDP</div>`;
+    } else {
+      desvioHtml  = `<div class="stt-dev" style="color:#4a6080">Sem programação</div>`;
+    }
+  }
+
+  el.innerHTML = `
+    <div class="stt-hora">${hora}</div>
+    <div class="stt-row">Gerado <span>${gerado !== null ? Math.round(gerado) + ' MW' : '—'}</span></div>
+    <div class="stt-row">PDP <span>${pdpVal !== null ? Math.round(pdpVal) + ' MW' : '—'}</span></div>
+    ${desvioHtml}`;
+
+  const rect = chart.canvas.getBoundingClientRect();
+  let left = rect.left + tooltip.caretX + 14;
+  let top  = rect.top  + tooltip.caretY - 24;
+
+  el.style.opacity = '1';
+  el.style.left = left + 'px';
+  el.style.top  = top  + 'px';
+
+  requestAnimationFrame(() => {
+    const tw = el.offsetWidth, th = el.offsetHeight;
+    if (left + tw > window.innerWidth  - 8) left = rect.left + tooltip.caretX - tw - 14;
+    if (top  + th > window.innerHeight - 8) top  = rect.top  + tooltip.caretY - th - 4;
+    el.style.left = left + 'px';
+    el.style.top  = top  + 'px';
+  });
+}
+
+// Factory: cria plugin com trips fechado em closure
+// Usa meta.data[idx].x (posição real do ponto renderizado) em vez de scales.x
+function makeTripPlugin(trips) {
+  return {
+    id: 'sparkTrips',
+    afterDraw(chart) {
+      if (!trips || !trips.length) return;
+      const {ctx, chartArea} = chart;
+      if (!chartArea) return;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta || !meta.data || !meta.data.length) return;
+      trips.forEach(({hora, label}) => {
+        const idx = chart.data.labels.indexOf(hora);
+        if (idx < 0 || idx >= meta.data.length) return;
+        const x = meta.data[idx].x;
+        ctx.save();
+        // linha fina tracejada vermelha
+        ctx.strokeStyle = 'rgba(224,85,85,0.6)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // rótulo rotacionado — lê de baixo pra cima
+        ctx.translate(x - 3, chartArea.bottom - 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = 'rgba(224,85,85,0.9)';
+        ctx.font = 'bold 8px DM Mono, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`TRIP · ${label}`, 3, 0);
+        ctx.restore();
+      });
+    }
+  };
+}
+
+// ── SPARKLINES ─────────────────────────────────────────────────────────────
+function renderSparks(labels, data, pdp, visUnits) {
+  const container = document.getElementById('sparks-grid');
+  container.innerHTML='';
+
+  const PLANTA_META_SP = {
+    P1V:  { label: 'Parnaíba I/V',    color: '#3b9eff' },
+    P2:   { label: 'Parnaíba II',     color: '#f0a040' },
+    P3VI: { label: 'Parnaíba III/VI', color: '#c77dff' },
+    P4:   { label: 'Parnaíba IV',     color: '#b5ead7' },
+  };
+  const byPlanta = {};
+  visUnits.forEach(u => { (byPlanta[u.planta] = byPlanta[u.planta] || []).push(u); });
+
+  ['P1V','P2','P3VI','P4'].forEach(planta => {
+    const units = byPlanta[planta];
+    if (!units || !units.length) return;
+    const meta = PLANTA_META_SP[planta] || { label: planta, color: '#4a6080' };
+
+    // Série da usina = soma das unidades a cada intervalo
+    const plantSeries = labels.map((_,i) => units.reduce((s,u) => s + (data[u.id]?.[i] || 0), 0));
+    const plantNominal = units.reduce((s,u) => s + u.nominal, 0);
+    const plantLast = plantSeries[plantSeries.length-1] || 0;
+    const plantAvg  = plantSeries.reduce((a,v)=>a+v,0) / (plantSeries.length||1);
+    const plantTrend = plantLast > plantAvg ? '↑' : plantLast < plantAvg - 10 ? '↓' : '→';
+    const plantTrendC = plantTrend==='↑' ? 'var(--accent)' : plantTrend==='↓' ? 'var(--danger)' : 'var(--accent2)';
+    const plantTrendLbl = plantTrend==='↑' ? 'subindo' : plantTrend==='↓' ? 'caindo' : 'estável';
+
+    // PDP da usina — soma das unidades; FC e Desvio só nos intervalos com PDP > 0
+    const plantPdpSeriesPre = labels.map((_,i) => units.reduce((s,u) => s + (pdp[u.id]?.[i] || 0), 0));
+    const plantProgIdx   = plantPdpSeriesPre.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
+    const plantSumGerado = plantProgIdx.reduce((s,i) => s + (plantSeries[i] || 0), 0);
+    const plantSumProg   = plantProgIdx.reduce((s,i) => s + plantPdpSeriesPre[i], 0);
+    const plantAvgProg   = plantProgIdx.length > 0 ? plantSumGerado / plantProgIdx.length : 0;
+    const plantFC        = plantNominal > 0 && plantProgIdx.length > 0
+                           ? Math.round(100 * plantAvgProg / plantNominal) : 0;
+    const plantDesvio    = plantSumProg > 0 ? (1 - Math.min(1, plantSumGerado / plantSumProg)) * 100 : null;
+    const plantDesvColor = plantDesvio === null ? 'var(--text2)'
+                         : plantDesvio <= 2    ? '#1d9e75'
+                         : plantDesvio <= 10   ? '#f0c040' : '#e05555';
+    const plantDesvTxt   = plantDesvio === null ? '—' : plantDesvio.toFixed(1) + '%';
+
+    const section = document.createElement('div');
+
+    // ── Card de totais da usina ──
+    const plantCid = `spark-plant-${planta}`;
+    const plantCard = document.createElement('div');
+    plantCard.className = 'spark-card spark-plant-card';
+    plantCard.style.setProperty('--plant-color', meta.color);
+    plantCard.innerHTML = `
+      <div class="spark-header">
+        <span class="spark-name" style="color:${meta.color};font-size:12px;font-family:var(--font-head);font-weight:700">${meta.label}</span>
+        <span class="spark-now" style="color:${meta.color}">${Math.round(plantAvg)}<span class="spark-unit"> MW méd</span></span>
+      </div>
+      <canvas id="${plantCid}" class="spark spark-lg" height="80" aria-label="Sparkline ${meta.label}"></canvas>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-size:10px;color:var(--text2)">FC ${plantFC}% · ${units.length} unid.</span>
+        <span style="font-size:11px;color:${plantTrendC}">${plantTrend} ${plantTrendLbl}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
+        <span style="font-size:10px;color:var(--text2)">Desvio PDP</span>
+        <span style="font-size:11px;font-weight:600;color:${plantDesvColor}">${plantDesvTxt}</span>
+      </div>`;
+    section.appendChild(plantCard);
+
+    // ── Linha separadora ──
+    const divider = document.createElement('div');
+    divider.className = 'spark-plant-divider';
+    section.appendChild(divider);
+
+    // ── Sub-grid de unidades individuais ──
+    const subGrid = document.createElement('div');
+    subGrid.className = 'sparks-sub-grid';
+
+    // Subgrupos P1V: M4 = TG31+TG32, M5 = TG21+TG22, TV28 individual
+    const SPARK_SUBGROUPS = {
+      P1V: [
+        { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'] },
+        { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'] },
+        { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28'] },
+      ]
+    };
+
+    const subItems = (SPARK_SUBGROUPS[planta] || units.map(u => ({ id:u.id, label:u.label, color:u.color, ids:[u.id] })))
+      .map(sg => {
+        const sgUnits = UNITS.filter(u => sg.ids.includes(u.id));
+        return {
+          ...sg,
+          nominal:   sgUnits.reduce((s,u) => s + u.nominal, 0),
+          series:    labels.map((_,i) => sg.ids.reduce((s,id) => s + (data[id]?.[i] || 0), 0)),
+          pdpSeries: labels.map((_,i) => sg.ids.reduce((s,id) => s + (pdp[id]?.[i]  || 0), 0)),
+        };
+      });
+
+    subGrid.style.gridTemplateColumns = `repeat(${subItems.length}, 1fr)`;
+
+    subItems.forEach(item => {
+      const series  = item.series;
+      const lastVal = series[series.length-1] || 0;
+      const avg     = series.reduce((a,v) => a+v, 0) / (series.length || 1);
+      const cid     = `spark-${item.id}`;
+      const trend   = lastVal > avg ? '↑' : lastVal < avg - 5 ? '↓' : '→';
+      const trendC  = trend === '↑' ? 'var(--accent)' : trend === '↓' ? 'var(--danger)' : 'var(--accent2)';
+
+      // FC e Desvio PDP — só nos intervalos com programação > 0
+      const progIdx   = item.pdpSeries.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
+      const sumGerado = progIdx.reduce((s,i) => s + (series[i] || 0), 0);
+      const sumProg   = progIdx.reduce((s,i) => s + item.pdpSeries[i], 0);
+      const avgProg   = progIdx.length > 0 ? sumGerado / progIdx.length : 0;
+      const fc        = item.nominal > 0 && progIdx.length > 0
+                        ? Math.round(100 * avgProg / item.nominal) : 0;
+      const desvio    = sumProg > 0 ? (1 - Math.min(1, sumGerado / sumProg)) * 100 : null;
+      const desvColor = desvio === null ? 'var(--text2)'
+                      : desvio <= 2    ? '#1d9e75'
+                      : desvio <= 10   ? '#f0c040' : '#e05555';
+      const desvTxt   = desvio === null ? '—' : desvio.toFixed(1) + '%';
+
+      const card = document.createElement('div');
+      card.className = 'spark-card';
+      card.innerHTML = `
+        <div class="spark-header">
+          <span class="spark-name" style="color:${item.color}">${item.label}</span>
+          <span class="spark-now" style="color:${item.color}">${Math.round(avg)}<span class="spark-unit"> MW méd</span></span>
+        </div>
+        <canvas id="${cid}" class="spark" height="75" aria-label="Sparkline ${item.label}"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:10px;color:var(--text2)">FC ${fc}%</span>
+          <span style="font-size:11px;color:${trendC}">${trend} ${trend==='→'?'estável':trend==='↑'?'subindo':'caindo'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
+          <span style="font-size:10px;color:var(--text2)">Desvio PDP</span>
+          <span style="font-size:11px;font-weight:600;color:${desvColor}">${desvTxt}</span>
+        </div>`;
+      subGrid.appendChild(card);
+
+      // Linhas de TRIP por subgrupo — agrupadas por hora
+      const tripsByHora = {};
+      (G.events||[]).filter(e => e.type==='TRIP' && item.ids.includes(e.unit.id))
+        .forEach(e => { (tripsByHora[e.hora] = tripsByHora[e.hora]||[]).push(e.unit.id); });
+      const tripData = Object.entries(tripsByHora).map(([hora, ids]) => ({hora, label: ids.join(', ')}));
+
+      setTimeout(() => {
+        const sCtx = document.getElementById(cid);
+        if (!sCtx) return;
+        if (sparkCharts[item.id]) sparkCharts[item.id].destroy();
+        sparkCharts[item.id] = new Chart(sCtx.getContext('2d'), {
+          type: 'line',
+          plugins: [makeTripPlugin(tripData)],
+          data: {
+            labels,
+            datasets: [
+              {
+                label: 'Gerado',
+                data: series,
+                borderColor: item.color, borderWidth: 1.5,
+                backgroundColor: item.color + '33',
+                fill: true, tension: 0.4, pointRadius: 0
+              },
+              {
+                label: 'PDP',
+                data: item.pdpSeries,
+                borderColor: '#ffffff55', borderWidth: 1,
+                borderDash: [4, 3],
+                fill: false, tension: 0, pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: false, animation: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: false, external: sparkTooltip }
+            },
+            scales: { x: { display: false }, y: { display: false, min: 0 } }
+          }
+        });
+      }, 0);
+    });
+
+    section.appendChild(subGrid);
+    container.appendChild(section);
+
+    // PDP somado da usina
+    const plantPdpSeries = labels.map((_,i) => units.reduce((s,u) => s + (pdp[u.id]?.[i] || 0), 0));
+
+    // Linhas de TRIP no card da planta — qualquer unidade da planta, agrupadas por hora
+    const plantTripsByHora = {};
+    (G.events||[]).filter(e => e.type==='TRIP' && units.some(u => u.id===e.unit.id))
+      .forEach(e => { (plantTripsByHora[e.hora] = plantTripsByHora[e.hora]||[]).push(e.unit.id); });
+    const plantTripData = Object.entries(plantTripsByHora).map(([hora, ids]) => ({hora, label: ids.join(', ')}));
+
+    // Gráfico do total da usina (renderizado após montagem no DOM)
+    setTimeout(()=>{
+      const pCtx = document.getElementById(plantCid);
+      if(!pCtx) return;
+      if(sparkCharts[plantCid]) sparkCharts[plantCid].destroy();
+      sparkCharts[plantCid] = new Chart(pCtx.getContext('2d'),{
+        type:'line',
+        plugins: [makeTripPlugin(plantTripData)],
+        data:{
+          labels,
+          datasets:[
+            {
+              label: 'Gerado',
+              data: plantSeries,
+              borderColor: meta.color, borderWidth: 2,
+              backgroundColor: meta.color+'22',
+              fill: true, tension: 0.4, pointRadius: 0
+            },
+            {
+              label: 'PDP',
+              data: plantPdpSeries,
+              borderColor: '#ffffff66', borderWidth: 1.5,
+              borderDash: [5, 4],
+              fill: false, tension: 0, pointRadius: 0
+            }
+          ]
+        },
+        options:{
+          responsive:false, animation:false,
+          interaction:{ mode:'index', intersect:false },
+          plugins:{
+            legend:{display:false},
+            tooltip:{ enabled:false, external:sparkTooltip }
+          },
+          scales:{x:{display:false},y:{display:false,min:0}}
+        }
+      });
+    },0);
+  });
+}
+
+
+// ── PAINEL HEAT RATE ──────────────────────────────────────────────────────
+function renderHR(labels, data, hr, visUnits) {
+  const grid = document.getElementById('hr-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+
+  const PLANTA_META_HR = {
+    P1V:  { label: 'Parnaíba I/V',    color: '#3b9eff' },
+    P2:   { label: 'Parnaíba II',     color: '#f0a040' },
+    P3VI: { label: 'Parnaíba III/VI', color: '#c77dff' },
+    P4:   { label: 'Parnaíba IV',     color: '#b5ead7' },
+  };
+  const byPlantaHR = {};
+  visUnits.forEach(u => { (byPlantaHR[u.planta] = byPlantaHR[u.planta] || []).push(u); });
+
+  ['P1V','P2','P3VI','P4'].forEach(planta => {
+    const units = byPlantaHR[planta];
+    if (!units || !units.length) return;
+    const meta = PLANTA_META_HR[planta] || { label: planta, color: '#4a6080' };
+
+    const group = document.createElement('div');
+    group.className = 'hr-plant-group';
+    grid.appendChild(group);
+
+    const hdr = document.createElement('div');
+    hdr.className = 'fcfu-group-header';
+    hdr.innerHTML = `<span style="color:${meta.color}">▸</span> ${meta.label}`;
+    group.appendChild(hdr);
+
+    const subGrid = document.createElement('div');
+    subGrid.className = 'hr-cards-row';
+    subGrid.style.gridTemplateColumns = `repeat(${units.length}, 1fr)`;
+    group.appendChild(subGrid);
+
+    units.forEach(u => {
+    const mwSeries = data[u.id] || [];
+
+    if (!u.hr_proj) {
+      const isOffHR   = mwSeries[mwSeries.length-1] < 5;
+      const pdpSeries = (G.pdp && G.pdp[u.id]) || [];
+      const pdpIdx    = pdpSeries.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
+      const avgMW     = pdpIdx.length > 0
+                        ? pdpIdx.reduce((s,i) => s + (mwSeries[i] || 0), 0) / pdpIdx.length
+                        : mwSeries.reduce((s,v)=>s+v,0) / (mwSeries.length||1);
+      const fcPct     = u.nominal > 0 && pdpIdx.length > 0 ? Math.round(avgMW / u.nominal * 100) : 0;
+      const acc     = isOffHR ? '#4a6080' : u.color;
+      const card    = document.createElement('div');
+      card.className = 'hr-card';
+      card.style.setProperty('--hr-accent', acc);
+      card.innerHTML = `
+        <div class="hr-card-top">
+          <span class="hr-unit-name" style="color:${u.color}">${u.id}</span>
+          <span class="hr-status-pill ${isOffHR?'hr-pill-off':'hr-pill-good'}">${isOffHR?'PARADA':'OPERANDO'}</span>
+        </div>
+        <div class="hr-values">
+          <div>
+            <span class="hr-real-val" style="color:${acc}">${avgMW>0?Math.round(avgMW):'—'}</span>
+            <span class="hr-real-unit">MW méd</span>
+          </div>
+          <div class="hr-proj-block">
+            <span class="hr-proj-label">Nominal</span>
+            <span class="hr-proj-val">${u.nominal} MW</span>
+          </div>
+        </div>
+        <div class="hr-desvio-row">
+          <span class="hr-desvio-label">Heat Rate</span>
+          <span class="hr-desvio-val hr-desvio-zero">Não aplic.</span>
+        </div>
+        <div class="hr-bar-wrap">
+          <div class="hr-bar-fill" style="width:${Math.min(100,fcPct)}%;background:${u.color}88"></div>
+        </div>
+        <div class="hr-footnote">
+          <span>FC ${fcPct}%</span>
+          <span>${u.tipo === 'BAG' ? 'Motor BAG' : u.tipo}</span>
+        </div>`;
+      subGrid.appendChild(card);
+      return;
+    }
+
+    const hrSeries = (hr && hr[u.id]) || [];
+
+    // Média do HR apenas quando ligada
+    const hrVals = hrSeries.filter(v => v !== null && v > 0);
+    const avgHR  = hrVals.length ? Math.round(hrVals.reduce((s,v)=>s+v,0)/hrVals.length) : null;
+    const lastHR = [...hrSeries].reverse().find(v => v !== null && v > 0) || null;
+    const isOff  = mwSeries[mwSeries.length-1] < 5;
+
+    const proj   = u.hr_proj;
+    const desvio = avgHR ? ((avgHR - proj) / proj * 100) : null;
+
+    // limites de alerta: ±2% ok, ±2-5% atenção, >5% crítico
+    let pill, pillClass, accentColor, barColor;
+    if(isOff || avgHR === null) {
+      pill='PARADA'; pillClass='hr-pill-off'; accentColor='#4a6080'; barColor='#4a6080';
+    } else if(desvio <= 2) {
+      pill='NORMAL'; pillClass='hr-pill-good'; accentColor='#1d9e75'; barColor='#1d9e75';
+    } else if(desvio <= 5) {
+      pill='ATENÇÃO'; pillClass='hr-pill-warn'; accentColor='#f0c040'; barColor='#f0c040';
+    } else {
+      pill='CRÍTICO'; pillClass='hr-pill-bad'; accentColor='#e05555'; barColor='#e05555';
+    }
+
+    // largura da barra: 0% desvio = barra no meio, escala ±10%
+    const barPct = desvio !== null ? Math.min(100, Math.abs(desvio) / 10 * 100) : 0;
+    const desvClass = desvio === null ? 'hr-desvio-zero' : desvio > 0 ? 'hr-desvio-pos' : 'hr-desvio-neg';
+    const desvTxt = desvio === null ? '—' : (desvio > 0 ? '+' : '') + desvio.toFixed(1) + '%';
+
+    // "melhor hora" = menor HR do dia
+    const minHR = hrVals.length ? Math.min(...hrVals) : null;
+    const minHRIdx = hrSeries.indexOf(minHR);
+    const minHRHora = minHRIdx >= 0 ? labels[minHRIdx] : '—';
+
+    const card = document.createElement('div');
+    card.className = 'hr-card';
+    card.style.setProperty('--hr-accent', accentColor);
+    card.innerHTML = `
+      <div class="hr-card-top">
+        <span class="hr-unit-name" style="color:${u.color}">${u.id}</span>
+        <span class="hr-status-pill ${pillClass}">${pill}</span>
+      </div>
+      <div class="hr-values">
+        <div>
+          <span class="hr-real-val" style="color:${isOff?'var(--muted)':accentColor}">
+            ${avgHR !== null ? avgHR.toLocaleString('pt-BR') : '—'}
+          </span>
+          <span class="hr-real-unit">kJ/kWh</span>
+        </div>
+        <div class="hr-proj-block">
+          <span class="hr-proj-label">Projeto</span>
+          <span class="hr-proj-val">${proj.toLocaleString('pt-BR')}</span>
+        </div>
+      </div>
+      <div class="hr-desvio-row">
+        <span class="hr-desvio-label">Desvio vs. projeto</span>
+        <span class="hr-desvio-val ${desvClass}">${desvTxt}</span>
+      </div>
+      <div class="hr-bar-wrap">
+        <div class="hr-bar-fill" style="width:${barPct}%;background:${barColor}"></div>
+      </div>
+      <div class="hr-footnote">
+        <span>Melhor hora: ${minHRHora} (${minHR ? minHR.toLocaleString('pt-BR') : '—'} kJ/kWh)</span>
+        <span>${hrVals.length} leituras válidas</span>
+      </div>`;
+    subGrid.appendChild(card);
+    });
+  });
+}
+
+
+// ── PAINEL ATENDIMENTO AO DESPACHO ──────────────────────────────────────────
+function renderDespacho(labels, data, pdp, visUnits) {
+  const grid = document.getElementById('fcfu-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  const ih = G.resolution / 60;
+
+  // KPI global: média ponderada pelo programado
+  let totalGerado = 0, totalProg = 0;
+
+  const PLANTA_META = {
+    P1V:  { label: 'Parnaíba I/V',    color: '#3b9eff' },
+    P2:   { label: 'Parnaíba II',     color: '#f0a040' },
+    P3VI: { label: 'Parnaíba III/VI', color: '#c77dff' },
+    P4:   { label: 'Parnaíba IV',     color: '#b5ead7' },
+  };
+  const byPlanta = {};
+  visUnits.forEach(u => { (byPlanta[u.planta] = byPlanta[u.planta] || []).push(u); });
+  const plantaOrder = ['P1V','P2','P3VI','P4'];
+
+  plantaOrder.forEach(planta => {
+    const units = byPlanta[planta];
+    if (!units || !units.length) return;
+    const meta = PLANTA_META[planta] || { label: planta, color: '#4a6080' };
+
+    const group = document.createElement('div');
+    group.className = 'fcfu-plant-group';
+    grid.appendChild(group);
+
+    const hdr = document.createElement('div');
+    hdr.className = 'fcfu-group-header';
+    hdr.innerHTML = `<span style="color:${meta.color}">▸</span> ${meta.label}`;
+    group.appendChild(hdr);
+
+    const subGrid = document.createElement('div');
+    subGrid.className = 'fcfu-cards-row';
+    subGrid.style.gridTemplateColumns = `repeat(${units.length}, 1fr)`;
+    group.appendChild(subGrid);
+
+    units.forEach(u => {
+    const gerado = data[u.id] || [];
+    const prog   = (pdp && pdp[u.id]) || Array(labels.length).fill(0);
+
+    // somar só intervalos onde havia programação > 0
+    const mwhGerado = gerado.reduce((s,v,i)=> prog[i]>0 ? s+(v||0)*ih : s, 0);
+    const mwhProg   = prog.reduce((s,v)=> s+v*ih, 0);
+
+    totalGerado += mwhGerado;
+    totalProg   += mwhProg;
+
+    // Desvio = 1 − (gerado ÷ programado)   [só nos h programados]
+    const desvio = mwhProg > 0
+      ? (1 - Math.min(1, mwhGerado / mwhProg)) * 100
+      : null;   // null = sem programação (fora de OM esperado)
+
+    // Atendimento %
+    const atend = desvio !== null ? 100 - desvio : null;
+
+    // Status
+    let statusTxt, statusClass, accentColor;
+    if(desvio === null) {
+      statusTxt='FORA OM'; statusClass='hr-pill-off'; accentColor='#4a6080';
+    } else if(desvio <= 2) {
+      statusTxt='PLENO';   statusClass='hr-pill-good'; accentColor='#1d9e75';
+    } else if(desvio <= 10) {
+      statusTxt='PARCIAL'; statusClass='hr-pill-warn'; accentColor='#f0c040';
+    } else {
+      statusTxt='CRÍTICO'; statusClass='hr-pill-bad';  accentColor='#e05555';
+    }
+
+    // Mini gráfico: barras gerado vs programado por intervalo (agrupadas por hora)
+    const slotsPerH = Math.round(60 / G.resolution);
+    const horasVisiveis = 24;
+    const barGerado = [], barProg = [];
+    for(let h=0; h<horasVisiveis; h++) {
+      let sg=0, sp=0, cnt=0;
+      for(let s=0; s<slotsPerH; s++) {
+        const idx = h*slotsPerH + s;
+        if(idx < gerado.length) { sg += gerado[idx]||0; sp += prog[idx]||0; cnt++; }
+      }
+      barGerado.push(cnt ? sg/cnt : 0);
+      barProg.push(cnt ? sp/cnt : 0);
+    }
+    const maxBar = Math.max(...barProg, ...barGerado, 1);
+
+    // Pior hora (maior desvio individual)
+    let piorHora='—', piorDesvio=0;
+    barProg.forEach((p,h) => {
+      if(p > 0) {
+        const d = Math.max(0, (1 - (barGerado[h]/p))) * 100;
+        if(d > piorDesvio) { piorDesvio=d; piorHora=String(h).padStart(2,'0')+':00'; }
+      }
+    });
+
+    // ── Montar card ──
+    const card = document.createElement('div');
+    card.className = 'fcfu-card';
+    card.style.setProperty('--fcfu-accent', accentColor);
+
+    // barras do mini gráfico (24 barras = 24h)
+    const barsHtml = barProg.map((p,h) => {
+      const g   = barGerado[h];
+      const hProg  = p   > 0 ? Math.round(p/maxBar*28) : 0;
+      const hGer   = g   > 0 ? Math.round(g/maxBar*28) : 0;
+      const cor    = p===0 ? '#1e2d45'
+                   : g >= p*0.98 ? '#1d9e7566'
+                   : g >= p*0.90 ? '#f0c04066'
+                   : '#e0555566';
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px">
+        <div style="width:100%;height:${hProg}px;background:#1e2d45;border-radius:2px 2px 0 0;position:relative">
+          <div style="position:absolute;bottom:0;left:0;right:0;height:${hGer}px;background:${cor};border-radius:2px 2px 0 0"></div>
+        </div>
+      </div>`;
+    }).join('');
+
+    const adStr  = atend  !== null ? atend.toFixed(1)+'%'  : '—';
+    const devStr = desvio !== null ? desvio.toFixed(1)+'%' : '—';
+    const devColor = desvio === null ? 'var(--text2)'
+                   : desvio <= 2    ? '#1d9e75'
+                   : desvio <= 10   ? '#f0c040' : '#e05555';
+
+    card.innerHTML = `
+      <div class="fcfu-top">
+        <span class="fcfu-name" style="color:${u.color}">${u.id}</span>
+        <span class="fcfu-status ${statusClass}">${statusTxt}</span>
+      </div>
+
+      <div style="display:flex;gap:16px;align-items:baseline;margin-bottom:8px">
+        <div>
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Atendimento</div>
+          <div style="font-family:var(--font-head);font-size:26px;font-weight:800;line-height:1;color:${accentColor}">
+            ${adStr}
+          </div>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Desvio</div>
+          <div style="font-size:16px;font-weight:600;color:${devColor}">${devStr}</div>
+          <div style="font-size:9px;color:var(--text2)">1 − (gerado ÷ prog.)</div>
+        </div>
+      </div>
+
+      <!-- barra de atendimento -->
+      <div class="ad-gauge-wrap">
+        <div class="ad-gauge-fill" style="width:${atend!==null?Math.min(100,atend).toFixed(1):0}%;background:${accentColor}"></div>
+        <div class="ad-gauge-ref"></div>
+      </div>
+
+      <!-- mini gráfico gerado vs programado -->
+      <div style="display:flex;align-items:flex-end;gap:1px;height:32px;margin:8px 0 4px">
+        ${barsHtml}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text2);margin-bottom:6px">
+        <span>00:00</span><span>12:00</span><span>23:00</span>
+      </div>
+
+      <hr class="fcfu-divider">
+
+      <div class="fcfu-detail-row">
+        <span>Gerado (h programadas)</span>
+        <span class="fcfu-detail-val">${mwhGerado.toFixed(1)} MWh</span>
+      </div>
+      <div class="fcfu-detail-row">
+        <span>Programado (PDP)</span>
+        <span class="fcfu-detail-val">${mwhProg.toFixed(1)} MWh</span>
+      </div>
+      <div class="fcfu-detail-row">
+        <span>Não atendido</span>
+        <span class="fcfu-detail-val" style="color:${devColor}">
+          ${mwhProg>0?(Math.max(0,mwhProg-mwhGerado)).toFixed(1)+' MWh':'—'}
+        </span>
+      </div>
+      <div class="fcfu-detail-row">
+        <span>Pior hora</span>
+        <span class="fcfu-detail-val" style="color:${devColor}">${piorHora} (−${piorDesvio.toFixed(1)}%)</span>
+      </div>`;
+    subGrid.appendChild(card);
+    });
+  });
+
+  // Atualizar KPI global
+  const adGlobal = totalProg > 0
+    ? (1 - Math.min(1, totalGerado/totalProg)) * 100
+    : null;
+  const adEl  = document.getElementById('kpi-ad');
+  const adSub = document.getElementById('kpi-ad-sub');
+  if(adEl) {
+    adEl.textContent  = adGlobal !== null ? (100-adGlobal).toFixed(1)+'%' : '—';
+    if(adSub) adSub.textContent = adGlobal !== null
+      ? `desvio médio: ${adGlobal.toFixed(1)}%`
+      : 'sem programação no período';
+  }
+}
+
+// ── LINHA DO TEMPO DE EVENTOS ──────────────────────────────────────────────
+const UNIT_PLANT_NAME = {
+  TG31:'Maranhão IV', TG32:'Maranhão IV',
+  TG21:'Maranhão V',  TG22:'Maranhão V',
+  TV28:'Parnaíba V',
+  TG51:'Parnaíba II', TG52:'Parnaíba II', TV58:'Parnaíba II',
+  TG12:'Nova Venécia II', TV18:'Nova Venécia II', UG10:'Nova Venécia II',
+  BAG011:'Parnaíba IV', BAG021:'Parnaíba IV', BAG031:'Parnaíba IV',
+};
+
+function fmtHora(h) { return h.replace(':', 'h'); }
+
+function renderEventsTable(events) {
+  const container = document.getElementById('trips-tbody');
+  document.getElementById('badge-trips').textContent = events.length;
+
+  if (events.length === 0) {
+    container.innerHTML = '<div style="text-align:center;color:var(--accent);padding:20px;font-size:12px">✓ Nenhum evento detectado nos critérios atuais</div>';
+    return;
+  }
+
+  // Agrupa por hora+tipo; TRIP permanece individual (precisa identificar a unidade)
+  const groups = new Map();
+  events.forEach(ev => {
+    const key = ev.type === 'TRIP' ? `${ev.hora}|TRIP|${ev.unit.id}` : `${ev.hora}|${ev.type}`;
+    if (!groups.has(key)) groups.set(key, { hora: ev.hora, type: ev.type, evs: [] });
+    groups.get(key).evs.push(ev);
+  });
+
+  const entries = [...groups.values()].sort((a,b) => a.hora.localeCompare(b.hora));
+
+  container.innerHTML = entries.map(g => {
+    const hora = fmtHora(g.hora);
+    const plants = [...new Set(g.evs.map(e => UNIT_PLANT_NAME[e.unit.id] || e.unit.planta))].join(' · ');
+
+    let icon, titleClass, titleText, detail;
+
+    if (g.type === 'TRIP') {
+      const ev = g.evs[0];
+      const plant = UNIT_PLANT_NAME[ev.unit.id] || ev.unit.planta;
+      const semRetorno = !ev.resolved ? ' · sem retorno ao despacho' : '';
+      icon = '⚠';
+      titleClass = 'is-trip';
+      titleText = `TRIP — ${ev.unit.id}`;
+      detail = `${plant}${semRetorno}`;
+
+    } else if (g.type === 'DESLIGAMENTO') {
+      icon = '●';
+      titleClass = 'is-desl';
+      titleText = 'Desligamento programado conforme PDP';
+      detail = plants;
+
+    } else if (g.type === 'PARTIDA') {
+      icon = '●';
+      titleClass = '';
+      titleText = 'Partida conforme PDP';
+      detail = plants;
+
+    } else if (g.type === 'REDUÇÃO') {
+      icon = '●';
+      titleClass = 'is-red';
+      titleText = 'Redução de carga conforme PDP';
+      detail = plants;
+
+    } else if (g.type === 'ELEVAÇÃO') {
+      icon = '●';
+      titleClass = 'is-elev';
+      titleText = 'Elevação de carga conforme PDP';
+      detail = plants;
+
+    } else {
+      icon = '●';
+      titleClass = '';
+      titleText = g.type;
+      detail = plants;
+    }
+
+    return `<div class="ev-entry">
+      <div class="ev-hora">${hora}</div>
+      <div class="ev-icon">${icon}</div>
+      <div class="ev-body">
+        <div class="ev-title ${titleClass}">${titleText}</div>
+        <div class="ev-detail">${detail}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── STATUS BAR ─────────────────────────────────────────────────────────────
+function updateStatusBar(events) {
+  const trips    = events.filter(e=>e.type==='TRIP').length;
+  const reducoes = events.filter(e=>e.type==='REDUÇÃO').length;
+  const desls    = events.filter(e=>e.type==='DESLIGAMENTO').length;
+  const partidas = events.filter(e=>e.type==='PARTIDA').length;
+  const statusBar = document.getElementById('status-bar');
+  const dotColor = trips>0 ? 'dot-red' : reducoes>0 ? 'dot-yellow' : 'dot-green';
+  const msg = trips>0 ? `${trips} TRIP(S) DETECTADO(S)` :
+              reducoes>0 ? `${reducoes} REDUÇÃO(ÕES) DE CARGA` : 'OPERAÇÃO NORMAL';
+
+  statusBar.innerHTML = `
+    <span><span class="status-dot ${dotColor}"></span>${msg}</span>
+    <span>·</span>
+    <span>${partidas} partida(s) · ${desls} desligamento(s) programado(s)</span>
+    <span>·</span>
+    <span>Fonte: ${G.sourceRaw===SITOP_RAW_DATA?'SITOP demo':'PIM Way2'} · ${(G.sourceRaw||SITOP_RAW_DATA).date||''} · Resolução ${G.resolution} min</span>
+    <span>·</span>
+    <span>Atualizado: ${new Date().toLocaleTimeString('pt-BR',{hour12:false})}</span>
+  `;
+}
+
+// ── DEMO (SITOP embutido) ──────────────────────────────────────────────────
+function loadDemoData() {
+  G.sourceRaw = SITOP_RAW_DATA;
+  document.getElementById('demo-banner').style.display = 'flex';
+  document.getElementById('sel-date').value = SITOP_RAW_DATA.date;
+  renderAll();
+}
+
+// ── CARREGAR DO PIM VIA PROXY GAS ──────────────────────────────────────────
+async function fetchFromPIM() {
+  if (!GAS_PROXY_URL) {
+    alert('GAS_PROXY_URL não configurada.\nDeploy o script pim_dashboard_proxy.gs e preencha a constante no topo do dashboard.');
+    return;
+  }
+  const date = document.getElementById('sel-date').value;
+  if (!date) { alert('Selecione uma data.'); return; }
+
+  const btn = document.getElementById('btn-carregar-pim');
+  btn.disabled = true;
+  btn.textContent = 'Carregando…';
+
+  try {
+    const url  = `${GAS_PROXY_URL}?data=${date}&intervalo=TrintaMinutos`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (json.error) throw new Error(json.error);
+
+    // Monta estrutura compatível com SITOP_RAW_DATA (sem pdp/pdpTotal — usa embedded)
+    G.sourceRaw = {
+      date:   json.date,
+      labels: json.labels,
+      data:   json.data,
+      pdp:    SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdp     : {},
+      pdpTotal: SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdpTotal : [],
+    };
+
+    document.getElementById('demo-banner').style.display = 'none';
+    renderAll();
+  } catch(err) {
+    alert('Erro ao carregar dados do PIM:\n' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Carregar PIM';
+  }
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', ()=>{
+  // Sempre inicia com a data de hoje
+  document.getElementById('sel-date').value = new Date().toISOString().slice(0, 10);
+
+  if (GAS_PROXY_URL) {
+    fetchFromPIM();
+  } else {
+    loadDemoData();
+  }
+
+  // Auto-refresh a cada 30 min; avança data se virou meia-noite
+  setInterval(() => {
+    document.getElementById('sel-date').value = new Date().toISOString().slice(0, 10);
+    if (GAS_PROXY_URL) fetchFromPIM();
+  }, 1800000);
+});
+</script>
+</body>
+</html>
