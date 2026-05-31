@@ -712,6 +712,10 @@ const INSTALADA_TOTAL = UNITS.reduce((a,u)=>a+u.instalada, 0);
 // URL do Web App GAS proxy (preencher após deploy)
 const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbxVfV6Y87ElmG4o7mQiYrSLwyYA9MSttmed3fCxOvMCRKc-OJjhY6JDORPkUPXPM7gG/exec';
 
+// Quando servido pelo abrir_dashboard.py (localhost:8765), PDP vem do CSV local
+const IS_LOCAL     = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const LOCAL_PDP_URL = IS_LOCAL ? `http://localhost:8765/api/pdp` : null;
+
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
 let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
 let mainChart=null, stackChart=null, sparkCharts={};
@@ -1905,13 +1909,41 @@ async function fetchFromPIM() {
     const json = await resp.json();
     if (json.error) throw new Error(json.error);
 
+    // Se PDP veio vazio do proxy (ONS API não configurada) e estamos em localhost,
+    // buscar do CSV local gerado pelo pdp_download.py (via abrir_dashboard.py)
+    let pdpFinal = (json.pdp && Object.keys(json.pdp).length) ? json.pdp : null;
+
+    if (!pdpFinal && LOCAL_PDP_URL) {
+      try {
+        const pr   = await fetch(`${LOCAL_PDP_URL}?data=${date}`);
+        const mapa = await pr.json(); // { "HH:MM": { "UG": mw }, ... }
+        if (Object.keys(mapa).length) {
+          // Converter { hora: { uid: mw } } → { uid: [mw por label] }
+          const byUnit = {};
+          json.labels.forEach((lbl, idx) => {
+            const hora = lbl === '00:00' ? '24:00' : lbl; // normalizar virada
+            const slot = mapa[lbl] || mapa[hora] || {};
+            for (const [uid, mw] of Object.entries(slot)) {
+              if (!byUnit[uid]) byUnit[uid] = new Array(json.labels.length).fill(0);
+              byUnit[uid][idx] = mw;
+            }
+          });
+          if (Object.keys(byUnit).length) pdpFinal = byUnit;
+        }
+      } catch(e) {
+        console.warn('PDP local indisponível:', e.message);
+      }
+    }
+
+    if (!pdpFinal) {
+      pdpFinal = SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdp : {};
+    }
+
     G.sourceRaw = {
       date:     json.date,
       labels:   json.labels,
       data:     json.data,
-      pdp:      (json.pdp && Object.keys(json.pdp).length)
-                  ? json.pdp
-                  : (SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdp : {}),
+      pdp:      pdpFinal,
       pdpTotal: SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdpTotal : [],
     };
 
