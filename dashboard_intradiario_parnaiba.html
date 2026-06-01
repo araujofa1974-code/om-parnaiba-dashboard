@@ -679,6 +679,7 @@ const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzYNnutEn2k5eXn16
 
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
 let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
+let _autoRefreshTimer = null;
 let mainChart=null, stackChart=null, sparkCharts={};
 
 // ── RELÓGIO ────────────────────────────────────────────────────────────────
@@ -1954,9 +1955,26 @@ async function carregarDados() {
 
     G.sourceRaw = { date: data, labels: w30.labels, data: w30.data, pdp: pdp30, pdpTotal: pdpTotal30 };
     document.getElementById('demo-banner').style.display = 'none';
-    document.getElementById('data-source-badge').textContent =
-      IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · GAS PROXY · 30MIN';
     renderAll();
+
+    // Auto-refresh a cada 5 min apenas para D-0
+    if (_autoRefreshTimer) { clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
+    if (isToday) {
+      const proxHora = () => {
+        const t = new Date(Date.now() + 5 * 60 * 1000);
+        return String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
+      };
+      document.getElementById('data-source-badge').textContent =
+        (IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO') + ' · ↻ ' + proxHora();
+      _autoRefreshTimer = setInterval(() => {
+        document.getElementById('data-source-badge').textContent =
+          (IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO') + ' · ↻ ' + proxHora();
+        carregarDados();
+      }, 5 * 60 * 1000);
+    } else {
+      document.getElementById('data-source-badge').textContent =
+        IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · GAS PROXY · 30MIN';
+    }
 
     // Redetecta eventos com 5 min (apenas local — GAS proxy retorna 30 min)
     if (IS_LOCAL && w5 && w5.labels && w5.labels.length) {
