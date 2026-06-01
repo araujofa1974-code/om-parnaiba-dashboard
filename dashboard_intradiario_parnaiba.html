@@ -709,9 +709,11 @@ const UNITS = [
 const NOMINAL_TOTAL   = UNITS.reduce((a,u)=>a+u.nominal,   0);
 const INSTALADA_TOTAL = UNITS.reduce((a,u)=>a+u.instalada, 0);
 
-// Quando servido pelo abrir_dashboard.py (localhost:8765), PDP vem do CSV local
-const IS_LOCAL      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const LOCAL_PDP_URL = IS_LOCAL ? 'http://localhost:8765/api/pdp' : null;
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+// URL do Google Apps Script proxy (pim_dashboard_proxy.gs) para uso em produção
+// Preencha após o deploy do Web App no Google Apps Script
+const GAS_PROXY_URL = '';
 
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
 let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
@@ -1879,14 +1881,6 @@ function updateStatusBar(events) {
   `;
 }
 
-// ── DEMO (SITOP embutido — apenas para GitHub Pages) ──────────────────────
-function loadDemoData() {
-  G.sourceRaw = SITOP_RAW_DATA;
-  document.getElementById('demo-banner').style.display = 'flex';
-  document.getElementById('data-source-badge').textContent = 'DEMO · 30 MIN';
-  renderAll();
-}
-
 function mostrarErro(msg) {
   G.sourceRaw = null;
   const banner = document.getElementById('demo-banner');
@@ -1895,59 +1889,72 @@ function mostrarErro(msg) {
   document.getElementById('data-source-badge').textContent = 'SEM DADOS';
 }
 
-// ── CARREGAR DADOS — Way2 PIM (30 min geração + 5 min eventos) ────────────
+// ── CARREGAR DADOS ─────────────────────────────────────────────────────────
 async function carregarDados() {
-  if (!IS_LOCAL) { loadDemoData(); return; }
-
   const data = document.getElementById('sel-date').value;
   const btn  = document.getElementById('btn-carregar-pim');
   if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
 
   try {
-    const [rPdp, r30, r5] = await Promise.all([
-      fetch(`http://localhost:8765/api/pdp?data=${data}`),
-      fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
-      fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
-    ]);
+    let w30, pdp30, pdpTotal30, w5 = null;
 
-    const pdpMap = await rPdp.json();   // { "HH:MM": { "TG31": MW, ... } }
-    const w30    = await r30.json();    // { labels, data: { "TG31": [...] } }
-    const w5     = await r5.json();     // { labels, data: { "TG31": [...] } }
+    if (IS_LOCAL) {
+      // ── Local: Way2 CSV + PDP CSV via abrir_dashboard.py ──────────────
+      const [rPdp, r30, r5] = await Promise.all([
+        fetch(`http://localhost:8765/api/pdp?data=${data}`),
+        fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
+        fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
+      ]);
+      const pdpMap = await rPdp.json();
+      w30 = await r30.json();
+      w5  = await r5.json();
 
-    if (!w30.labels || !w30.labels.length) {
-      console.warn('[carregarDados] Way2 30min sem dados');
-      mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
-      return;
+      if (!w30.labels || !w30.labels.length) {
+        mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
+        return;
+      }
+
+      // Alinha PDP (fim-de-slot +30 min) com Way2 (início-de-slot)
+      pdp30 = {};
+      UNITS.forEach(u => {
+        pdp30[u.id] = w30.labels.map(lbl => {
+          const [h, m] = lbl.split(':').map(Number);
+          const tot = h * 60 + m + 30;
+          const pk  = `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
+          return (pdpMap[pk] || {})[u.id] || 0;
+        });
+      });
+
+    } else {
+      // ── Produção: Google Apps Script proxy ────────────────────────────
+      if (!GAS_PROXY_URL) {
+        mostrarErro('Preencha GAS_PROXY_URL no HTML com a URL do deploy do Apps Script.');
+        return;
+      }
+      const r   = await fetch(`${GAS_PROXY_URL}?data=${data}&intervalo=TrintaMinutos`);
+      const gas = await r.json();
+
+      if (gas.error || !gas.labels || !gas.labels.length) {
+        mostrarErro('Sem dados para ' + data + (gas.error ? ': ' + gas.error : ''));
+        return;
+      }
+
+      w30   = { labels: gas.labels, data: gas.data };
+      pdp30 = gas.pdp || {};
     }
 
-    // Alinha PDP (fim-de-slot "HH:MM+30") com Way2 (início-de-slot "HH:MM")
-    const pdp30 = {};
-    UNITS.forEach(u => {
-      pdp30[u.id] = w30.labels.map(lbl => {
-        const [h, m] = lbl.split(':').map(Number);
-        const tot = h * 60 + m + 30;
-        const pk  = `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
-        return (pdpMap[pk] || {})[u.id] || 0;
-      });
-    });
-    const pdpTotal30 = w30.labels.map((_,i) =>
-      UNITS.reduce((s,u) => s + (pdp30[u.id][i] || 0), 0)
+    pdpTotal30 = w30.labels.map((_,i) =>
+      UNITS.reduce((s,u) => s + ((pdp30[u.id] || [])[i] || 0), 0)
     );
 
-    G.sourceRaw = {
-      date: data,
-      labels:   w30.labels,
-      data:     w30.data,
-      pdp:      pdp30,
-      pdpTotal: pdpTotal30,
-    };
-
+    G.sourceRaw = { date: data, labels: w30.labels, data: w30.data, pdp: pdp30, pdpTotal: pdpTotal30 };
     document.getElementById('demo-banner').style.display = 'none';
-    document.getElementById('data-source-badge').textContent = 'WAY2 · 30MIN GER · 5MIN EVT';
+    document.getElementById('data-source-badge').textContent =
+      IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · GAS PROXY · 30MIN';
     renderAll();
 
-    // Redetecta eventos com resolução 5 min (mais preciso)
-    if (w5.labels && w5.labels.length) {
+    // Redetecta eventos com 5 min (apenas local — GAS proxy retorna 30 min)
+    if (IS_LOCAL && w5 && w5.labels && w5.labels.length) {
       const pdp5 = {};
       UNITS.forEach(u => {
         pdp5[u.id] = [];
@@ -1979,11 +1986,7 @@ async function carregarDados() {
 window.addEventListener('DOMContentLoaded', ()=>{
   const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   document.getElementById('sel-date').value = ontem;
-  if (IS_LOCAL) {
-    carregarDados();   // auto-carrega Way2 quando rodando no servidor local
-  } else {
-    loadDemoData();
-  }
+  carregarDados();
 });
 </script>
 </body>
