@@ -989,10 +989,10 @@ const S4_DATES = (function(){
 
   return {
     // Parnaíba I — ciclo independente por equipamento
-    pi_comp:  ['14/04','17/04','20/04','23/04','26/04','29/04','02/05','05/05','08/05','11/05'],
+    pi_comp:  calc(['14/04','17/04','20/04','23/04','26/04','29/04','02/05','05/05','08/05','11/05'], 3),
     pi_sec:   calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
     // Parnaíba V — ciclo independente por equipamento
-    pv_comp:  ['14/04','17/04','20/04','23/04','26/04','29/04','02/05','05/05','08/05','11/05'],
+    pv_comp:  calc(['14/04','17/04','20/04','23/04','26/04','29/04','02/05','05/05','08/05','11/05'], 3),
     pv_sec:   calc(['16/03','23/03','30/03','06/04','13/04','20/04','27/04','04/05','11/05','18/05'], 7),
     // Parnaíba VI — ciclo independente por equipamento
     pvi_comp: calc(['16/04','17/04','18/04','19/04','20/04','21/04','22/04','23/04','24/04','25/04'], 1),
@@ -1511,6 +1511,7 @@ function _coletarEstado(){
     s4cells.push({i,v:el.dataset.val||'',c:el.dataset.comment||''});
   });
   estado['__s4__']=JSON.stringify(s4cells);
+  estado['__s4dates__']=JSON.stringify(S4_DATES);
   // S2 — ocorrências por usina (suporte a múltiplas linhas)
   const s2snap={};
   ['u_piv','u_pii','u_piii','u_p4'].forEach(bid=>{
@@ -1681,6 +1682,18 @@ function _aplicarEstado(estado){
       });
       ok++;
     } catch(e){ console.error('S2 restore error:',e); }
+  }
+  // S4 — restaura datas do ciclo (antes das células para evitar desalinhamento)
+  if(estado['__s4dates__']){
+    try{
+      const savedDates=JSON.parse(estado['__s4dates__']);
+      Object.keys(savedDates).forEach(key=>{
+        S4_DATES[key]=savedDates[key];
+        document.querySelectorAll(`[data-s4unit="${key}"]`).forEach((el,i)=>{
+          el.textContent=savedDates[key][i]||'';
+        });
+      });
+    } catch(e){ console.error('S4 dates restore error:',e); }
   }
   // S4 — restaura células
   if(estado['__s4__']){
