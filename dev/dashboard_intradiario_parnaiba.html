@@ -553,6 +553,7 @@
       <div class="kpi-label">Total Bruto</div>
       <div class="kpi-value" id="kpi-total">—</div>
       <div class="kpi-sub">MWh acumulado no dia</div>
+      <div class="kpi-sub" id="kpi-total-pdp" style="margin-top:4px">PDP: — MWh</div>
     </div>
     <div class="kpi" style="--kpi-color:var(--c31)">
       <div class="kpi-label">Pico do dia</div>
@@ -913,10 +914,15 @@ function renderKPIs(labels, data, visUnits) {
   const ih = G.resolution/60;
   let totalMWh=0, pico=0, picoH='', minV=9999, minH='', lastV=0;
 
+  let pdpMWh = 0;
   labels.forEach((lbl,i)=>{
-    let soma=0;
-    visUnits.forEach(u=>{ soma+=(data[u.id][i]||0); });
-    totalMWh += soma*ih;
+    let soma=0, somaP=0;
+    visUnits.forEach(u=>{
+      soma  += (data[u.id][i]       || 0);
+      somaP += (G.pdp[u.id]?.[i]   || 0);
+    });
+    totalMWh += soma  * ih;
+    pdpMWh   += somaP * ih;
     if(soma>pico){ pico=soma; picoH=lbl; }
     if(soma>0 && soma<minV){ minV=soma; minH=lbl; }
     if(i===labels.length-1) lastV=soma;
@@ -929,6 +935,16 @@ function renderKPIs(labels, data, visUnits) {
   const desls    = G.events.filter(e=>e.type==='DESLIGAMENTO').length;
 
   document.getElementById('kpi-total').textContent = Math.round(totalMWh).toLocaleString('pt-BR');
+  const pdpEl = document.getElementById('kpi-total-pdp');
+  if (pdpMWh > 0) {
+    const desvPct = pdpMWh > 0 ? Math.round((totalMWh - pdpMWh) / pdpMWh * 100) : 0;
+    const cor     = desvPct >= 0 ? 'var(--accent)' : 'var(--danger)';
+    const sinal   = desvPct >= 0 ? '+' : '';
+    pdpEl.innerHTML = `PDP: ${Math.round(pdpMWh).toLocaleString('pt-BR')} MWh `
+      + `<span style="color:${cor}">(${sinal}${desvPct}%)</span>`;
+  } else {
+    pdpEl.textContent = 'PDP: sem dados';
+  }
   document.getElementById('kpi-pico').textContent  = pico.toFixed(1)+' MW';
   document.getElementById('kpi-pico-hora').textContent = picoH;
   document.getElementById('kpi-min').textContent   = minV.toFixed(1)+' MW';
