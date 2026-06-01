@@ -490,7 +490,7 @@
 <header>
   <div class="logo">COMPLEXO <span>PARNAÍBA</span> · OPERAÇÃO INTRADIÁRIA</div>
   <div class="header-right">
-    <span id="data-source-badge">PIM WAY2 · 30 MIN</span>
+    <span id="data-source-badge">COMPLEXO PARNAÍBA · 30 MIN</span>
     <span id="clock">--:--:--</span>
   </div>
 </header>
@@ -499,7 +499,7 @@
   <div class="ctrl-group">
     <label>Data</label>
     <input type="date" id="sel-date">
-    <button class="btn btn-primary btn-sm" id="btn-carregar-pim" onclick="fetchFromPIM()">Carregar PIM</button>
+    <button class="btn btn-primary btn-sm" id="btn-carregar-pim" onclick="carregarDados()">Carregar Dados</button>
   </div>
   <div class="ctrl-group">
     <label>Planta</label>
@@ -521,7 +521,7 @@
 
 <main>
   <div class="demo-banner" id="demo-banner" style="display:none">
-    ℹ Dados de demonstração — sem conexão com o PIM Way2.
+    ℹ Dados de demonstração.
   </div>
 
   <!-- KPIs -->
@@ -709,12 +709,9 @@ const UNITS = [
 const NOMINAL_TOTAL   = UNITS.reduce((a,u)=>a+u.nominal,   0);
 const INSTALADA_TOTAL = UNITS.reduce((a,u)=>a+u.instalada, 0);
 
-// URL do Web App GAS proxy (preencher após deploy)
-const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbxVfV6Y87ElmG4o7mQiYrSLwyYA9MSttmed3fCxOvMCRKc-OJjhY6JDORPkUPXPM7gG/exec';
-
 // Quando servido pelo abrir_dashboard.py (localhost:8765), PDP vem do CSV local
-const IS_LOCAL     = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const LOCAL_PDP_URL = IS_LOCAL ? `http://localhost:8765/api/pdp` : null;
+const IS_LOCAL      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const LOCAL_PDP_URL = IS_LOCAL ? 'http://localhost:8765/api/pdp' : null;
 
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
 let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
@@ -1875,7 +1872,7 @@ function updateStatusBar(events) {
     <span>·</span>
     <span>${partidas} partida(s) · ${desls} desligamento(s) programado(s)</span>
     <span>·</span>
-    <span>Fonte: ${G.sourceRaw===SITOP_RAW_DATA?'Demo':'PIM Way2'} · ${document.getElementById('sel-date').value} · Resolução ${G.resolution} min</span>
+    <span>Fonte: ${G.sourceRaw===SITOP_RAW_DATA?'Demo':'Tempo Real'} · ${document.getElementById('sel-date').value} · Resolução ${G.resolution} min</span>
     <span>·</span>
     <span>Atualizado: ${new Date().toLocaleTimeString('pt-BR',{hour12:false})}</span>
   `;
@@ -1889,90 +1886,17 @@ function loadDemoData() {
   renderAll();
 }
 
-// ── CARREGAR DO PIM VIA PROXY GAS ──────────────────────────────────────────
-async function fetchFromPIM() {
-  if (!GAS_PROXY_URL) {
-    alert('GAS_PROXY_URL não configurada.\nDeploy o script pim_dashboard_proxy.gs e preencha a constante no topo do dashboard.');
-    return;
-  }
-  const date = document.getElementById('sel-date').value;
-  if (!date) { alert('Selecione uma data.'); return; }
-
-  const btn = document.getElementById('btn-carregar-pim');
-  btn.disabled = true;
-  btn.textContent = 'Carregando…';
-
-  try {
-    const url  = `${GAS_PROXY_URL}?data=${date}&intervalo=TrintaMinutos`;
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const json = await resp.json();
-    if (json.error) throw new Error(json.error);
-
-    // Se PDP veio vazio do proxy (ONS API não configurada) e estamos em localhost,
-    // buscar do CSV local gerado pelo pdp_download.py (via abrir_dashboard.py)
-    let pdpFinal = (json.pdp && Object.keys(json.pdp).length) ? json.pdp : null;
-
-    if (!pdpFinal && LOCAL_PDP_URL) {
-      try {
-        const pr   = await fetch(`${LOCAL_PDP_URL}?data=${date}`);
-        const mapa = await pr.json(); // { "HH:MM": { "UG": mw }, ... }
-        if (Object.keys(mapa).length) {
-          // Converter { hora: { uid: mw } } → { uid: [mw por label] }
-          const byUnit = {};
-          json.labels.forEach((lbl, idx) => {
-            const hora = lbl === '00:00' ? '24:00' : lbl; // normalizar virada
-            const slot = mapa[lbl] || mapa[hora] || {};
-            for (const [uid, mw] of Object.entries(slot)) {
-              if (!byUnit[uid]) byUnit[uid] = new Array(json.labels.length).fill(0);
-              byUnit[uid][idx] = mw;
-            }
-          });
-          if (Object.keys(byUnit).length) pdpFinal = byUnit;
-        }
-      } catch(e) {
-        console.warn('PDP local indisponível:', e.message);
-      }
-    }
-
-    if (!pdpFinal) {
-      pdpFinal = SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdp : {};
-    }
-
-    G.sourceRaw = {
-      date:     json.date,
-      labels:   json.labels,
-      data:     json.data,
-      pdp:      pdpFinal,
-      pdpTotal: SITOP_RAW_DATA.date === json.date ? SITOP_RAW_DATA.pdpTotal : [],
-    };
-
-    document.getElementById('demo-banner').style.display = 'none';
-    renderAll();
-  } catch(err) {
-    alert('Erro ao carregar dados do PIM:\n' + err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Carregar PIM';
-  }
+// ── CARREGAR DADOS (fonte a definir) ───────────────────────────────────────
+function carregarDados() {
+  // Ponto de extensão: conectar nova fonte de geração aqui.
+  loadDemoData();
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
-  // Inicia com D-1 (ontem)
   const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   document.getElementById('sel-date').value = ontem;
-
-  if (GAS_PROXY_URL) {
-    fetchFromPIM();
-  } else {
-    loadDemoData();
-  }
-
-  // Auto-refresh a cada 30 min — mantém a data selecionada
-  setInterval(() => {
-    if (GAS_PROXY_URL) fetchFromPIM();
-  }, 1800000);
+  loadDemoData();
 });
 </script>
 </body>
