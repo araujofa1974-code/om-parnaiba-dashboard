@@ -121,11 +121,11 @@ def baixar_pdp(data_iso: str) -> Path | None:
         try:
             # ── Login SINtegre ────────────────────────────────────────────
             log("Login SINtegre...")
-            page.goto("https://sintegre.ons.org.br", wait_until="networkidle")
+            page.goto("https://sintegre.ons.org.br", wait_until="domcontentloaded", timeout=60000)
             page.fill("#username", CONFIG["usuario"])
             page.fill("#password", CONFIG["senha"])
             page.click("input[value='Entrar']")
-            page.wait_for_load_state("networkidle")
+            page.wait_for_load_state("domcontentloaded", timeout=60000)
             log("Login OK", "OK")
 
             # ── Download direto via frmPlanilha.aspx ──────────────────────
