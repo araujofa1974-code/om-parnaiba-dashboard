@@ -782,23 +782,28 @@ function loadSitopData(resMin) {
 }
 
 // ── DETECÇÃO DE EVENTOS ────────────────────────────────────────────────────
-function detectEvents(labels, data, pdp, sensitivity, resMin, visUnits) {
+function detectEvents(labels, data, pdp, sensitivity, resMin, visUnits, isToday) {
   const lookahead = Math.max(1, Math.round(30 / resMin));
   const events = [];
+  // Para D-0, o último slot está incompleto (média parcial) — exclui da detecção de trips
+  const lastSafeIdx = (isToday && labels.length > 1) ? labels.length - 2 : labels.length - 1;
+
   visUnits.forEach(u => {
     const series    = data[u.id];
     const pdpSeries = pdp[u.id] || [];
     if (!series) return;
     const minOp = u.min_op ?? 5;
 
-    for (let i = 1; i < series.length; i++) {
+    for (let i = 1; i <= lastSafeIdx; i++) {
       const prev  = series[i-1];
       const curr  = series[i];
       const delta = curr - prev;
       let type = null;
 
       if (prev >= 5 && curr < 5) {
-        // Parada total — TRIP ou DESLIGAMENTO conforme PDP
+        // Parada total — confirma apenas se a geração chegou a ~0 em < 15 min do slot
+        // (curr < prev/2 implica queda nos primeiros 15 min: avg = prev×t/30, t<15 → avg<prev/2)
+        if (curr >= prev / 2) continue;
         const pdpWindow  = pdpSeries.slice(i, i + lookahead + 1);
         const pdpCaiLogo = pdpWindow.some(v => v <= 5);
         type = pdpCaiLogo ? 'DESLIGAMENTO' : 'TRIP';
@@ -858,7 +863,13 @@ function renderAll() {
     ? UNITS
     : UNITS.filter(u=>u.planta===filtroPlanta);
 
-  G.events = detectEvents(labels, data, pdp, sensitivity, res, visUnits);
+  const _brNow2  = new Date(Date.now() - 3 * 3600000);
+  const _hoje2   = _brNow2.getUTCFullYear() + '-' +
+    String(_brNow2.getUTCMonth() + 1).padStart(2,'0') + '-' +
+    String(_brNow2.getUTCDate()).padStart(2,'0');
+  const isToday  = (document.getElementById('sel-date').value || '') === _hoje2;
+
+  G.events = detectEvents(labels, data, pdp, sensitivity, res, visUnits, isToday);
 
   renderKPIs(labels, data, visUnits);
   renderMainChart(labels, data, visUnits);
@@ -1856,6 +1867,10 @@ async function carregarDados() {
   const data = document.getElementById('sel-date').value;
   const btn  = document.getElementById('btn-carregar-pim');
   if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
+  const _brNowCD = new Date(Date.now() - 3 * 3600000);
+  const isToday  = data === (_brNowCD.getUTCFullYear() + '-' +
+    String(_brNowCD.getUTCMonth() + 1).padStart(2,'0') + '-' +
+    String(_brNowCD.getUTCDate()).padStart(2,'0'));
 
   try {
     let w30, pdp30, pdpTotal30, w5 = null;
@@ -1953,7 +1968,7 @@ async function carregarDados() {
       const sens     = parseInt(document.getElementById('sel-trip-sens').value) || 50;
       const filtroP  = document.getElementById('sel-planta').value;
       const visUnits = filtroP === 'all' ? UNITS : UNITS.filter(u => u.planta === filtroP);
-      G.events = detectEvents(w5.labels, w5.data, pdp5, sens, 5, visUnits);
+      G.events = detectEvents(w5.labels, w5.data, pdp5, sens, 5, visUnits, isToday);
       renderEventsTable(G.events);
       updateStatusBar(G.events);
       const trips = G.events.filter(e=>e.type==='TRIP').length;
