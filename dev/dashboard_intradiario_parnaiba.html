@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -498,7 +498,7 @@
 <div class="controls">
   <div class="ctrl-group">
     <label>Data</label>
-    <input type="date" id="sel-date">
+    <input type="date" id="sel-date" onchange="carregarDados()">
     <button class="btn btn-primary btn-sm" id="btn-carregar-pim" onclick="carregarDados()">Carregar Dados</button>
   </div>
   <div class="ctrl-group">
@@ -648,44 +648,6 @@
 
 <script>
 // ── CONFIGURAÇÃO DE UNIDADES ───────────────────────────────────────────────
-// ── DADOS SITOP · 25/05/2026 (FL.PRN.OPR.069) ────────────────────────────
-const SITOP_RAW_DATA = {
-  date: "2026-05-25",
-  labels: ["00:30","01:00","01:30","02:00","02:30","03:00","03:30","04:00","04:30","05:00","05:30","06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","00:00"],
-  data: {
-    TG31:   [167.3,167.2,167.4,166.8,166.4,166.8,167.0,166.3,166.5,166.4,166.3,166.9,166.8,166.4,115.2,107.8,106.6,107.7,108.7,108.2,108.0,108.1,108.0,107.1,107.2,107.1,147.9,158.3,158.4,159.1,157.8,158.2,158.0,158.9,159.6,160.3,161.0,162.0,163.1,164.1,165.1,164.9,165.7,166.6,166.9,167.5,167.6,168.2],
-    TG32:   [165.1,165.0,165.1,165.0,165.0,164.9,164.7,164.0,163.8,163.6,163.7,164.5,164.6,164.2,115.2,108.1,107.0,108.0,109.1,108.5,108.3,108.5,108.5,107.5,107.7,107.7,146.7,156.1,156.1,156.5,156.3,155.9,155.7,156.6,157.3,158.0,158.7,160.1,161.2,162.1,163.1,162.7,163.2,164.1,164.7,165.4,165.3,165.8],
-    TG21:   [167.5,167.8,167.9,168.0,167.4,167.2,167.6,167.0,167.6,167.5,167.3,167.5,167.8,167.1,114.4,107.4,106.3,107.3,108.3,107.8,107.6,107.7,107.6,106.8,106.8,106.8,148.1,158.7,160.0,158.9,158.6,158.6,158.4,159.5,160.2,160.8,161.3,19.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-    TG22:   [167.3,167.2,167.2,166.4,165.7,166.3,166.8,166.4,167.0,166.8,166.8,167.3,167.3,166.5,114.4,107.2,106.1,107.1,108.1,107.5,107.4,107.4,107.4,106.5,106.6,106.6,148.0,158.5,159.0,158.9,158.4,158.4,158.2,159.3,159.8,160.2,160.7,161.3,162.0,163.0,163.4,163.8,166.2,167.2,167.4,167.9,168.2,168.7],
-    TV28:   [364.7,364.7,364.7,364.4,364.0,364.0,364.1,363.7,363.7,363.6,363.5,363.9,363.9,364.0,307.1,290.8,291.1,292.2,293.7,293.1,293.5,292.3,292.1,291.1,291.6,292.7,331.2,355.3,356.3,356.8,356.7,356.8,357.0,357.5,358.3,358.9,359.6,286.9,263.8,264.1,265.1,265.4,266.4,267.6,268.5,269.0,269.1,269.2],
-    TG51:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-    TG52:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,12.1,100.5,100.0,101.3,100.0,98.9,99.9,100.9,100.3,100.1,100.2,100.2,99.3,99.4,99.4,99.0,102.4,102.5,106.1,164.8,165.4,165.2,166.1,166.8,167.7,168.9,170.5,171.6,172.7,173.5,173.4,173.8,174.5,174.7,175.2,175.4,176.4],
-    TV58:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-    TV18:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-    TG12:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-    UG10:   [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],
-    BAG011: [17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,17.6,1.8,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.8,17.1,17.8,18.2,18.2,18.2,18.2,18.2,18.1,18.1,18.1,12.5,12.0,12.0,12.0,12.0,12.0,12.0,12.0,12.0],
-    BAG021: [17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,17.5,1.5,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,8.8,17.6,17.4,17.5,17.5,17.5,17.5,17.5,17.5,17.5,12.4,12.0,12.0,12.0,12.0,12.0,12.0,12.0,12.0],
-    BAG031: [17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,17.7,1.6,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.7,17.1,16.9,17.1,17.1,17.1,17.1,17.1,17.1,17.2,17.2,12.5,12.2,12.2,12.2,12.2,12.2,12.2,12.2,12.2]
-  },
-  pdpTotal: [1453,1453,1453,1453,1177,1177,1177,1177,1177,1177,1177,1177,1192,832,739,705,705,981,981,981,991,1016,1036,1056,1066,1066,1066,1141,1141,1175,1261,1261,1261,1261,1261,1261,1261,1261,1261,1243,1209,1209,1209,1209,1209,1209,1209,1209],
-  pdp: {
-    TG31:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
-    TG32:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
-    TG21:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
-    TG22:   [169,169,169,169,100,100,100,100,100,100,100,100,100,100,100,100,100,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169,169],
-    TV28:   [365,365,365,365,365,365,365,365,365,365,365,365,365,365,290,290,290,290,290,290,290,290,290,290,290,290,290,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365,365],
-    TG51:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    TG52:   [0,0,0,0,0,0,0,0,0,0,0,0,15,15,15,15,15,15,15,15,25,50,70,90,100,100,100,100,100,100,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168,168],
-    TV58:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    TV18:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    TG12:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    UG10:   [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    BAG011: [17,17,17,17,17,17,17,17,17,17,17,17,17,17,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17,17,17,17,17,17,17,17,17,17,12,12,12,12,12,12,12,12],
-    BAG021: [17,17,17,17,17,17,17,17,17,17,17,17,17,17,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17,17,17,17,17,17,17,17,17,17,12,12,12,12,12,12,12,12],
-    BAG031: [17,17,17,17,17,17,17,17,17,17,17,17,17,17,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,17,17,17,17,17,17,17,17,17,17,12,12,12,12,12,12,12,12]
-  }
-};
 
 const UNITS = [
   // nominal  = potência do teste de performance (para HR, FC técnico)
@@ -709,9 +671,11 @@ const UNITS = [
 const NOMINAL_TOTAL   = UNITS.reduce((a,u)=>a+u.nominal,   0);
 const INSTALADA_TOTAL = UNITS.reduce((a,u)=>a+u.instalada, 0);
 
-// Quando servido pelo abrir_dashboard.py (localhost:8765), PDP vem do CSV local
-const IS_LOCAL      = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-const LOCAL_PDP_URL = IS_LOCAL ? 'http://localhost:8765/api/pdp' : null;
+const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+// URL do Google Apps Script proxy (pim_dashboard_proxy.gs) para uso em produção
+// Preencha após o deploy do Web App no Google Apps Script
+const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzYNnutEn2k5eXn16a_8Pq1qKY21Ky8K5PEPGZMNUAcnWnGVqSR35LexvkZPC7O2i57/exec';
 
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
 let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
@@ -1879,14 +1843,6 @@ function updateStatusBar(events) {
   `;
 }
 
-// ── DEMO (SITOP embutido — apenas para GitHub Pages) ──────────────────────
-function loadDemoData() {
-  G.sourceRaw = SITOP_RAW_DATA;
-  document.getElementById('demo-banner').style.display = 'flex';
-  document.getElementById('data-source-badge').textContent = 'DEMO · 30 MIN';
-  renderAll();
-}
-
 function mostrarErro(msg) {
   G.sourceRaw = null;
   const banner = document.getElementById('demo-banner');
@@ -1895,59 +1851,100 @@ function mostrarErro(msg) {
   document.getElementById('data-source-badge').textContent = 'SEM DADOS';
 }
 
-// ── CARREGAR DADOS — Way2 PIM (30 min geração + 5 min eventos) ────────────
+// ── CARREGAR DADOS ─────────────────────────────────────────────────────────
 async function carregarDados() {
-  if (!IS_LOCAL) { loadDemoData(); return; }
-
   const data = document.getElementById('sel-date').value;
   const btn  = document.getElementById('btn-carregar-pim');
   if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
 
   try {
-    const [rPdp, r30, r5] = await Promise.all([
-      fetch(`http://localhost:8765/api/pdp?data=${data}`),
-      fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
-      fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
-    ]);
+    let w30, pdp30, pdpTotal30, w5 = null;
 
-    const pdpMap = await rPdp.json();   // { "HH:MM": { "TG31": MW, ... } }
-    const w30    = await r30.json();    // { labels, data: { "TG31": [...] } }
-    const w5     = await r5.json();     // { labels, data: { "TG31": [...] } }
+    if (IS_LOCAL) {
+      // ── Local: Way2 CSV + PDP CSV via abrir_dashboard.py ──────────────
+      const [rPdp, r30, r5] = await Promise.all([
+        fetch(`http://localhost:8765/api/pdp?data=${data}`),
+        fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
+        fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
+      ]);
+      const pdpMap = await rPdp.json();
+      w30 = await r30.json();
+      w5  = await r5.json();
 
-    if (!w30.labels || !w30.labels.length) {
-      console.warn('[carregarDados] Way2 30min sem dados');
-      mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
-      return;
+      if (!w30.labels || !w30.labels.length) {
+        mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
+        return;
+      }
+
+      // Alinha PDP (fim-de-slot +30 min) com Way2 (início-de-slot)
+      pdp30 = {};
+      UNITS.forEach(u => {
+        pdp30[u.id] = w30.labels.map(lbl => {
+          const [h, m] = lbl.split(':').map(Number);
+          const tot = h * 60 + m + 30;
+          const pk  = `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
+          return (pdpMap[pk] || {})[u.id] || 0;
+        });
+      });
+
+    } else {
+      // ── Produção: Google Apps Script proxy ────────────────────────────
+      if (!GAS_PROXY_URL) {
+        mostrarErro('Preencha GAS_PROXY_URL no HTML com a URL do deploy do Apps Script.');
+        return;
+      }
+      const r   = await fetch(GAS_PROXY_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body:    JSON.stringify({ data: data, intervalo: 'TrintaMinutos' }),
+      })
+      const gas = await r.json();
+
+      if (gas.error || !gas.labels || !gas.labels.length) {
+        mostrarErro('Sem dados para ' + data + (gas.error ? ': ' + gas.error : ''));
+        return;
+      }
+
+      w30   = { labels: gas.labels, data: gas.data };
+      pdp30 = gas.pdp || {};
     }
 
-    // Alinha PDP (fim-de-slot "HH:MM+30") com Way2 (início-de-slot "HH:MM")
-    const pdp30 = {};
-    UNITS.forEach(u => {
-      pdp30[u.id] = w30.labels.map(lbl => {
-        const [h, m] = lbl.split(':').map(Number);
-        const tot = h * 60 + m + 30;
-        const pk  = `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
-        return (pdpMap[pk] || {})[u.id] || 0;
+    // Dia passado: garantir eixo X com 48 slots (dia completo 00:30–00:00)
+    const _brNow = new Date(Date.now() - 3 * 3600000);
+    const _hoje  = _brNow.getUTCFullYear() + '-' +
+      String(_brNow.getUTCMonth() + 1).padStart(2,'0') + '-' +
+      String(_brNow.getUTCDate()).padStart(2,'0');
+    if (data < _hoje && w30.labels.length < 48) {
+      const FULL48 = ["00:30","01:00","01:30","02:00","02:30","03:00","03:30","04:00",
+        "04:30","05:00","05:30","06:00","06:30","07:00","07:30","08:00","08:30","09:00",
+        "09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00",
+        "14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00",
+        "19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","00:00"];
+      const idxMap = {};
+      w30.labels.forEach((lbl, i) => { idxMap[lbl] = i; });
+      const paddedData = {}, paddedPdp = {};
+      UNITS.forEach(u => {
+        paddedData[u.id] = FULL48.map(lbl =>
+          idxMap[lbl] !== undefined ? (w30.data[u.id]?.[idxMap[lbl]] ?? null) : null);
+        paddedPdp[u.id]  = FULL48.map(lbl =>
+          idxMap[lbl] !== undefined ? (pdp30[u.id]?.[idxMap[lbl]] ?? 0) : 0);
       });
-    });
-    const pdpTotal30 = w30.labels.map((_,i) =>
-      UNITS.reduce((s,u) => s + (pdp30[u.id][i] || 0), 0)
+      w30   = { labels: FULL48, data: paddedData };
+      pdp30 = paddedPdp;
+    }
+
+    pdpTotal30 = w30.labels.map((_,i) =>
+      UNITS.reduce((s,u) => s + ((pdp30[u.id] || [])[i] || 0), 0)
     );
 
-    G.sourceRaw = {
-      date: data,
-      labels:   w30.labels,
-      data:     w30.data,
-      pdp:      pdp30,
-      pdpTotal: pdpTotal30,
-    };
-
+    G.sourceRaw = { date: data, labels: w30.labels, data: w30.data, pdp: pdp30, pdpTotal: pdpTotal30 };
     document.getElementById('demo-banner').style.display = 'none';
-    document.getElementById('data-source-badge').textContent = 'WAY2 · 30MIN GER · 5MIN EVT';
+    document.getElementById('data-source-badge').textContent =
+      IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · GAS PROXY · 30MIN';
     renderAll();
 
-    // Redetecta eventos com resolução 5 min (mais preciso)
-    if (w5.labels && w5.labels.length) {
+    // Redetecta eventos com 5 min (apenas local — GAS proxy retorna 30 min)
+    if (IS_LOCAL && w5 && w5.labels && w5.labels.length) {
       const pdp5 = {};
       UNITS.forEach(u => {
         pdp5[u.id] = [];
@@ -1977,13 +1974,12 @@ async function carregarDados() {
 
 // ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
-  const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  document.getElementById('sel-date').value = ontem;
-  if (IS_LOCAL) {
-    carregarDados();   // auto-carrega Way2 quando rodando no servidor local
-  } else {
-    loadDemoData();
-  }
+  const brNow  = new Date(Date.now() - 3 * 3600000); // UTC-3 fixo (Brasil sem DST desde 2019)
+  const hojeStr = brNow.getUTCFullYear() + '-' +
+    String(brNow.getUTCMonth() + 1).padStart(2,'0') + '-' +
+    String(brNow.getUTCDate()).padStart(2,'0');
+  document.getElementById('sel-date').value = hojeStr;
+  carregarDados();
 });
 </script>
 </body>
