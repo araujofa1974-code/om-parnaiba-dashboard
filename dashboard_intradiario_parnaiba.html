@@ -64,8 +64,8 @@
   }
   #refresh-countdown {
     display: none;
-    font-size: 10px; color: var(--text2); letter-spacing: .05em;
-    opacity: .65;
+    opacity: .7;
+    cursor: default;
   }
   #data-source-badge {
     font-size: 10px; padding: 3px 8px;
@@ -496,7 +496,17 @@
   <div class="logo">COMPLEXO <span>PARNAÍBA</span> · OPERAÇÃO INTRADIÁRIA</div>
   <div class="header-right">
     <span id="data-source-badge">COMPLEXO PARNAÍBA · 30 MIN</span>
-    <span id="refresh-countdown"></span>
+    <!-- relógio analógico regressivo: arco depleta + ponteiro gira em 5 min -->
+    <svg id="refresh-countdown" width="26" height="26" viewBox="0 0 26 26" title="Próxima atualização automática">
+      <circle cx="13" cy="13" r="10" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="1.5"/>
+      <circle id="refresh-arc" cx="13" cy="13" r="10" fill="none"
+              stroke="rgba(29,158,117,.6)" stroke-width="1.5"
+              stroke-dasharray="62.83 62.83" stroke-dashoffset="0"
+              stroke-linecap="round" transform="rotate(-90 13 13)"/>
+      <line id="refresh-hand" x1="13" y1="13" x2="13" y2="5"
+            stroke="rgba(29,158,117,.9)" stroke-width="1.2" stroke-linecap="round"/>
+      <circle cx="13" cy="13" r="1.5" fill="rgba(29,158,117,.7)"/>
+    </svg>
     <span id="clock">--:--:--</span>
   </div>
 </header>
@@ -1973,12 +1983,15 @@ async function carregarDados() {
       document.getElementById('data-source-badge').textContent =
         IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO';
       _nextRefreshAt = Date.now() + 5 * 60 * 1000;
-      // Atualiza countdown a cada segundo
+      // Anima arco SVG e ponteiro a cada segundo
+      const CIRCUM = 62.83; // 2π × r=10
+      const arc    = document.getElementById('refresh-arc');
+      const hand   = document.getElementById('refresh-hand');
       const tickCountdown = () => {
-        const rem = Math.max(0, Math.round((_nextRefreshAt - Date.now()) / 1000));
-        const m = String(Math.floor(rem / 60)).padStart(2, '0');
-        const s = String(rem % 60).padStart(2, '0');
-        if (cdEl) cdEl.textContent = `↻ ${m}:${s}`;
+        const remMs  = Math.max(0, _nextRefreshAt - Date.now());
+        const frac   = remMs / (5 * 60 * 1000); // 1 → 0
+        if (arc)  arc.setAttribute('stroke-dashoffset', CIRCUM * (1 - frac));
+        if (hand) hand.setAttribute('transform', `rotate(${(1 - frac) * 360} 13 13)`);
       };
       if (cdEl) { cdEl.style.display = ''; tickCountdown(); }
       _countdownTimer   = setInterval(tickCountdown, 1000);
