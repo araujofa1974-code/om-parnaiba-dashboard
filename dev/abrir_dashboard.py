@@ -13,6 +13,7 @@ Fluxo:
 """
 
 import argparse, csv, http.server, io, json, os, subprocess, sys, threading, webbrowser
+_pdp_downloading = set()   # datas com download em andamento
 from datetime    import datetime, timedelta
 from pathlib     import Path
 from urllib.parse import urlparse, parse_qs
@@ -110,6 +111,20 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         if not data:
             data = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
+        arq = DEV_DIR / f"PDP_ENEVA_N_{data}.csv"
+        if not arq.exists() and data not in _pdp_downloading:
+            _pdp_downloading.add(data)
+            def _baixar():
+                try:
+                    subprocess.run(
+                        [sys.executable, str(DEV_DIR / "pdp_download.py"), "--data", data],
+                        cwd=str(DEV_DIR),
+                    )
+                finally:
+                    _pdp_downloading.discard(data)
+            threading.Thread(target=_baixar, daemon=True).start()
+            print(f"[pdp] Download iniciado em background para {data}")
+
         mapa = carregar_pdp(data)
         self._json(mapa)
 
@@ -153,7 +168,7 @@ def garantir_way2(data_iso: str) -> bool:
         return True
     print(f"[i] Way2 CSV não encontrado — executando way2_coleta.py ({data_iso})...")
     ret = subprocess.run(
-        [sys.executable, str(DEV_DIR / "way2_coleta.py")],
+        [sys.executable, str(DEV_DIR / "way2_coleta.py"), "--data", data_iso],
         cwd=str(DEV_DIR),
     )
     if ret.returncode == 0:
@@ -209,9 +224,12 @@ def main():
         criar_tarefa_agendada()
         return
 
+    d0 = datetime.now().strftime("%Y-%m-%d")
     d1 = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
     garantir_way2(d1)
     garantir_pdp(d1)
+    garantir_way2(d0)
+    # PDP D-0: download em background via /api/pdp (não bloqueia inicialização)
 
     # Servidor HTTP local
     server = http.server.HTTPServer(("localhost", PORTA), DashboardHandler)
