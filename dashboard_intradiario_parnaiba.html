@@ -62,6 +62,11 @@
   #clock {
     font-size: 12px; color: var(--accent); letter-spacing: .08em;
   }
+  #refresh-countdown {
+    display: none;
+    font-size: 10px; color: var(--text2); letter-spacing: .05em;
+    opacity: .65;
+  }
   #data-source-badge {
     font-size: 10px; padding: 3px 8px;
     background: rgba(29,158,117,.15);
@@ -491,6 +496,7 @@
   <div class="logo">COMPLEXO <span>PARNAÍBA</span> · OPERAÇÃO INTRADIÁRIA</div>
   <div class="header-right">
     <span id="data-source-badge">COMPLEXO PARNAÍBA · 30 MIN</span>
+    <span id="refresh-countdown"></span>
     <span id="clock">--:--:--</span>
   </div>
 </header>
@@ -680,6 +686,8 @@ const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzYNnutEn2k5eXn16
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
 let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
 let _autoRefreshTimer = null;
+let _countdownTimer   = null;
+let _nextRefreshAt    = null;
 let mainChart=null, stackChart=null, sparkCharts={};
 
 // ── RELÓGIO ────────────────────────────────────────────────────────────────
@@ -1957,23 +1965,28 @@ async function carregarDados() {
     document.getElementById('demo-banner').style.display = 'none';
     renderAll();
 
-    // Auto-refresh a cada 5 min apenas para D-0
+    // Auto-refresh + countdown apenas para D-0
     if (_autoRefreshTimer) { clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
+    if (_countdownTimer)   { clearInterval(_countdownTimer);   _countdownTimer   = null; }
+    const cdEl = document.getElementById('refresh-countdown');
     if (isToday) {
-      const proxHora = () => {
-        const t = new Date(Date.now() + 5 * 60 * 1000);
-        return String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0');
-      };
       document.getElementById('data-source-badge').textContent =
-        (IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO') + ' · ↻ ' + proxHora();
-      _autoRefreshTimer = setInterval(() => {
-        document.getElementById('data-source-badge').textContent =
-          (IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO') + ' · ↻ ' + proxHora();
-        carregarDados();
-      }, 5 * 60 * 1000);
+        IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO';
+      _nextRefreshAt = Date.now() + 5 * 60 * 1000;
+      // Atualiza countdown a cada segundo
+      const tickCountdown = () => {
+        const rem = Math.max(0, Math.round((_nextRefreshAt - Date.now()) / 1000));
+        const m = String(Math.floor(rem / 60)).padStart(2, '0');
+        const s = String(rem % 60).padStart(2, '0');
+        if (cdEl) cdEl.textContent = `↻ ${m}:${s}`;
+      };
+      if (cdEl) { cdEl.style.display = ''; tickCountdown(); }
+      _countdownTimer   = setInterval(tickCountdown, 1000);
+      _autoRefreshTimer = setInterval(carregarDados, 5 * 60 * 1000);
     } else {
       document.getElementById('data-source-badge').textContent =
         IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · GAS PROXY · 30MIN';
+      if (cdEl) cdEl.style.display = 'none';
     }
 
     // Redetecta eventos com 5 min (apenas local — GAS proxy retorna 30 min)
