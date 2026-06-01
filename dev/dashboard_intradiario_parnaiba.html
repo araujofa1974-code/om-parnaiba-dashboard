@@ -1883,13 +1883,88 @@ function loadDemoData() {
   G.sourceRaw = SITOP_RAW_DATA;
   document.getElementById('demo-banner').style.display = 'flex';
   document.getElementById('sel-date').value = SITOP_RAW_DATA.date;
+  document.getElementById('data-source-badge').textContent = 'DEMO · 30 MIN';
   renderAll();
 }
 
-// ── CARREGAR DADOS (fonte a definir) ───────────────────────────────────────
-function carregarDados() {
-  // Ponto de extensão: conectar nova fonte de geração aqui.
-  loadDemoData();
+// ── CARREGAR DADOS — Way2 PIM (30 min geração + 5 min eventos) ────────────
+async function carregarDados() {
+  if (!IS_LOCAL) { loadDemoData(); return; }
+
+  const data = document.getElementById('sel-date').value;
+  const btn  = document.getElementById('btn-carregar-pim');
+  if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
+
+  try {
+    const [rPdp, r30, r5] = await Promise.all([
+      fetch(`http://localhost:8765/api/pdp?data=${data}`),
+      fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
+      fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
+    ]);
+
+    const pdpMap = await rPdp.json();   // { "HH:MM": { "TG31": MW, ... } }
+    const w30    = await r30.json();    // { labels, data: { "TG31": [...] } }
+    const w5     = await r5.json();     // { labels, data: { "TG31": [...] } }
+
+    if (!w30.labels || !w30.labels.length) {
+      console.warn('[carregarDados] Way2 30min sem dados — usando demo');
+      loadDemoData();
+      return;
+    }
+
+    // Alinha PDP (fim-de-slot "HH:MM+30") com Way2 (início-de-slot "HH:MM")
+    const pdp30 = {};
+    UNITS.forEach(u => {
+      pdp30[u.id] = w30.labels.map(lbl => {
+        const [h, m] = lbl.split(':').map(Number);
+        const tot = h * 60 + m + 30;
+        const pk  = `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
+        return (pdpMap[pk] || {})[u.id] || 0;
+      });
+    });
+    const pdpTotal30 = w30.labels.map((_,i) =>
+      UNITS.reduce((s,u) => s + (pdp30[u.id][i] || 0), 0)
+    );
+
+    G.sourceRaw = {
+      date: data,
+      labels:   w30.labels,
+      data:     w30.data,
+      pdp:      pdp30,
+      pdpTotal: pdpTotal30,
+    };
+
+    document.getElementById('demo-banner').style.display = 'none';
+    document.getElementById('data-source-badge').textContent = 'WAY2 · 30MIN GER · 5MIN EVT';
+    renderAll();
+
+    // Redetecta eventos com resolução 5 min (mais preciso)
+    if (w5.labels && w5.labels.length) {
+      const pdp5 = {};
+      UNITS.forEach(u => {
+        pdp5[u.id] = [];
+        (pdp30[u.id] || []).forEach(v => { for(let j=0;j<6;j++) pdp5[u.id].push(v); });
+      });
+      const sens     = parseInt(document.getElementById('sel-trip-sens').value) || 50;
+      const filtroP  = document.getElementById('sel-planta').value;
+      const visUnits = filtroP === 'all' ? UNITS : UNITS.filter(u => u.planta === filtroP);
+      G.events = detectEvents(w5.labels, w5.data, pdp5, sens, 5, visUnits);
+      renderEventsTable(G.events);
+      updateStatusBar(G.events);
+      const trips = G.events.filter(e=>e.type==='TRIP').length;
+      const reds  = G.events.filter(e=>e.type==='REDUÇÃO').length;
+      const desls = G.events.filter(e=>e.type==='DESLIGAMENTO').length;
+      document.getElementById('kpi-trips').textContent     = trips + reds;
+      document.getElementById('kpi-trips-sub').textContent = `${trips} trips · ${reds} reduções · ${desls} deslig.`;
+      document.getElementById('badge-trips').textContent   = trips + reds;
+    }
+
+  } catch(err) {
+    console.error('[carregarDados] erro:', err);
+    loadDemoData();
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Carregar Dados'; }
+  }
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
