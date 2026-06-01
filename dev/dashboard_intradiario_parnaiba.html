@@ -824,6 +824,7 @@ function detectEvents(labels, data, pdp, sensitivity, resMin, visUnits, isToday)
     for (let i = 1; i <= lastSafeIdx; i++) {
       const prev  = series[i-1];
       const curr  = series[i];
+      if (prev == null || curr == null) continue;  // slot sem leitura (API ainda não retornou)
       const delta = curr - prev;
       let type = null;
 
