@@ -1993,7 +1993,7 @@ async function carregarDados() {
         if (arc)  arc.setAttribute('stroke-dashoffset', CIRCUM * (1 - frac));
         if (hand) hand.setAttribute('transform', `rotate(${(1 - frac) * 360} 13 13)`);
       };
-      if (cdEl) { cdEl.style.display = ''; tickCountdown(); }
+      if (cdEl) { cdEl.style.display = 'inline'; tickCountdown(); }
       _countdownTimer   = setInterval(tickCountdown, 1000);
       _autoRefreshTimer = setInterval(carregarDados, 5 * 60 * 1000);
     } else {
