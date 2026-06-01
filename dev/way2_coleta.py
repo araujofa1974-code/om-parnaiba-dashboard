@@ -122,7 +122,7 @@ def _parse_dt(s: str) -> datetime | None:
         return None
 
 
-def buscar_grupo(nome: str, cfg: dict) -> pd.DataFrame:
+def buscar_grupo(nome: str, cfg: dict, tempo_relativo: str = "Ontem") -> pd.DataFrame:
     """Chama a API Way2 (5 min) e retorna DataFrame pivotado com valores em MW."""
     ids_str = "%2C".join(str(i) for i in cfg["ids"])
     url = (
@@ -130,7 +130,7 @@ def buscar_grupo(nome: str, cfg: dict) -> pd.DataFrame:
         "&grandezas=Eneat"
         "&contextodasdatas=ConsiderarDiaCheio"
         "&intervalo=CincoMinutos"
-        "&medicao-temporelativo=Ontem"
+        f"&medicao-temporelativo={tempo_relativo}"
     )
 
     print(f"  [{nome}] requisitando...")
@@ -281,15 +281,39 @@ def _estilizar(ws, ncols: int):
 
 
 def main():
-    import urllib3
+    import argparse, urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    d1 = (datetime.now() - timedelta(days=1)).date()
-    print(f"\n=== Way2 Coleta D-1: {d1} ===\n")
+    ap = argparse.ArgumentParser(description="Coleta Way2 para o dashboard")
+    ap.add_argument("--data", default=None,
+                    help="Data ISO YYYY-MM-DD (default: D-1). Use 'hoje' para D-0.")
+    args = ap.parse_args()
+
+    hoje = datetime.now().date()
+    ontem = (hoje - timedelta(days=1))
+
+    if args.data is None or args.data.lower() == "ontem":
+        d1 = ontem
+        tempo_relativo = "Ontem"
+    elif args.data.lower() == "hoje":
+        d1 = hoje
+        tempo_relativo = "Hoje"
+    else:
+        from datetime import date as _date
+        d1 = _date.fromisoformat(args.data)
+        if d1 == hoje:
+            tempo_relativo = "Hoje"
+        elif d1 == ontem:
+            tempo_relativo = "Ontem"
+        else:
+            print(f"[!] A API Way2 só suporta Hoje/Ontem via tempo relativo. Data {d1} não suportada.")
+            sys.exit(1)
+
+    print(f"\n=== Way2 Coleta {tempo_relativo}: {d1} ===\n")
 
     dfs: dict[str, pd.DataFrame] = {}
     for nome, cfg in GRUPOS.items():
-        dfs[nome] = buscar_grupo(nome, cfg)
+        dfs[nome] = buscar_grupo(nome, cfg, tempo_relativo)
 
     # ── CSVs para o dashboard ──────────────────────────────────────────────────
     print("\nGerando CSVs para o dashboard...")
