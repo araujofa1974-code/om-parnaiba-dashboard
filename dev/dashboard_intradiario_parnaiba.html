@@ -725,9 +725,10 @@ setInterval(()=>{
 
 
 // ── CARREGA E AGREGA DADOS ────────────────────────────────────────────────
-// Lê de G.sourceRaw (API ou SITOP demo). PDP vem do proxy (json.pdp) ou do SITOP_RAW_DATA.
+// Lê de G.sourceRaw (Way2 API ou SITOP demo para GitHub Pages).
 function loadSitopData(resMin) {
-  const base = G.sourceRaw || SITOP_RAW_DATA;
+  const base = G.sourceRaw;
+  if (!base || !base.labels) return { labels: [], data: {}, hr: {}, ctm: {}, pdp: {}, pdpTotal: [] };
   const n30  = base.labels.length;  // 48 slots de 30 min
 
   let labels = [], data = {}, pdp = {};
@@ -778,7 +779,7 @@ function loadSitopData(resMin) {
 
   // PDP total do complexo (aba PDP Diário — soma de todas as plantas)
   const pdpTotal = [];
-  const srcPdpTotal = (G.sourceRaw || SITOP_RAW_DATA).pdpTotal || [];
+  const srcPdpTotal = base.pdpTotal || [];
   if (resMin <= 30) {
     const repeat = 30 / resMin;
     for (let i = 0; i < n30; i++)
@@ -927,9 +928,9 @@ function renderKPIs(labels, data, visUnits) {
   const desls    = G.events.filter(e=>e.type==='DESLIGAMENTO').length;
 
   document.getElementById('kpi-total').textContent = Math.round(totalMWh).toLocaleString('pt-BR');
-  document.getElementById('kpi-pico').textContent  = Math.round(pico)+' MW';
+  document.getElementById('kpi-pico').textContent  = pico.toFixed(1)+' MW';
   document.getElementById('kpi-pico-hora').textContent = picoH;
-  document.getElementById('kpi-min').textContent   = Math.round(minV)+' MW';
+  document.getElementById('kpi-min').textContent   = minV.toFixed(1)+' MW';
   document.getElementById('kpi-min-hora').textContent  = minH;
   document.getElementById('kpi-trips').textContent = trips + reducoes;
   document.getElementById('kpi-trips-sub').textContent =
@@ -940,7 +941,7 @@ function renderKPIs(labels, data, visUnits) {
   document.getElementById('kpi-fc').textContent     = fc_complexo+'%';
   document.getElementById('kpi-fc-sub').textContent = 'gerado ÷ Σnominal × 24h';
   // KPI de Atendimento ao Despacho é calculado em renderDespacho()
-  document.getElementById('kpi-agora').textContent  = Math.round(lastV)+' MW';
+  document.getElementById('kpi-agora').textContent  = lastV.toFixed(1)+' MW';
 }
 
 // ── GRÁFICO PRINCIPAL ──────────────────────────────────────────────────────
@@ -1133,8 +1134,8 @@ function sparkTooltip(context) {
 
   el.innerHTML = `
     <div class="stt-hora">${hora}</div>
-    <div class="stt-row">Gerado <span>${gerado !== null ? Math.round(gerado) + ' MW' : '—'}</span></div>
-    <div class="stt-row">PDP <span>${pdpVal !== null ? Math.round(pdpVal) + ' MW' : '—'}</span></div>
+    <div class="stt-row">Gerado <span>${gerado !== null ? gerado.toFixed(1) + ' MW' : '—'}</span></div>
+    <div class="stt-row">PDP <span>${pdpVal !== null ? pdpVal.toFixed(1) + ' MW' : '—'}</span></div>
     ${desvioHtml}`;
 
   const rect = chart.canvas.getBoundingClientRect();
@@ -1244,7 +1245,7 @@ function renderSparks(labels, data, pdp, visUnits) {
     plantCard.innerHTML = `
       <div class="spark-header">
         <span class="spark-name" style="color:${meta.color};font-size:12px;font-family:var(--font-head);font-weight:700">${meta.label}</span>
-        <span class="spark-now" style="color:${meta.color}">${Math.round(plantAvg)}<span class="spark-unit"> MW méd</span></span>
+        <span class="spark-now" style="color:${meta.color}">${plantAvg.toFixed(1)}<span class="spark-unit"> MW méd</span></span>
       </div>
       <canvas id="${plantCid}" class="spark spark-lg" height="80" aria-label="Sparkline ${meta.label}"></canvas>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
@@ -1314,7 +1315,7 @@ function renderSparks(labels, data, pdp, visUnits) {
       card.innerHTML = `
         <div class="spark-header">
           <span class="spark-name" style="color:${item.color}">${item.label}</span>
-          <span class="spark-now" style="color:${item.color}">${Math.round(avg)}<span class="spark-unit"> MW méd</span></span>
+          <span class="spark-now" style="color:${item.color}">${avg.toFixed(1)}<span class="spark-unit"> MW méd</span></span>
         </div>
         <canvas id="${cid}" class="spark" height="75" aria-label="Sparkline ${item.label}"></canvas>
         <div style="display:flex;justify-content:space-between;margin-top:4px">
@@ -1482,7 +1483,7 @@ function renderHR(labels, data, hr, visUnits) {
         </div>
         <div class="hr-values">
           <div>
-            <span class="hr-real-val" style="color:${acc}">${avgMW>0?Math.round(avgMW):'—'}</span>
+            <span class="hr-real-val" style="color:${acc}">${avgMW>0?avgMW.toFixed(1):'—'}</span>
             <span class="hr-real-unit">MW méd</span>
           </div>
           <div class="hr-proj-block">
@@ -1872,19 +1873,26 @@ function updateStatusBar(events) {
     <span>·</span>
     <span>${partidas} partida(s) · ${desls} desligamento(s) programado(s)</span>
     <span>·</span>
-    <span>Fonte: ${G.sourceRaw===SITOP_RAW_DATA?'Demo':'Tempo Real'} · ${document.getElementById('sel-date').value} · Resolução ${G.resolution} min</span>
+    <span>Fonte: ${IS_LOCAL ? 'Tempo Real' : 'Demo'} · ${document.getElementById('sel-date').value} · Resolução ${G.resolution} min</span>
     <span>·</span>
     <span>Atualizado: ${new Date().toLocaleTimeString('pt-BR',{hour12:false})}</span>
   `;
 }
 
-// ── DEMO (SITOP embutido) ──────────────────────────────────────────────────
+// ── DEMO (SITOP embutido — apenas para GitHub Pages) ──────────────────────
 function loadDemoData() {
   G.sourceRaw = SITOP_RAW_DATA;
   document.getElementById('demo-banner').style.display = 'flex';
-  document.getElementById('sel-date').value = SITOP_RAW_DATA.date;
   document.getElementById('data-source-badge').textContent = 'DEMO · 30 MIN';
   renderAll();
+}
+
+function mostrarErro(msg) {
+  G.sourceRaw = null;
+  const banner = document.getElementById('demo-banner');
+  banner.textContent = '⚠ ' + msg;
+  banner.style.display = 'flex';
+  document.getElementById('data-source-badge').textContent = 'SEM DADOS';
 }
 
 // ── CARREGAR DADOS — Way2 PIM (30 min geração + 5 min eventos) ────────────
@@ -1907,8 +1915,8 @@ async function carregarDados() {
     const w5     = await r5.json();     // { labels, data: { "TG31": [...] } }
 
     if (!w30.labels || !w30.labels.length) {
-      console.warn('[carregarDados] Way2 30min sem dados — usando demo');
-      loadDemoData();
+      console.warn('[carregarDados] Way2 30min sem dados');
+      mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
       return;
     }
 
@@ -1961,7 +1969,7 @@ async function carregarDados() {
 
   } catch(err) {
     console.error('[carregarDados] erro:', err);
-    loadDemoData();
+    mostrarErro('Erro ao carregar dados: ' + err.message);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Carregar Dados'; }
   }
@@ -1971,7 +1979,11 @@ async function carregarDados() {
 window.addEventListener('DOMContentLoaded', ()=>{
   const ontem = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   document.getElementById('sel-date').value = ontem;
-  loadDemoData();
+  if (IS_LOCAL) {
+    carregarDados();   // auto-carrega Way2 quando rodando no servidor local
+  } else {
+    loadDemoData();
+  }
 });
 </script>
 </body>
