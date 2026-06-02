@@ -552,18 +552,16 @@
     <div class="kpi" style="--kpi-color:var(--accent)">
       <div class="kpi-label">Total Bruto</div>
       <div class="kpi-value" id="kpi-total">—</div>
-      <div class="kpi-sub">MWh acumulado no dia</div>
-      <div class="kpi-sub" id="kpi-total-pdp" style="margin-top:4px">PDP: — MWh</div>
+      <div class="kpi-sub">GWh acumulado no dia</div>
+      <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:6px" id="kpi-total-pdp">
+        <span style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Total Programado</span>
+        <span style="font-size:15px;font-weight:700;color:var(--text);font-family:var(--font-head)">— GWh</span>
+      </div>
     </div>
-    <div class="kpi" style="--kpi-color:var(--c31)">
-      <div class="kpi-label">Pico do dia</div>
-      <div class="kpi-value" id="kpi-pico">—</div>
-      <div class="kpi-sub" id="kpi-pico-hora">—</div>
-    </div>
-    <div class="kpi" style="--kpi-color:var(--accent2)">
-      <div class="kpi-label">Mínimo do dia</div>
-      <div class="kpi-value" id="kpi-min">—</div>
-      <div class="kpi-sub" id="kpi-min-hora">—</div>
+    <div class="kpi" style="--kpi-color:var(--accent)">
+      <div class="kpi-label">Atend. Despacho</div>
+      <div class="kpi-value" id="kpi-ad">—</div>
+      <div class="kpi-sub" id="kpi-ad-sub">complexo · média ponderada</div>
     </div>
     <div class="kpi" style="--kpi-color:var(--danger)">
       <div class="kpi-label">Eventos detectados</div>
@@ -575,15 +573,18 @@
       <div class="kpi-value" id="kpi-fc">—</div>
       <div class="kpi-sub" id="kpi-fc-sub">vs. capacidade nominal</div>
     </div>
-    <div class="kpi" style="--kpi-color:var(--accent)">
-      <div class="kpi-label">Atend. Despacho</div>
-      <div class="kpi-value" id="kpi-ad">—</div>
-      <div class="kpi-sub" id="kpi-ad-sub">complexo · média ponderada</div>
-    </div>
-    <div class="kpi" style="--kpi-color:var(--c12)">
-      <div class="kpi-label">Agora</div>
-      <div class="kpi-value" id="kpi-agora">—</div>
-      <div class="kpi-sub">MW último intervalo</div>
+    <div class="kpi" style="--kpi-color:var(--c31)">
+      <div class="kpi-label">Pico · Mínimo do dia</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span style="font-size:10px;color:var(--c31);letter-spacing:.05em">↑</span>
+        <span class="kpi-value" id="kpi-pico" style="color:var(--c31)">—</span>
+        <span class="kpi-sub" id="kpi-pico-hora" style="margin-top:0">—</span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:3px">
+        <span style="font-size:10px;color:var(--accent2);letter-spacing:.05em">↓</span>
+        <span class="kpi-value" id="kpi-min" style="color:var(--accent2)">—</span>
+        <span class="kpi-sub" id="kpi-min-hora" style="margin-top:0">—</span>
+      </div>
     </div>
   </div>
 
@@ -935,20 +936,31 @@ function renderKPIs(labels, data, visUnits) {
   const reducoes = G.events.filter(e=>e.type==='REDUÇÃO').length;
   const desls    = G.events.filter(e=>e.type==='DESLIGAMENTO').length;
 
-  document.getElementById('kpi-total').textContent = Math.round(totalMWh).toLocaleString('pt-BR');
   const pdpEl = document.getElementById('kpi-total-pdp');
   if (pdpMWh > 0) {
-    const desvPct = pdpMWh > 0 ? Math.round((totalMWh - pdpMWh) / pdpMWh * 100) : 0;
-    const cor     = desvPct >= 0 ? 'var(--accent)' : 'var(--danger)';
-    const sinal   = desvPct >= 0 ? '+' : '';
-    pdpEl.innerHTML = `PDP: ${Math.round(pdpMWh).toLocaleString('pt-BR')} MWh `
-      + `<span style="color:${cor}">(${sinal}${desvPct}%)</span>`;
+    const desvPctNum = (totalMWh - pdpMWh) / pdpMWh * 100;
+    const desvPct    = desvPctNum.toFixed(1);
+    const sinal      = desvPctNum >= 0 ? '+' : '';
+    const cor        = desvPctNum >= 0 ? 'var(--accent)' : 'var(--danger)';
+    const icone      = desvPctNum >= 0 ? '▲' : '▼';
+    document.getElementById('kpi-total').innerHTML =
+      (totalMWh/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})
+      + '<span style="font-size:22px;font-weight:700;color:var(--white);margin-left:4px">GWh</span>'
+      + `<span style="font-size:22px;font-weight:700;color:${cor};margin-left:8px">${icone} ${sinal}${desvPct}%</span>`;
+    pdpEl.innerHTML =
+      `<span style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Total Programado</span>`
+      + `<span style="font-size:15px;font-weight:700;color:var(--text);font-family:var(--font-head)">${(pdpMWh/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} GWh</span>`;
   } else {
-    pdpEl.textContent = 'PDP: sem dados';
+    document.getElementById('kpi-total').innerHTML =
+      (totalMWh/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})
+      + '<span style="font-size:22px;font-weight:700;color:var(--white);margin-left:4px">GWh</span>';
+    pdpEl.innerHTML =
+      `<span style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Total Programado</span>`
+      + `<span style="font-size:13px;color:var(--muted)">sem dados</span>`;
   }
-  document.getElementById('kpi-pico').textContent  = pico.toFixed(1)+' MW';
+  document.getElementById('kpi-pico').textContent  = (pico/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' GW';
   document.getElementById('kpi-pico-hora').textContent = picoH;
-  document.getElementById('kpi-min').textContent   = minV.toFixed(1)+' MW';
+  document.getElementById('kpi-min').textContent   = (minV/1000).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' GW';
   document.getElementById('kpi-min-hora').textContent  = minH;
   document.getElementById('kpi-trips').textContent = trips + reducoes;
   document.getElementById('kpi-trips-sub').textContent =
@@ -959,7 +971,6 @@ function renderKPIs(labels, data, visUnits) {
   document.getElementById('kpi-fc').textContent     = fc_complexo+'%';
   document.getElementById('kpi-fc-sub').textContent = 'gerado ÷ Σnominal × 24h';
   // KPI de Atendimento ao Despacho é calculado em renderDespacho()
-  document.getElementById('kpi-agora').textContent  = lastV.toFixed(1)+' MW';
 }
 
 // ── GRÁFICO PRINCIPAL ──────────────────────────────────────────────────────
@@ -1063,9 +1074,9 @@ function renderStackChart(labels, data, pdp) {
   datasets.push({
     label: 'PDP',
     data: pdpTotal,
-    borderColor: '#ffffff99',
-    borderWidth: 2,
-    borderDash: [6, 4],
+    borderColor: '#e53535dd',
+    borderWidth: 3,
+    borderDash: [10, 5],
     backgroundColor: 'transparent',
     fill: false,
     tension: 0,
@@ -1417,8 +1428,8 @@ function renderSparks(labels, data, pdp, visUnits) {
             {
               label: 'PDP',
               data: plantPdpSeries,
-              borderColor: '#ffffff66', borderWidth: 1.5,
-              borderDash: [5, 4],
+              borderColor: '#e53535bb', borderWidth: 2,
+              borderDash: [8, 4],
               fill: false, tension: 0, pointRadius: 0
             }
           ]
@@ -1749,7 +1760,7 @@ function renderDespacho(labels, data, pdp, visUnits) {
         <span class="fcfu-detail-val">${mwhGerado.toFixed(1)} MWh</span>
       </div>
       <div class="fcfu-detail-row">
-        <span>Programado (PDP)</span>
+        <span>Total Programado</span>
         <span class="fcfu-detail-val">${mwhProg.toFixed(1)} MWh</span>
       </div>
       <div class="fcfu-detail-row">
