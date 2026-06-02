@@ -562,6 +562,7 @@
       <div class="kpi-label">Atend. Despacho</div>
       <div class="kpi-value" id="kpi-ad">—</div>
       <div class="kpi-sub" id="kpi-ad-sub">complexo · média ponderada</div>
+      <div id="kpi-ad-plants"></div>
     </div>
     <div class="kpi" style="--kpi-color:var(--danger)">
       <div class="kpi-label">Eventos detectados</div>
@@ -1607,6 +1608,7 @@ function renderDespacho(labels, data, pdp, visUnits) {
 
   // KPI global: média ponderada pelo programado
   let totalGerado = 0, totalProg = 0;
+  const plantaStats = {};
 
   const PLANTA_META = {
     P1V:  { label: 'Parnaíba I/V',    color: '#3b9eff' },
@@ -1647,6 +1649,9 @@ function renderDespacho(labels, data, pdp, visUnits) {
 
     totalGerado += mwhGerado;
     totalProg   += mwhProg;
+    if (!plantaStats[planta]) plantaStats[planta] = { gerado: 0, prog: 0, meta };
+    plantaStats[planta].gerado += mwhGerado;
+    plantaStats[planta].prog   += mwhProg;
 
     // Desvio = 1 − (gerado ÷ programado)   [só nos h programados]
     const desvio = mwhProg > 0
@@ -1788,6 +1793,31 @@ function renderDespacho(labels, data, pdp, visUnits) {
     if(adSub) adSub.textContent = adGlobal !== null
       ? `desvio médio: ${adGlobal.toFixed(1)}%`
       : 'sem programação no período';
+  }
+
+  // Breakdown por planta (somente quando filtro = Todas)
+  const filtroPlanta = document.getElementById('sel-planta').value;
+  const adPlantsEl  = document.getElementById('kpi-ad-plants');
+  if (adPlantsEl) {
+    if (filtroPlanta === 'all') {
+      const rows = plantaOrder.filter(p => plantaStats[p] && plantaStats[p].prog > 0).map(p => {
+        const ps      = plantaStats[p];
+        const desvPct = (ps.gerado - ps.prog) / ps.prog * 100;
+        const sinal   = desvPct >= 0 ? '+' : '';
+        const cor     = desvPct >= 0 ? 'var(--accent)' : 'var(--danger)';
+        const icone   = desvPct >= 0 ? '▲' : '▼';
+        const label   = ps.meta.label.replace('Parnaíba ', 'PRN ');
+        return `<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <span style="font-size:10px;color:${ps.meta.color}">${label}</span>
+          <span style="font-size:11px;font-weight:600;color:${cor}">${icone} ${sinal}${desvPct.toFixed(1)}%</span>
+        </div>`;
+      });
+      adPlantsEl.innerHTML = rows.length
+        ? `<div style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px">${rows.join('')}</div>`
+        : '';
+    } else {
+      adPlantsEl.innerHTML = '';
+    }
   }
 }
 
