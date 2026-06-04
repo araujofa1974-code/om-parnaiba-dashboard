@@ -103,6 +103,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self._serve_pdp(parse_qs(parsed.query))
         elif parsed.path == "/api/way2":
             self._serve_way2(parse_qs(parsed.query))
+        elif parsed.path == "/api/status":
+            self._serve_status()
         else:
             super().do_GET()
 
@@ -127,6 +129,18 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         mapa = carregar_pdp(data)
         self._json(mapa)
+
+    def _serve_status(self):
+        hoje = datetime.now().date()
+        faltando = []
+        for i in range(1, 8):
+            d = hoje - timedelta(days=i)
+            data_iso = d.strftime("%Y-%m-%d")
+            arq30 = DEV_DIR / f"Way2_UG_30min_{data_iso}.csv"
+            arq5  = DEV_DIR / f"Way2_UG_5min_{data_iso}.csv"
+            if not (arq30.exists() and arq5.exists()):
+                faltando.append(data_iso)
+        self._json({"faltando": faltando})
 
     def _serve_way2(self, params):
         data = (params.get("data") or [None])[0]
@@ -160,13 +174,25 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
 # ─── Garantir CSV disponível ──────────────────────────────────────────────────
 
-def garantir_way2(data_iso: str) -> bool:
+def garantir_way2(data_iso: str, forcar: bool = False) -> bool:
     arq5  = DEV_DIR / f"Way2_UG_5min_{data_iso}.csv"
     arq30 = DEV_DIR / f"Way2_UG_30min_{data_iso}.csv"
     if arq5.exists() and arq30.exists():
-        print(f"[v] Way2 encontrado: {arq5.name}")
-        return True
-    print(f"[i] Way2 CSV não encontrado — executando way2_coleta.py ({data_iso})...")
+        if forcar:
+            # conta slots do 30min (48 = dia completo); re-coleta só se incompleto
+            with open(str(arq30), encoding="utf-8") as _f:
+                slots = sum(1 for _ in _f) - 1  # desconta header
+            if slots >= 48:
+                print(f"[v] Way2 D-1 já completo ({arq30.name}, {slots} slots).")
+                return True
+            print(f"[i] Way2 D-1 incompleto ({slots} slots) — re-coletando ({data_iso})...")
+            arq5.unlink()
+            arq30.unlink()
+        else:
+            print(f"[v] Way2 encontrado: {arq5.name}")
+            return True
+    else:
+        print(f"[i] Way2 CSV não encontrado — executando way2_coleta.py ({data_iso})...")
     ret = subprocess.run(
         [sys.executable, str(DEV_DIR / "way2_coleta.py"), "--data", data_iso],
         cwd=str(DEV_DIR),
@@ -226,10 +252,20 @@ def main():
 
     d0 = datetime.now().strftime("%Y-%m-%d")
     d1 = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-    garantir_way2(d1)
+    garantir_way2(d1, forcar=True)
     garantir_pdp(d1)
     garantir_way2(d0)
     # PDP D-0: download em background via /api/pdp (não bloqueia inicialização)
+
+    # Verifica se a porta já está em uso (ex: servidor anterior ainda ativo)
+    import socket as _sock
+    _s = _sock.socket(_sock.AF_INET, _sock.SOCK_STREAM)
+    porta_livre = _s.connect_ex(("localhost", PORTA)) != 0
+    _s.close()
+
+    if not porta_livre:
+        print(f"[i] Porta {PORTA} já em uso — coleta concluída, servidor não iniciado.")
+        return
 
     # Servidor HTTP local
     server = http.server.HTTPServer(("localhost", PORTA), DashboardHandler)
