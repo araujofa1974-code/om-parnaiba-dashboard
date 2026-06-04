@@ -105,6 +105,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             self._serve_way2(parse_qs(parsed.query))
         elif parsed.path == "/api/status":
             self._serve_status()
+        elif parsed.path == "/api/coletar":
+            self._serve_coletar(parse_qs(parsed.query))
         else:
             super().do_GET()
 
@@ -129,6 +131,23 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         mapa = carregar_pdp(data)
         self._json(mapa)
+
+    def _serve_coletar(self, params):
+        data = (params.get("data") or [None])[0]
+        if not data:
+            self._json({"ok": False, "erro": "Parâmetro data ausente"})
+            return
+        print(f"[api/coletar] Iniciando coleta Way2 para {data}...")
+        ret = subprocess.run(
+            [sys.executable, str(DEV_DIR / "way2_coleta.py"), "--data", data],
+            cwd=str(DEV_DIR),
+        )
+        if ret.returncode == 0:
+            print(f"[api/coletar] Concluído: {data}")
+            self._json({"ok": True})
+        else:
+            print(f"[api/coletar] Falha: {data}")
+            self._json({"ok": False, "erro": "Coleta Way2 falhou (data não suportada ou erro de rede)"})
 
     def _serve_status(self):
         hoje = datetime.now().date()
