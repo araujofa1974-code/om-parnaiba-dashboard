@@ -286,6 +286,26 @@
   .kpi:nth-child(5) { animation-delay: .25s; }
   .kpi:nth-child(6) { animation-delay: .30s; }
 
+  /* ── ALERTA DADOS AUSENTES ── */
+  .missing-banner {
+    background: rgba(224,85,85,.1);
+    border: 1px solid rgba(224,85,85,.4);
+    border-radius: 6px;
+    color: #f0a0a0;
+    font-size: 12px;
+    padding: 8px 14px;
+    margin: 8px 0 0;
+    display: none;
+    align-items: center;
+    gap: 10px;
+  }
+  .missing-banner span { flex: 1; }
+  .missing-banner button {
+    background: none; border: none; color: #f0a0a0;
+    cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px;
+  }
+  .missing-banner button:hover { color: #fff; }
+
   /* ── MODO DEMO ── */
   .demo-banner {
     background: rgba(240,192,64,.1);
@@ -543,6 +563,10 @@
 </div>
 
 <main>
+  <div class="missing-banner" id="missing-banner">
+    <span id="missing-banner-text"></span>
+    <button onclick="document.getElementById('missing-banner').style.display='none'" title="Fechar">✕</button>
+  </div>
   <div class="demo-banner" id="demo-banner" style="display:none">
     ℹ Dados de demonstração.
   </div>
@@ -1940,7 +1964,7 @@ function mostrarErro(msg) {
 }
 
 // ── CARREGAR DADOS ─────────────────────────────────────────────────────────
-async function carregarDados() {
+async function carregarDados(_retry = false) {
   const data = document.getElementById('sel-date').value;
   const btn  = document.getElementById('btn-carregar-pim');
   if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
@@ -1951,6 +1975,7 @@ async function carregarDados() {
 
   try {
     let w30, pdp30, pdpTotal30, w5 = null;
+    let pdpMap = {};
 
     if (IS_LOCAL) {
       // ── Local: Way2 CSV + PDP CSV via abrir_dashboard.py ──────────────
@@ -1959,12 +1984,31 @@ async function carregarDados() {
         fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
         fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
       ]);
-      const pdpMap = await rPdp.json();
+      pdpMap = await rPdp.json();
       w30 = await r30.json();
       w5  = await r5.json();
 
       if (!w30.labels || !w30.labels.length) {
-        mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
+        if (!_retry) {
+          const banner = document.getElementById('demo-banner');
+          banner.textContent = '⏳ Coletando dados Way2 para ' + data + '... aguarde.';
+          banner.style.display = 'flex';
+          try {
+            const rc = await fetch(`http://localhost:8765/api/coletar?data=${data}`,
+              { signal: AbortSignal.timeout(90000) });
+            const rj = await rc.json();
+            banner.style.display = 'none';
+            if (rj.ok) {
+              await carregarDados(true);
+              return;
+            }
+            mostrarErro('Coleta Way2 falhou para ' + data + (rj.erro ? ': ' + rj.erro : ''));
+          } catch(e) {
+            mostrarErro('Erro ao coletar Way2 para ' + data + ': ' + e.message);
+          }
+        } else {
+          mostrarErro('Sem dados Way2 para ' + data + '. Verifique a conexão com a API Way2.');
+        }
         return;
       }
 
@@ -2013,13 +2057,15 @@ async function carregarDados() {
         "14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00",
         "19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","00:00"];
       const idxMap = {};
-      w30.labels.forEach((lbl, i) => { idxMap[lbl] = i; });
+      w30.labels.forEach((lbl, i) => { if (lbl !== '00:00') idxMap[lbl] = i; });
       const paddedData = {}, paddedPdp = {};
       UNITS.forEach(u => {
         paddedData[u.id] = FULL48.map(lbl =>
           idxMap[lbl] !== undefined ? (w30.data[u.id]?.[idxMap[lbl]] ?? null) : null);
-        paddedPdp[u.id]  = FULL48.map(lbl =>
-          idxMap[lbl] !== undefined ? (pdp30[u.id]?.[idxMap[lbl]] ?? 0) : 0);
+        paddedPdp[u.id] = FULL48.map(lbl => {
+          if (idxMap[lbl] !== undefined) return pdp30[u.id]?.[idxMap[lbl]] ?? 0;
+          return (pdpMap[lbl] || {})[u.id] || 0;
+        });
       });
       w30   = { labels: FULL48, data: paddedData };
       pdp30 = paddedPdp;
@@ -2089,6 +2135,24 @@ async function carregarDados() {
   }
 }
 
+// ── ALERTA DE DIAS SEM COLETA ─────────────────────────────────────────────
+async function verificarStatusCSVs() {
+  if (!IS_LOCAL) return;
+  try {
+    const res  = await fetch('http://localhost:8765/api/status');
+    const json = await res.json();
+    if (!json.faltando || !json.faltando.length) return;
+    const datas = json.faltando.map(d => {
+      const [y,m,dia] = d.split('-');
+      return `${dia}/${m}`;
+    }).join(', ');
+    const el = document.getElementById('missing-banner');
+    document.getElementById('missing-banner-text').textContent =
+      `⚠ Dados Way2 ausentes nos últimos 7 dias: ${datas} — ligue o notebook antes de meia-noite para coleta automática.`;
+    el.style.display = 'flex';
+  } catch (_) {}
+}
+
 // ── INIT ───────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', ()=>{
   const brNow  = new Date(Date.now() - 3 * 3600000); // UTC-3 fixo (Brasil sem DST desde 2019)
@@ -2097,6 +2161,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     String(brNow.getUTCDate()).padStart(2,'0');
   document.getElementById('sel-date').value = hojeStr;
   carregarDados();
+  verificarStatusCSVs();
 });
 </script>
 </body>
