@@ -1964,7 +1964,7 @@ function mostrarErro(msg) {
 }
 
 // ── CARREGAR DADOS ─────────────────────────────────────────────────────────
-async function carregarDados() {
+async function carregarDados(_retry = false) {
   const data = document.getElementById('sel-date').value;
   const btn  = document.getElementById('btn-carregar-pim');
   if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
@@ -1989,7 +1989,26 @@ async function carregarDados() {
       w5  = await r5.json();
 
       if (!w30.labels || !w30.labels.length) {
-        mostrarErro('Sem dados Way2 para ' + data + '. Execute way2_coleta.py primeiro.');
+        if (!_retry) {
+          const banner = document.getElementById('demo-banner');
+          banner.textContent = '⏳ Coletando dados Way2 para ' + data + '... aguarde.';
+          banner.style.display = 'flex';
+          try {
+            const rc = await fetch(`http://localhost:8765/api/coletar?data=${data}`,
+              { signal: AbortSignal.timeout(90000) });
+            const rj = await rc.json();
+            banner.style.display = 'none';
+            if (rj.ok) {
+              await carregarDados(true);
+              return;
+            }
+            mostrarErro('Coleta Way2 falhou para ' + data + (rj.erro ? ': ' + rj.erro : ''));
+          } catch(e) {
+            mostrarErro('Erro ao coletar Way2 para ' + data + ': ' + e.message);
+          }
+        } else {
+          mostrarErro('Sem dados Way2 para ' + data + '. Verifique a conexão com a API Way2.');
+        }
         return;
       }
 
