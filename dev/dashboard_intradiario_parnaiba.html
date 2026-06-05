@@ -483,21 +483,20 @@
 
   /* ── CARD ATENDIMENTO DESPACHO ── */
   .ad-gauge-wrap {
-    position: relative; height: 6px;
-    background: var(--surface2); border-radius: 3px;
+    position: relative; height: 16px;
+    background: #ffffff18; border-radius: 8px;
     overflow: hidden; margin: 8px 0 4px;
+  }
+  /* trilho: sempre 100%, cor de acento esmaecida */
+  .ad-gauge-track {
+    position: absolute; left: 0; top: 0; right: 0; height: 100%;
+    background: var(--fcfu-accent, #4a6080);
+    opacity: .30; border-radius: 8px;
   }
   .ad-gauge-fill {
     position: absolute; left: 0; top: 0; height: 100%;
-    border-radius: 3px;
+    border-radius: 8px;
     transition: width .6s cubic-bezier(.4,0,.2,1);
-  }
-  /* linha de programado (referência 100%) */
-  .ad-gauge-ref {
-    position: absolute; right: 0; top: -2px;
-    width: 2px; height: 10px;
-    background: var(--text2); border-radius: 1px;
-    opacity: .5;
   }
   .ad-sparkrow {
     display: flex; gap: 2px; margin-top: 6px; align-items: flex-end; height: 32px;
@@ -1275,14 +1274,13 @@ function renderSparks(labels, data, pdp, visUnits) {
     const plantTrendC = plantTrend==='↑' ? 'var(--accent)' : plantTrend==='↓' ? 'var(--danger)' : 'var(--accent2)';
     const plantTrendLbl = plantTrend==='↑' ? 'subindo' : plantTrend==='↓' ? 'caindo' : 'estável';
 
-    // PDP da usina — soma das unidades; FC e Desvio só nos intervalos com PDP > 0
+    // PDP da usina — soma das unidades; Desvio só nos intervalos com PDP > 0
     const plantPdpSeriesPre = labels.map((_,i) => units.reduce((s,u) => s + (pdp[u.id]?.[i] || 0), 0));
     const plantProgIdx   = plantPdpSeriesPre.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
     const plantSumGerado = plantProgIdx.reduce((s,i) => s + (plantSeries[i] || 0), 0);
     const plantSumProg   = plantProgIdx.reduce((s,i) => s + plantPdpSeriesPre[i], 0);
-    const plantAvgProg   = plantProgIdx.length > 0 ? plantSumGerado / plantProgIdx.length : 0;
-    const plantFC        = plantNominal > 0 && plantProgIdx.length > 0
-                           ? Math.round(100 * plantAvgProg / plantNominal) : 0;
+    const plantFU        = plantNominal > 0
+                           ? Math.round(100 * plantAvg / plantNominal) : 0;
     const plantDesvio    = plantSumProg > 0 ? (1 - Math.min(1, plantSumGerado / plantSumProg)) * 100 : null;
     const plantDesvColor = plantDesvio === null ? 'var(--text2)'
                          : plantDesvio <= 2    ? '#1d9e75'
@@ -1303,7 +1301,7 @@ function renderSparks(labels, data, pdp, visUnits) {
       </div>
       <canvas id="${plantCid}" class="spark spark-lg" height="80" aria-label="Sparkline ${meta.label}"></canvas>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:10px;color:var(--text2)">FC ${plantFC}% · ${units.length} unid.</span>
+        <span style="font-size:10px;color:var(--text2)">FU ${plantFU}% · ${units.length} unid.</span>
         <span style="font-size:11px;color:${plantTrendC}">${plantTrend} ${plantTrendLbl}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
@@ -1324,13 +1322,13 @@ function renderSparks(labels, data, pdp, visUnits) {
     // Subgrupos P1V: M4 = TG31+TG32, M5 = TG21+TG22, TV28 individual
     const SPARK_SUBGROUPS = {
       P1V: [
-        { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'] },
-        { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'] },
-        { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28'] },
+        { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'], showPdp:true },
+        { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'], showPdp:true },
+        { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28'],        showPdp:true },
       ]
     };
 
-    const subItems = (SPARK_SUBGROUPS[planta] || units.map(u => ({ id:u.id, label:u.label, color:u.color, ids:[u.id] })))
+    const subItems = (SPARK_SUBGROUPS[planta] || units.map(u => ({ id:u.id, label:u.label, color:u.color, ids:[u.id], showPdp:false })))
       .map(sg => {
         const sgUnits = UNITS.filter(u => sg.ids.includes(u.id));
         return {
@@ -1351,13 +1349,12 @@ function renderSparks(labels, data, pdp, visUnits) {
       const trend   = lastVal > avg ? '↑' : lastVal < avg - 5 ? '↓' : '→';
       const trendC  = trend === '↑' ? 'var(--accent)' : trend === '↓' ? 'var(--danger)' : 'var(--accent2)';
 
-      // FC e Desvio PDP — só nos intervalos com programação > 0
+      // Desvio PDP e FU — só nos intervalos com programação > 0
+      const hasPdp    = !!item.showPdp;
       const progIdx   = item.pdpSeries.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
       const sumGerado = progIdx.reduce((s,i) => s + (series[i] || 0), 0);
       const sumProg   = progIdx.reduce((s,i) => s + item.pdpSeries[i], 0);
-      const avgProg   = progIdx.length > 0 ? sumGerado / progIdx.length : 0;
-      const fc        = item.nominal > 0 && progIdx.length > 0
-                        ? Math.round(100 * avgProg / item.nominal) : 0;
+      const fu        = item.nominal > 0 ? Math.round(100 * avg / item.nominal) : 0;
       const desvio    = sumProg > 0 ? (1 - Math.min(1, sumGerado / sumProg)) * 100 : null;
       const desvColor = desvio === null ? 'var(--text2)'
                       : desvio <= 2    ? '#1d9e75'
@@ -1372,14 +1369,14 @@ function renderSparks(labels, data, pdp, visUnits) {
           <span class="spark-now" style="color:${item.color}">${avg.toFixed(1)}<span class="spark-unit"> MW méd</span></span>
         </div>
         <canvas id="${cid}" class="spark" height="75" aria-label="Sparkline ${item.label}"></canvas>
-        <div style="display:flex;justify-content:space-between;margin-top:4px">
-          <span style="font-size:10px;color:var(--text2)">FC ${fc}%</span>
+        <div style="display:flex;justify-content:flex-end;margin-top:4px">
           <span style="font-size:11px;color:${trendC}">${trend} ${trend==='→'?'estável':trend==='↑'?'subindo':'caindo'}</span>
         </div>
+        ${hasPdp ? `
         <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
-          <span style="font-size:10px;color:var(--text2)">Desvio PDP</span>
-          <span style="font-size:11px;font-weight:600;color:${desvColor}">${desvTxt}</span>
-        </div>`;
+          <span style="font-size:10px;color:var(--text2)">FU ${fu}%</span>
+          <span style="font-size:10px;color:var(--text2)">Desvio PDP <span style="font-weight:600;color:${desvColor}">${desvTxt}</span></span>
+        </div>` : ''}`;
       subGrid.appendChild(card);
 
       // Linhas de TRIP por subgrupo — agrupadas por hora
@@ -1404,7 +1401,14 @@ function renderSparks(labels, data, pdp, visUnits) {
                 borderColor: item.color, borderWidth: 1.5,
                 backgroundColor: item.color + '33',
                 fill: true, tension: 0.4, pointRadius: 0
-              }
+              },
+              ...(hasPdp ? [{
+                label: 'PDP',
+                data: item.pdpSeries,
+                borderColor: '#e53535bb', borderWidth: 2,
+                borderDash: [8, 4],
+                fill: false, tension: 0, pointRadius: 0
+              }] : [])
             ]
           },
           options: {
@@ -1658,14 +1662,36 @@ function renderDespacho(labels, data, pdp, visUnits) {
     hdr.innerHTML = `<span style="color:${meta.color}">▸</span> ${meta.label}`;
     group.appendChild(hdr);
 
+    // P1V: agrega por subgrupo (Maranhão IV, Maranhão V, Parnaíba V)
+    const DESP_SUBGROUPS_P1V = [
+      { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'] },
+      { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'] },
+      { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28']        },
+    ];
+    const despItems = planta === 'P1V'
+      ? DESP_SUBGROUPS_P1V.map(sg => ({
+          id:    sg.id,
+          label: sg.label,
+          color: sg.color,
+          gerado: labels.map((_,i) => sg.ids.reduce((s,id) => s + (data[id]?.[i] || 0), 0)),
+          prog:   labels.map((_,i) => sg.ids.reduce((s,id) => s + (pdp?.[id]?.[i] || 0), 0)),
+        }))
+      : units.map(u => ({
+          id:    u.id,
+          label: u.id,
+          color: u.color,
+          gerado: data[u.id] || [],
+          prog:   (pdp && pdp[u.id]) || Array(labels.length).fill(0),
+        }));
+
     const subGrid = document.createElement('div');
     subGrid.className = 'fcfu-cards-row';
-    subGrid.style.gridTemplateColumns = `repeat(${units.length}, 1fr)`;
+    subGrid.style.gridTemplateColumns = `repeat(${despItems.length}, 1fr)`;
     group.appendChild(subGrid);
 
-    units.forEach(u => {
-    const gerado = data[u.id] || [];
-    const prog   = (pdp && pdp[u.id]) || Array(labels.length).fill(0);
+    despItems.forEach(u => {
+    const gerado = u.gerado;
+    const prog   = u.prog;
 
     // somar só intervalos onde havia programação > 0
     const mwhGerado = gerado.reduce((s,v,i)=> prog[i]>0 ? s+(v||0)*ih : s, 0);
@@ -1750,7 +1776,7 @@ function renderDespacho(labels, data, pdp, visUnits) {
 
     card.innerHTML = `
       <div class="fcfu-top">
-        <span class="fcfu-name" style="color:${u.color}">${u.id}</span>
+        <span class="fcfu-name" style="color:${u.color}">${u.label ?? u.id}</span>
         <span class="fcfu-status ${statusClass}">${statusTxt}</span>
       </div>
 
@@ -1770,8 +1796,8 @@ function renderDespacho(labels, data, pdp, visUnits) {
 
       <!-- barra de atendimento -->
       <div class="ad-gauge-wrap">
+        <div class="ad-gauge-track"></div>
         <div class="ad-gauge-fill" style="width:${atend!==null?Math.min(100,atend).toFixed(1):0}%;background:${accentColor}"></div>
-        <div class="ad-gauge-ref"></div>
       </div>
 
       <!-- mini gráfico gerado vs programado -->
@@ -1785,7 +1811,7 @@ function renderDespacho(labels, data, pdp, visUnits) {
       <hr class="fcfu-divider">
 
       <div class="fcfu-detail-row">
-        <span>Gerado (h programadas)</span>
+        <span>Total Gerado</span>
         <span class="fcfu-detail-val">${mwhGerado.toFixed(1)} MWh</span>
       </div>
       <div class="fcfu-detail-row">
