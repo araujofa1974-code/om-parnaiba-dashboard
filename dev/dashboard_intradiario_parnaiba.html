@@ -701,16 +701,16 @@
 const UNITS = [
   // nominal  = potência do teste de performance (para HR, FC técnico)
   // instalada = potência registrada ANEEL/ONS (para FU regulatório)
-  { id:'TG31', label:'TG31', planta:'P1V', color:'#3b9eff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG31_MW',   hr_proj:9206, hr_pim:'MHV_TG31_HR',   gas_proj:2093873/4, tipo:'TG' },
-  { id:'TG32', label:'TG32', planta:'P1V', color:'#7ecfff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG32_MW',   hr_proj:9180, hr_pim:'MHV_TG32_HR',   gas_proj:2093873/4, tipo:'TG' },
-  { id:'TG21', label:'TG21', planta:'P1V', color:'#1d9e75', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG21_MW',   hr_proj:9150, hr_pim:'MHV_TG21_HR',   gas_proj:1851273/4, tipo:'TG' },
-  { id:'TG22', label:'TG22', planta:'P1V', color:'#5dd6a8', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG22_MW',   hr_proj:9206, hr_pim:'MHV_TG22_HR',   gas_proj:1851273/4, tipo:'TG' },
-  { id:'TG51', label:'TG51', planta:'P2',  color:'#f0a040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG51_MW', hr_proj:9223, hr_pim:'MHIII_TG51_HR', gas_proj:1609961/2, tipo:'TG' },
-  { id:'TG52', label:'TG52', planta:'P2',  color:'#f0c040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG52_MW', hr_proj:9179, hr_pim:'MHIII_TG52_HR', gas_proj:1609961/2, tipo:'TG' },
-  { id:'TG12', label:'TG12', planta:'P3VI',color:'#c77dff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'NV2_TG12_MW',   hr_proj:9191, hr_pim:'NV2_TG12_HR',   gas_proj:0,         tipo:'TG' },
-  { id:'TV28', label:'TV28', planta:'P1V', color:'#ff6b6b', nominal:365.32, instalada:365.0, min_op:290,    max_op:365.32,  pim_tag:'PRN_TV28_MW',   hr_proj:6451, hr_pim:'PRN_TV28_HR',   gas_proj:0,         tipo:'TV' },
-  { id:'TV58', label:'TV58', planta:'P2',  color:'#ff9f7f', nominal:181.200,instalada:181.2, min_op:180,    max_op:181.200, pim_tag:'MHIII_TV58_MW', hr_proj:6500, hr_pim:'MHIII_TV58_HR', gas_proj:0,         tipo:'TV' },
-  { id:'TV18', label:'TV18', planta:'P3VI',color:'#ffb3c6', nominal:92.254, instalada:92.2,  min_op:70.701, max_op:92.254,  pim_tag:'NV2_TV18_MW',   hr_proj:9797, hr_pim:'NV2_TV18_HR',   gas_proj:0,         tipo:'TV' },
+  { id:'TG31', label:'TG31', planta:'P1V', color:'#3b9eff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG31_MW',   hr_proj:9206, hr_meta:9950, hr_pim:'MHV_TG31_HR',   gas_proj:2093873/4, tipo:'TG' },
+  { id:'TG32', label:'TG32', planta:'P1V', color:'#7ecfff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG32_MW',   hr_proj:9180, hr_meta:9950, hr_pim:'MHV_TG32_HR',   gas_proj:2093873/4, tipo:'TG' },
+  { id:'TG21', label:'TG21', planta:'P1V', color:'#1d9e75', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG21_MW',   hr_proj:9150, hr_meta:9950, hr_pim:'MHV_TG21_HR',   gas_proj:1851273/4, tipo:'TG' },
+  { id:'TG22', label:'TG22', planta:'P1V', color:'#5dd6a8', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG22_MW',   hr_proj:9206, hr_meta:9950, hr_pim:'MHV_TG22_HR',   gas_proj:1851273/4, tipo:'TG' },
+  { id:'TG51', label:'TG51', planta:'P2',  color:'#f0a040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG51_MW', hr_proj:9223, hr_meta:9950, hr_pim:'MHIII_TG51_HR', gas_proj:1609961/2, tipo:'TG' },
+  { id:'TG52', label:'TG52', planta:'P2',  color:'#f0c040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG52_MW', hr_proj:9179, hr_meta:9950, hr_pim:'MHIII_TG52_HR', gas_proj:1609961/2, tipo:'TG' },
+  { id:'TG12', label:'TG12', planta:'P3VI',color:'#c77dff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'NV2_TG12_MW',   hr_proj:9191, hr_meta:9950, hr_pim:'NV2_TG12_HR',   gas_proj:0,         tipo:'TG' },
+  { id:'TV28', label:'TV28', planta:'P1V', color:'#ff6b6b', nominal:365.32, instalada:365.0, min_op:290,    max_op:365.32,  pim_tag:'PRN_TV28_MW',   hr_proj:6451, hr_meta:6670, hr_pim:'PRN_TV28_HR',   gas_proj:0,         tipo:'TV' },
+  { id:'TV58', label:'TV58', planta:'P2',  color:'#ff9f7f', nominal:181.200,instalada:181.2, min_op:180,    max_op:181.200, pim_tag:'MHIII_TV58_MW', hr_proj:6500, hr_meta:6670, hr_pim:'MHIII_TV58_HR', gas_proj:0,         tipo:'TV' },
+  { id:'TV18', label:'TV18', planta:'P3VI',color:'#ffb3c6', nominal:92.254, instalada:92.2,  min_op:70.701, max_op:92.254,  pim_tag:'NV2_TV18_MW',   hr_proj:9797, hr_meta:6670, hr_pim:'NV2_TV18_HR',   gas_proj:0,         tipo:'TV' },
   { id:'UG10', label:'UG10', planta:'P3VI',color:'#a8d8ea', nominal:9.341,  instalada:9.3,   min_op:9.299,  max_op:9.341,   pim_tag:'NV2_UG10_MW',   hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'UG' },
   { id:'BAG011',label:'BAG011',planta:'P4',  color:'#b5ead7',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG011_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
   { id:'BAG021',label:'BAG021',planta:'P4',  color:'#c7ceea',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG021_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
@@ -1507,13 +1507,40 @@ function renderHR(labels, data, hr, visUnits) {
     hdr.innerHTML = `<span style="color:${meta.color}">▸</span> ${meta.label}`;
     group.appendChild(hdr);
 
+    // P1V: agrega por subgrupo (mesmo agrupamento do Atendimento ao Despacho)
+    const HR_SUBGROUPS_P1V = [
+      { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'], eff_meta: 36.2 },
+      { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'], eff_meta: 36.2 },
+      { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28'],        eff_meta: 54.0 },
+    ];
+
+    const hrItems = planta === 'P1V'
+      ? HR_SUBGROUPS_P1V.map(sg => {
+          const uRef = UNITS.find(u => u.id === sg.ids[0]);
+          const mwSeries = labels.map((_,i) => sg.ids.reduce((s,id) => s + ((data[id]||[])[i]||0), 0));
+          const hrSeries = labels.map((_,i) => {
+            let heat=0, mwTot=0;
+            sg.ids.forEach(id => {
+              const mw=(data[id]||[])[i]||0, hv=(hr[id]||[])[i]||0;
+              if(mw>0 && hv>0){ heat+=hv*mw; mwTot+=mw; }
+            });
+            return mwTot>0 ? Math.round(heat/mwTot) : null;
+          });
+          const nominal = sg.ids.reduce((s,id)=>{ const u=UNITS.find(u=>u.id===id); return s+(u?.nominal||0); }, 0);
+          return { id:sg.id, label:sg.label, color:sg.color,
+                   hr_proj:uRef?.hr_proj||null, hr_meta:uRef?.hr_meta||null,
+                   eff_meta:sg.eff_meta||null,
+                   nominal, tipo:uRef?.tipo||'TG', mwSeries, hrSeries };
+        })
+      : units.map(u => ({ ...u, mwSeries:data[u.id]||[], hrSeries:(hr&&hr[u.id])||[] }));
+
     const subGrid = document.createElement('div');
     subGrid.className = 'hr-cards-row';
-    subGrid.style.gridTemplateColumns = `repeat(${units.length}, 1fr)`;
+    subGrid.style.gridTemplateColumns = `repeat(${hrItems.length}, 1fr)`;
     group.appendChild(subGrid);
 
-    units.forEach(u => {
-    const mwSeries = data[u.id] || [];
+    hrItems.forEach(u => {
+    const mwSeries = u.mwSeries;
 
     if (!u.hr_proj) {
       const isOffHR   = mwSeries[mwSeries.length-1] < 5;
@@ -1529,7 +1556,7 @@ function renderHR(labels, data, hr, visUnits) {
       card.style.setProperty('--hr-accent', acc);
       card.innerHTML = `
         <div class="hr-card-top">
-          <span class="hr-unit-name" style="color:${u.color}">${u.id}</span>
+          <span class="hr-unit-name" style="color:${u.color}">${u.label || u.id}</span>
           <span class="hr-status-pill ${isOffHR?'hr-pill-off':'hr-pill-good'}">${isOffHR?'PARADA':'OPERANDO'}</span>
         </div>
         <div class="hr-values">
@@ -1557,7 +1584,7 @@ function renderHR(labels, data, hr, visUnits) {
       return;
     }
 
-    const hrSeries = (hr && hr[u.id]) || [];
+    const hrSeries = u.hrSeries;
 
     // Média do HR apenas quando ligada
     const hrVals = hrSeries.filter(v => v !== null && v > 0);
@@ -1566,7 +1593,8 @@ function renderHR(labels, data, hr, visUnits) {
     const isOff  = mwSeries[mwSeries.length-1] < 5;
 
     const proj   = u.hr_proj;
-    const desvio = avgHR ? ((avgHR - proj) / proj * 100) : null;
+    const meta   = u.hr_meta || proj;
+    const desvio = avgHR ? ((avgHR - meta) / meta * 100) : null;
 
     // limites de alerta: ±2% ok, ±2-5% atenção, >5% crítico
     let pill, pillClass, accentColor, barColor;
@@ -1580,8 +1608,12 @@ function renderHR(labels, data, hr, visUnits) {
       pill='CRÍTICO'; pillClass='hr-pill-bad'; accentColor='#e05555'; barColor='#e05555';
     }
 
-    // largura da barra: 0% desvio = barra no meio, escala ±10%
-    const barPct = desvio !== null ? Math.min(100, Math.abs(desvio) / 10 * 100) : 0;
+    // barra só preenche quando HR está acima da meta (pior eficiência)
+    const barPct = desvio !== null && desvio > 0 ? Math.min(100, desvio / 10 * 100) : 0;
+
+    // eficiência térmica: 3600 ÷ HR × 100
+    const effReal = avgHR ? parseFloat((3600 / avgHR * 100).toFixed(1)) : null;
+    const effMeta = u.eff_meta || null;
     const desvClass = desvio === null ? 'hr-desvio-zero' : desvio > 0 ? 'hr-desvio-pos' : 'hr-desvio-neg';
     const desvTxt = desvio === null ? '—' : (desvio > 0 ? '+' : '') + desvio.toFixed(1) + '%';
 
@@ -1595,7 +1627,7 @@ function renderHR(labels, data, hr, visUnits) {
     card.style.setProperty('--hr-accent', accentColor);
     card.innerHTML = `
       <div class="hr-card-top">
-        <span class="hr-unit-name" style="color:${u.color}">${u.id}</span>
+        <span class="hr-unit-name" style="color:${u.color}">${u.label || u.id}</span>
         <span class="hr-status-pill ${pillClass}">${pill}</span>
       </div>
       <div class="hr-values">
@@ -1606,14 +1638,21 @@ function renderHR(labels, data, hr, visUnits) {
           <span class="hr-real-unit">kJ/kWh</span>
         </div>
         <div class="hr-proj-block">
-          <span class="hr-proj-label">Projeto</span>
-          <span class="hr-proj-val">${proj.toLocaleString('pt-BR')}</span>
+          <span class="hr-proj-label">${u.hr_meta ? 'Meta' : 'Projeto'}</span>
+          <span class="hr-proj-val">${meta.toLocaleString('pt-BR')}</span>
         </div>
       </div>
       <div class="hr-desvio-row">
-        <span class="hr-desvio-label">Desvio vs. projeto</span>
+        <span class="hr-desvio-label">Desvio vs. ${u.hr_meta ? 'meta' : 'projeto'}</span>
         <span class="hr-desvio-val ${desvClass}">${desvTxt}</span>
       </div>
+      ${effMeta != null ? `
+      <div class="hr-desvio-row" style="margin-top:3px">
+        <span class="hr-desvio-label">Eficiência</span>
+        <span class="hr-desvio-val" style="color:${effReal==null?'var(--text2)':effReal>=effMeta?'#1d9e75':'#e05555'}">
+          ${effReal!=null?effReal.toFixed(1)+'%':'—'}<span style="color:var(--text2);font-size:9px;margin-left:4px">meta ${effMeta.toFixed(1)}%</span>
+        </span>
+      </div>` : ''}
       <div class="hr-bar-wrap">
         <div class="hr-bar-fill" style="width:${barPct}%;background:${barColor}"></div>
       </div>
