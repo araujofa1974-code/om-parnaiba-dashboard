@@ -339,6 +339,8 @@
     border-radius: 8px;
     padding: 12px 14px;
     position: relative; overflow: hidden;
+    min-height: 300px;
+    display: flex; flex-direction: column;
   }
   .hr-card-top {
     display: flex; justify-content: space-between; align-items: flex-start;
@@ -367,7 +369,7 @@
   .hr-proj-val   { font-size: 13px; color: var(--text2); font-weight: 500; }
   .hr-desvio-row {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 6px;
+    margin-top: auto; margin-bottom: 6px;
   }
   .hr-desvio-label { font-size: 10px; color: var(--text2); }
   .hr-desvio-val   { font-size: 12px; font-weight: 600; }
@@ -396,6 +398,48 @@
     .hr-cards-row, .fcfu-cards-row { grid-template-columns: 1fr !important; }
   }
 
+
+  /* ── GAUGE EFICIÊNCIA TG ── */
+  .eff-gauge-block {
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  /* altura fixa — impede que o SVG escale verticalmente com a largura do card */
+  .eff-gauge-block svg { height: 66px; display: block; width: 100%; }
+  .eff-gauge-title {
+    font-size: 9px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .eff-gauge-title-sub { font-size: 8px; color: var(--muted); }
+.eff-gauge-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .eff-val-block { display: flex; flex-direction: column; }
+  .eff-val-big {
+    font-family: var(--font-head); font-size: 24px; font-weight: 800;
+    line-height: 1; letter-spacing: .5px;
+  }
+  .eff-val-unit { font-size: 11px; color: var(--text2); margin-left: 1px; }
+  .eff-val-meta { font-size: 9px; color: var(--muted); margin-top: 2px; }
+  .eff-gap-badge {
+    border-radius: 6px; padding: 4px 8px;
+    font-size: 8px; letter-spacing: .8px;
+    text-transform: uppercase; line-height: 1.5; text-align: right;
+  }
+  .eff-gap-above { background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.25); color: #22c55e; }
+  .eff-gap-below { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25); color: #ef4444; }
+  .eff-gap-val { font-family: var(--font-head); font-size: 15px; display: block; }
+  .hr-placeholder-block {
+    display: flex; align-items: center; justify-content: center;
+    border: 1px dashed rgba(255,255,255,0.07); border-radius: 6px;
+    padding: 14px 8px; margin: 4px 0;
+    flex: 1;
+  }
+  .hr-placeholder-text {
+    font-size: 9px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--muted); text-align: center; line-height: 1.7;
+  }
 
   /* ── PAINEL FC / FU ── */
   .fcfu-grid {
@@ -483,21 +527,20 @@
 
   /* ── CARD ATENDIMENTO DESPACHO ── */
   .ad-gauge-wrap {
-    position: relative; height: 6px;
-    background: var(--surface2); border-radius: 3px;
+    position: relative; height: 16px;
+    background: #ffffff18; border-radius: 8px;
     overflow: hidden; margin: 8px 0 4px;
+  }
+  /* trilho: sempre 100%, cor de acento esmaecida */
+  .ad-gauge-track {
+    position: absolute; left: 0; top: 0; right: 0; height: 100%;
+    background: var(--fcfu-accent, #4a6080);
+    opacity: .30; border-radius: 8px;
   }
   .ad-gauge-fill {
     position: absolute; left: 0; top: 0; height: 100%;
-    border-radius: 3px;
+    border-radius: 8px;
     transition: width .6s cubic-bezier(.4,0,.2,1);
-  }
-  /* linha de programado (referência 100%) */
-  .ad-gauge-ref {
-    position: absolute; right: 0; top: -2px;
-    width: 2px; height: 10px;
-    background: var(--text2); border-radius: 1px;
-    opacity: .5;
   }
   .ad-sparkrow {
     display: flex; gap: 2px; margin-top: 6px; align-items: flex-end; height: 32px;
@@ -696,26 +739,27 @@
   <span><span class="status-dot dot-yellow"></span>AGUARDANDO DADOS</span>
 </div>
 
+<script src="Dados/hr_lookup_tg.js"></script>
 <script>
 // ── CONFIGURAÇÃO DE UNIDADES ───────────────────────────────────────────────
 
 const UNITS = [
   // nominal  = potência do teste de performance (para HR, FC técnico)
   // instalada = potência registrada ANEEL/ONS (para FU regulatório)
-  { id:'TG31', label:'TG31', planta:'P1V', color:'#3b9eff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG31_MW',   hr_proj:9206, hr_pim:'MHV_TG31_HR',   gas_proj:2093873/4, tipo:'TG' },
-  { id:'TG32', label:'TG32', planta:'P1V', color:'#7ecfff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG32_MW',   hr_proj:9180, hr_pim:'MHV_TG32_HR',   gas_proj:2093873/4, tipo:'TG' },
-  { id:'TG21', label:'TG21', planta:'P1V', color:'#1d9e75', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG21_MW',   hr_proj:9150, hr_pim:'MHV_TG21_HR',   gas_proj:1851273/4, tipo:'TG' },
-  { id:'TG22', label:'TG22', planta:'P1V', color:'#5dd6a8', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG22_MW',   hr_proj:9206, hr_pim:'MHV_TG22_HR',   gas_proj:1851273/4, tipo:'TG' },
-  { id:'TG51', label:'TG51', planta:'P2',  color:'#f0a040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG51_MW', hr_proj:9223, hr_pim:'MHIII_TG51_HR', gas_proj:1609961/2, tipo:'TG' },
-  { id:'TG52', label:'TG52', planta:'P2',  color:'#f0c040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG52_MW', hr_proj:9179, hr_pim:'MHIII_TG52_HR', gas_proj:1609961/2, tipo:'TG' },
-  { id:'TG12', label:'TG12', planta:'P3VI',color:'#c77dff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'NV2_TG12_MW',   hr_proj:9191, hr_pim:'NV2_TG12_HR',   gas_proj:0,         tipo:'TG' },
-  { id:'TV28', label:'TV28', planta:'P1V', color:'#ff6b6b', nominal:365.32, instalada:365.0, min_op:290,    max_op:365.32,  pim_tag:'PRN_TV28_MW',   hr_proj:6451, hr_pim:'PRN_TV28_HR',   gas_proj:0,         tipo:'TV' },
-  { id:'TV58', label:'TV58', planta:'P2',  color:'#ff9f7f', nominal:181.200,instalada:181.2, min_op:180,    max_op:181.200, pim_tag:'MHIII_TV58_MW', hr_proj:6500, hr_pim:'MHIII_TV58_HR', gas_proj:0,         tipo:'TV' },
-  { id:'TV18', label:'TV18', planta:'P3VI',color:'#ffb3c6', nominal:92.254, instalada:92.2,  min_op:70.701, max_op:92.254,  pim_tag:'NV2_TV18_MW',   hr_proj:9797, hr_pim:'NV2_TV18_HR',   gas_proj:0,         tipo:'TV' },
-  { id:'UG10', label:'UG10', planta:'P3VI',color:'#a8d8ea', nominal:9.341,  instalada:9.3,   min_op:9.299,  max_op:9.341,   pim_tag:'NV2_UG10_MW',   hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'UG' },
-  { id:'BAG011',label:'BAG011',planta:'P4',  color:'#b5ead7',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG011_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
-  { id:'BAG021',label:'BAG021',planta:'P4',  color:'#c7ceea',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG021_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
-  { id:'BAG031',label:'BAG031',planta:'P4',  color:'#ffdac1',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG031_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'BAG'},
+  { id:'TG31', label:'TG31', planta:'P1V', color:'#3b9eff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG31_MW',   hr_proj:9206, hr_meta:9950, hr_pim:'MHV_TG31_HR',   gas_proj:2093873/4, tipo:'TG' },
+  { id:'TG32', label:'TG32', planta:'P1V', color:'#7ecfff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG32_MW',   hr_proj:9180, hr_meta:9950, hr_pim:'MHV_TG32_HR',   gas_proj:2093873/4, tipo:'TG' },
+  { id:'TG21', label:'TG21', planta:'P1V', color:'#1d9e75', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG21_MW',   hr_proj:9150, hr_meta:9950, hr_pim:'MHV_TG21_HR',   gas_proj:1851273/4, tipo:'TG' },
+  { id:'TG22', label:'TG22', planta:'P1V', color:'#5dd6a8', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHV_TG22_MW',   hr_proj:9206, hr_meta:9950, hr_pim:'MHV_TG22_HR',   gas_proj:1851273/4, tipo:'TG' },
+  { id:'TG51', label:'TG51', planta:'P2',  color:'#f0a040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG51_MW', hr_proj:9223, hr_meta:9950, hr_pim:'MHIII_TG51_HR', gas_proj:1609961/2, tipo:'TG' },
+  { id:'TG52', label:'TG52', planta:'P2',  color:'#f0c040', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'MHIII_TG52_MW', hr_proj:9179, hr_meta:9950, hr_pim:'MHIII_TG52_HR', gas_proj:1609961/2, tipo:'TG' },
+  { id:'TG12', label:'TG12', planta:'P3VI',color:'#c77dff', nominal:168.872,instalada:168.8, min_op:100,    max_op:168.872, pim_tag:'NV2_TG12_MW',   hr_proj:9191, hr_meta:9950, hr_pim:'NV2_TG12_HR',   gas_proj:0,         tipo:'TG' },
+  { id:'TV28', label:'TV28', planta:'P1V', color:'#ff6b6b', nominal:365.32, instalada:365.0, min_op:290,    max_op:365.32,  pim_tag:'PRN_TV28_MW',   hr_proj:6500, hr_meta:6670, hr_pim:'PRN_TV28_HR',   gas_proj:0,         tipo:'TV' },
+  { id:'TV58', label:'TV58', planta:'P2',  color:'#ff9f7f', nominal:181.200,instalada:181.2, min_op:180,    max_op:181.200, pim_tag:'MHIII_TV58_MW', hr_proj:6500, hr_meta:6670, hr_pim:'MHIII_TV58_HR', gas_proj:0,         tipo:'TV' },
+  { id:'TV18', label:'TV18', planta:'P3VI',color:'#ffb3c6', nominal:92.254, instalada:92.2,  min_op:70.701, max_op:92.254,  pim_tag:'NV2_TV18_MW',   hr_proj:6500, hr_meta:6670, hr_pim:'NV2_TV18_HR',   gas_proj:0,         tipo:'TV' },
+  { id:'UG10', label:'UG10', planta:'P3VI',color:'#a8d8ea', nominal:9.341,  instalada:9.3,   min_op:9.299,  max_op:9.341,   pim_tag:'NV2_UG10_MW',   hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'MCI' },
+  { id:'BAG011',label:'BAG011',planta:'P4',  color:'#b5ead7',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG011_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'MCI'},
+  { id:'BAG021',label:'BAG021',planta:'P4',  color:'#c7ceea',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG021_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'MCI'},
+  { id:'BAG031',label:'BAG031',planta:'P4',  color:'#ffdac1',nominal:18.759,instalada:18.7,  min_op:15,     max_op:18.759,  pim_tag:'PIV_BAG031_MW', hr_proj:null, hr_pim:null,            gas_proj:0,         tipo:'MCI'},
 ];
 
 const NOMINAL_TOTAL   = UNITS.reduce((a,u)=>a+u.nominal,   0);
@@ -816,13 +860,17 @@ function loadSitopData(resMin) {
     ctm[u.id] = data[u.id].filter(v => v > 5).length * resMin / 60;
   });
 
-  // HR: determinístico a partir do MW real
+  // HR: lookup table (TGs) ou modelo paramétrico (TV/UG/BAG)
+  // HR_LOOKUP retorna kcal/kWh; internamente o dashboard usa kJ/kWh
   const hr = {};
   UNITS.forEach(u => {
     if (!u.hr_proj) return;
     hr[u.id] = data[u.id].map((mw, i) => {
       if (mw < 5) return null;
-      const h = (i * resMin + resMin / 2) / 60;               // hora central do slot
+      const hrKcal = getHeatRate(u.id, mw);
+      if (hrKcal !== null) return Math.round(hrKcal * 4.1868);  // kcal/kWh → kJ/kWh
+      // Fallback modelo paramétrico para TV/UG (sem tabela de lookup)
+      const h = (i * resMin + resMin / 2) / 60;
       const tAmb = 28 + 3 * Math.sin(Math.PI * (h - 6) / 12);
       const penalT = (tAmb - 15) * 0.004 * u.hr_proj;
       const fc = mw / u.nominal;
@@ -1275,14 +1323,13 @@ function renderSparks(labels, data, pdp, visUnits) {
     const plantTrendC = plantTrend==='↑' ? 'var(--accent)' : plantTrend==='↓' ? 'var(--danger)' : 'var(--accent2)';
     const plantTrendLbl = plantTrend==='↑' ? 'subindo' : plantTrend==='↓' ? 'caindo' : 'estável';
 
-    // PDP da usina — soma das unidades; FC e Desvio só nos intervalos com PDP > 0
+    // PDP da usina — soma das unidades; Desvio só nos intervalos com PDP > 0
     const plantPdpSeriesPre = labels.map((_,i) => units.reduce((s,u) => s + (pdp[u.id]?.[i] || 0), 0));
     const plantProgIdx   = plantPdpSeriesPre.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
     const plantSumGerado = plantProgIdx.reduce((s,i) => s + (plantSeries[i] || 0), 0);
     const plantSumProg   = plantProgIdx.reduce((s,i) => s + plantPdpSeriesPre[i], 0);
-    const plantAvgProg   = plantProgIdx.length > 0 ? plantSumGerado / plantProgIdx.length : 0;
-    const plantFC        = plantNominal > 0 && plantProgIdx.length > 0
-                           ? Math.round(100 * plantAvgProg / plantNominal) : 0;
+    const plantFU        = plantNominal > 0
+                           ? Math.round(100 * plantAvg / plantNominal) : 0;
     const plantDesvio    = plantSumProg > 0 ? (1 - Math.min(1, plantSumGerado / plantSumProg)) * 100 : null;
     const plantDesvColor = plantDesvio === null ? 'var(--text2)'
                          : plantDesvio <= 2    ? '#1d9e75'
@@ -1303,7 +1350,7 @@ function renderSparks(labels, data, pdp, visUnits) {
       </div>
       <canvas id="${plantCid}" class="spark spark-lg" height="80" aria-label="Sparkline ${meta.label}"></canvas>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:10px;color:var(--text2)">FC ${plantFC}% · ${units.length} unid.</span>
+        <span style="font-size:10px;color:var(--text2)">FU ${plantFU}% · ${units.length} unid.</span>
         <span style="font-size:11px;color:${plantTrendC}">${plantTrend} ${plantTrendLbl}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
@@ -1324,13 +1371,13 @@ function renderSparks(labels, data, pdp, visUnits) {
     // Subgrupos P1V: M4 = TG31+TG32, M5 = TG21+TG22, TV28 individual
     const SPARK_SUBGROUPS = {
       P1V: [
-        { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'] },
-        { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'] },
-        { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28'] },
+        { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'], showPdp:true },
+        { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'], showPdp:true },
+        { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28'],        showPdp:true },
       ]
     };
 
-    const subItems = (SPARK_SUBGROUPS[planta] || units.map(u => ({ id:u.id, label:u.label, color:u.color, ids:[u.id] })))
+    const subItems = (SPARK_SUBGROUPS[planta] || units.map(u => ({ id:u.id, label:u.label, color:u.color, ids:[u.id], showPdp:false })))
       .map(sg => {
         const sgUnits = UNITS.filter(u => sg.ids.includes(u.id));
         return {
@@ -1351,13 +1398,12 @@ function renderSparks(labels, data, pdp, visUnits) {
       const trend   = lastVal > avg ? '↑' : lastVal < avg - 5 ? '↓' : '→';
       const trendC  = trend === '↑' ? 'var(--accent)' : trend === '↓' ? 'var(--danger)' : 'var(--accent2)';
 
-      // FC e Desvio PDP — só nos intervalos com programação > 0
+      // Desvio PDP e FU — só nos intervalos com programação > 0
+      const hasPdp    = !!item.showPdp;
       const progIdx   = item.pdpSeries.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
       const sumGerado = progIdx.reduce((s,i) => s + (series[i] || 0), 0);
       const sumProg   = progIdx.reduce((s,i) => s + item.pdpSeries[i], 0);
-      const avgProg   = progIdx.length > 0 ? sumGerado / progIdx.length : 0;
-      const fc        = item.nominal > 0 && progIdx.length > 0
-                        ? Math.round(100 * avgProg / item.nominal) : 0;
+      const fu        = item.nominal > 0 ? Math.round(100 * avg / item.nominal) : 0;
       const desvio    = sumProg > 0 ? (1 - Math.min(1, sumGerado / sumProg)) * 100 : null;
       const desvColor = desvio === null ? 'var(--text2)'
                       : desvio <= 2    ? '#1d9e75'
@@ -1372,14 +1418,14 @@ function renderSparks(labels, data, pdp, visUnits) {
           <span class="spark-now" style="color:${item.color}">${avg.toFixed(1)}<span class="spark-unit"> MW méd</span></span>
         </div>
         <canvas id="${cid}" class="spark" height="75" aria-label="Sparkline ${item.label}"></canvas>
-        <div style="display:flex;justify-content:space-between;margin-top:4px">
-          <span style="font-size:10px;color:var(--text2)">FC ${fc}%</span>
+        <div style="display:flex;justify-content:flex-end;margin-top:4px">
           <span style="font-size:11px;color:${trendC}">${trend} ${trend==='→'?'estável':trend==='↑'?'subindo':'caindo'}</span>
         </div>
+        ${hasPdp ? `
         <div style="display:flex;justify-content:space-between;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
-          <span style="font-size:10px;color:var(--text2)">Desvio PDP</span>
-          <span style="font-size:11px;font-weight:600;color:${desvColor}">${desvTxt}</span>
-        </div>`;
+          <span style="font-size:10px;color:var(--text2)">FU ${fu}%</span>
+          <span style="font-size:10px;color:var(--text2)">Desvio PDP <span style="font-weight:600;color:${desvColor}">${desvTxt}</span></span>
+        </div>` : ''}`;
       subGrid.appendChild(card);
 
       // Linhas de TRIP por subgrupo — agrupadas por hora
@@ -1404,7 +1450,14 @@ function renderSparks(labels, data, pdp, visUnits) {
                 borderColor: item.color, borderWidth: 1.5,
                 backgroundColor: item.color + '33',
                 fill: true, tension: 0.4, pointRadius: 0
-              }
+              },
+              ...(hasPdp ? [{
+                label: 'PDP',
+                data: item.pdpSeries,
+                borderColor: '#e53535bb', borderWidth: 2,
+                borderDash: [8, 4],
+                fill: false, tension: 0, pointRadius: 0
+              }] : [])
             ]
           },
           options: {
@@ -1474,6 +1527,63 @@ function renderSparks(labels, data, pdp, visUnits) {
 }
 
 
+// ── GAUGE EFICIÊNCIA TG ──────────────────────────────────────────────────
+// SVG com preserveAspectRatio="none": estica horizontalmente para preencher
+// a largura do card; altura controlada via CSS (.eff-gauge-block svg { height:66px })
+// actual/goal/benchLo/benchHi em %; uid garante IDs únicos nos defs.
+function buildEffGaugeSvg(actual, goal, benchLo, benchHi, uid) {
+  const VW = 340, VH = 72;
+  const PL = 10, PR = 10;
+  const BY = VH - 16;
+  const MH = 4, XH = VH - 22;
+  const TW = VW - PL - PR;
+  const X_MIN = 28, X_MAX = 44, span = X_MAX - X_MIN;
+  const xOf = p => PL + Math.max(0, Math.min(1, (p - X_MIN) / span)) * TW;
+  const yOf = p => BY - (MH + Math.max(0, Math.min(1, (p - X_MIN) / span)) * (XH - MH));
+  const id  = uid.toString().replace(/[^a-zA-Z0-9]/g, '');
+  const act   = actual !== null ? Math.min(Math.max(actual, X_MIN), X_MAX) : X_MIN;
+  const fillW = actual !== null ? Math.max(0, (act - X_MIN) / span * TW) : 0;
+  const gX = xOf(goal),     gY = yOf(goal);
+  const aX = xOf(act),      aY = yOf(act);
+  const bx1 = xOf(benchLo), by1 = yOf(benchLo);
+  const bx2 = xOf(benchHi), by2 = yOf(benchHi);
+  const blX = PL, blY = BY, brX = PL + TW, brY = BY;
+  const tlX = PL, tlY = yOf(X_MIN), trX = PL + TW, trY = yOf(X_MAX);
+  const ticks = [], divs = [];
+  for (let p = X_MIN; p <= X_MAX; p += 2) {
+    const lx = xOf(p).toFixed(1), ty = yOf(p).toFixed(1);
+    if ((p - X_MIN) % 4 === 0) {
+      ticks.push('<line x1="' + lx + '" y1="' + (BY+1) + '" x2="' + lx + '" y2="' + (BY+5) + '" stroke="#2e3a55" stroke-width="1.2"/>');
+      ticks.push('<text x="' + lx + '" y="' + (BY+13) + '" text-anchor="middle" font-family="DM Mono,monospace" font-size="9" fill="#2e3a55">' + p + '%</text>');
+    } else {
+      ticks.push('<line x1="' + lx + '" y1="' + (BY+1) + '" x2="' + lx + '" y2="' + (BY+3) + '" stroke="#2e3a55" stroke-width="0.8"/>');
+    }
+    if (p < X_MAX)
+      divs.push('<line x1="' + lx + '" y1="' + ty + '" x2="' + lx + '" y2="' + BY + '" stroke="rgba(0,0,0,0.22)" stroke-width="1"/>');
+  }
+  return '<svg viewBox="0 0 ' + VW + ' ' + VH + '" preserveAspectRatio="none" style="display:block;overflow:visible">'
+    + '<defs>'
+    + '<clipPath id="ec' + id + '"><polygon points="' + blX + ',' + blY + ' ' + brX + ',' + brY + ' ' + trX + ',' + trY + ' ' + tlX + ',' + tlY + '"/></clipPath>'
+    + '<linearGradient id="ebg' + id + '" x1="0%" x2="100%"><stop offset="0%" stop-color="rgb(30,6,2)"/><stop offset="55%" stop-color="rgb(28,20,2)"/><stop offset="100%" stop-color="rgb(4,26,4)"/></linearGradient>'
+    + '<linearGradient id="efg' + id + '" x1="0%" x2="100%"><stop offset="0%" stop-color="#ef4444"/><stop offset="45%" stop-color="#f59e0b"/><stop offset="80%" stop-color="#22c55e"/><stop offset="100%" stop-color="#22c55e"/></linearGradient>'
+    + '</defs>'
+    + '<polygon points="' + blX + ',' + blY + ' ' + brX + ',' + brY + ' ' + trX + ',' + trY + ' ' + tlX + ',' + tlY + '" fill="url(#ebg' + id + ')"/>'
+    + '<rect x="' + PL + '" y="' + (BY - XH) + '" width="' + fillW.toFixed(1) + '" height="' + XH + '" fill="url(#efg' + id + ')" clip-path="url(#ec' + id + ')"/>'
+    + '<polygon points="' + bx1.toFixed(1) + ',' + BY + ' ' + bx2.toFixed(1) + ',' + BY + ' ' + bx2.toFixed(1) + ',' + by2.toFixed(1) + ' ' + bx1.toFixed(1) + ',' + by1.toFixed(1) + '" fill="rgba(139,92,246,0.16)" clip-path="url(#ec' + id + ')"/>'
+    + '<line x1="' + bx1.toFixed(1) + '" y1="' + (by1-2).toFixed(1) + '" x2="' + bx1.toFixed(1) + '" y2="' + BY + '" stroke="#7c3aed" stroke-width="0.8" stroke-dasharray="3 2"/>'
+    + '<line x1="' + bx2.toFixed(1) + '" y1="' + (by2-2).toFixed(1) + '" x2="' + bx2.toFixed(1) + '" y2="' + BY + '" stroke="#7c3aed" stroke-width="0.8" stroke-dasharray="3 2"/>'
+    + '<text x="' + ((bx1+bx2)/2).toFixed(1) + '" y="' + (by2-3).toFixed(1) + '" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" fill="#7c3aed" opacity="0.8">Benchmarking</text>'
+    // linha META + "M" centralizado acima dela
+    + '<line x1="' + gX.toFixed(1) + '" y1="' + (gY-5).toFixed(1) + '" x2="' + gX.toFixed(1) + '" y2="' + BY + '" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3"/>'
+    + '<text x="' + gX.toFixed(1) + '" y="' + (gY-6).toFixed(1) + '" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#f59e0b">M</text>'
+    // linha valor realizado + triângulo invertido centralizado acima
+    + (actual !== null ? '<line x1="' + aX.toFixed(1) + '" y1="' + (aY-5).toFixed(1) + '" x2="' + aX.toFixed(1) + '" y2="' + BY + '" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5 3"/>' : '')
+    + (actual !== null ? '<polygon points="' + aX.toFixed(1) + ',' + (aY-5).toFixed(1) + ' ' + (aX-5).toFixed(1) + ',' + (aY-12).toFixed(1) + ' ' + (aX+5).toFixed(1) + ',' + (aY-12).toFixed(1) + '" fill="#60a5fa" opacity="0.9"/>' : '')
+    + divs.join('') + ticks.join('')
+    + '<line x1="' + PL + '" y1="' + (BY+1) + '" x2="' + (PL+TW) + '" y2="' + (BY+1) + '" stroke="#1c2030" stroke-width="1"/>'
+    + '</svg>';
+}
+
 // ── PAINEL HEAT RATE ──────────────────────────────────────────────────────
 function renderHR(labels, data, hr, visUnits) {
   const grid = document.getElementById('hr-grid');
@@ -1486,13 +1596,38 @@ function renderHR(labels, data, hr, visUnits) {
     P3VI: { label: 'Parnaíba III/VI', color: '#c77dff' },
     P4:   { label: 'Parnaíba IV',     color: '#b5ead7' },
   };
-  const byPlantaHR = {};
-  visUnits.forEach(u => { (byPlantaHR[u.planta] = byPlantaHR[u.planta] || []).push(u); });
+
+  // Layout fixo: 4 usinas × 3 cards sempre — cards sem dados ficam como placeholder
+  const FIXED_SLOTS = {
+    P1V:  [
+      { kind:'sg',   id:'M4',    label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'], tipo:'TG', eff_meta:36.2 },
+      { kind:'sg',   id:'M5',    label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'], tipo:'TG', eff_meta:36.2 },
+      { kind:'unit', id:'TV28' },
+    ],
+    P2:   [
+      { kind:'unit', id:'TG51' },
+      { kind:'unit', id:'TG52' },
+      { kind:'unit', id:'TV58' },
+    ],
+    P3VI: [
+      { kind:'unit', id:'TG12' },
+      { kind:'unit', id:'TV18' },
+      { kind:'unit', id:'UG10' },
+    ],
+    P4:   [
+      { kind:'unit', id:'BAG011' },
+      { kind:'unit', id:'BAG021' },
+      { kind:'unit', id:'BAG031' },
+    ],
+  };
+
+  const visPlants = new Set(visUnits.map(u => u.planta));
 
   ['P1V','P2','P3VI','P4'].forEach(planta => {
-    const units = byPlantaHR[planta];
-    if (!units || !units.length) return;
-    const meta = PLANTA_META_HR[planta] || { label: planta, color: '#4a6080' };
+    if (!visPlants.has(planta)) return;
+
+    const meta  = PLANTA_META_HR[planta];
+    const slots = FIXED_SLOTS[planta];
 
     const group = document.createElement('div');
     group.className = 'hr-plant-group';
@@ -1503,29 +1638,56 @@ function renderHR(labels, data, hr, visUnits) {
     hdr.innerHTML = `<span style="color:${meta.color}">▸</span> ${meta.label}`;
     group.appendChild(hdr);
 
+    // Resolve hrItems a partir dos slots fixos
+    const hrItems = slots.map(slot => {
+      if (slot.kind === 'sg') {
+        const uRef = UNITS.find(u => u.id === slot.ids[0]);
+        const mwSeries = labels.map((_,i) => slot.ids.reduce((s,id) => s + ((data[id]||[])[i]||0), 0));
+        const hrSeries = labels.map((_,i) => {
+          let heat=0, mwTot=0;
+          slot.ids.forEach(id => {
+            const mw=(data[id]||[])[i]||0, hv=(hr[id]||[])[i]||0;
+            if(mw>0 && hv>0){ heat+=hv*mw; mwTot+=mw; }
+          });
+          return mwTot>0 ? Math.round(heat/mwTot) : null;
+        });
+        const nominal = slot.ids.reduce((s,id)=>{ const u=UNITS.find(u=>u.id===id); return s+(u?.nominal||0); },0);
+        return { id:slot.id, label:slot.label, color:slot.color, tipo:slot.tipo,
+                 hr_proj:uRef?.hr_proj||null, hr_meta:uRef?.hr_meta||null,
+                 eff_meta:slot.eff_meta||null, nominal, mwSeries, hrSeries };
+      } else {
+        const uDef = UNITS.find(u => u.id === slot.id);
+        if (!uDef) return null;
+        return {
+          ...uDef,
+          mwSeries: data[uDef.id] || [],
+          hrSeries: (hr && hr[uDef.id]) || [],
+          eff_meta: uDef.eff_meta != null ? uDef.eff_meta
+                    : (uDef.hr_meta ? parseFloat((3600 / uDef.hr_meta * 100).toFixed(1)) : null),
+        };
+      }
+    }).filter(Boolean);
+
     const subGrid = document.createElement('div');
     subGrid.className = 'hr-cards-row';
-    subGrid.style.gridTemplateColumns = `repeat(${units.length}, 1fr)`;
+    subGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
     group.appendChild(subGrid);
 
-    units.forEach(u => {
-    const mwSeries = data[u.id] || [];
+    hrItems.forEach(u => {
+    const mwSeries = u.mwSeries;
 
+    // ── Placeholder: sem dados de HR (UG, BAG) ────────────────────────────
     if (!u.hr_proj) {
-      const isOffHR   = mwSeries[mwSeries.length-1] < 5;
-      const pdpSeries = (G.pdp && G.pdp[u.id]) || [];
-      const pdpIdx    = pdpSeries.map((p,i) => p > 0 ? i : -1).filter(i => i >= 0);
-      const avgMW     = pdpIdx.length > 0
-                        ? pdpIdx.reduce((s,i) => s + (mwSeries[i] || 0), 0) / pdpIdx.length
-                        : mwSeries.reduce((s,v)=>s+v,0) / (mwSeries.length||1);
-      const fcPct     = u.nominal > 0 && pdpIdx.length > 0 ? Math.round(avgMW / u.nominal * 100) : 0;
-      const acc     = isOffHR ? '#4a6080' : u.color;
-      const card    = document.createElement('div');
+      const isOffHR   = (mwSeries[mwSeries.length-1] || 0) < 5;
+      const avgMW     = mwSeries.length ? mwSeries.reduce((s,v)=>s+(v||0),0)/mwSeries.length : 0;
+      const acc       = isOffHR ? '#4a6080' : u.color;
+      const tipoLabel = u.tipo === 'MCI' ? 'Motor a Gás · MCI' : u.tipo;
+      const card = document.createElement('div');
       card.className = 'hr-card';
       card.style.setProperty('--hr-accent', acc);
       card.innerHTML = `
         <div class="hr-card-top">
-          <span class="hr-unit-name" style="color:${u.color}">${u.id}</span>
+          <span class="hr-unit-name" style="color:${u.color}">${u.label || u.id}</span>
           <span class="hr-status-pill ${isOffHR?'hr-pill-off':'hr-pill-good'}">${isOffHR?'PARADA':'OPERANDO'}</span>
         </div>
         <div class="hr-values">
@@ -1535,36 +1697,36 @@ function renderHR(labels, data, hr, visUnits) {
           </div>
           <div class="hr-proj-block">
             <span class="hr-proj-label">Nominal</span>
-            <span class="hr-proj-val">${u.nominal} MW</span>
+            <span class="hr-proj-val">${u.nominal.toLocaleString('pt-BR')} MW</span>
           </div>
+        </div>
+        <div class="hr-placeholder-block">
+          <div class="hr-placeholder-text">${tipoLabel}<br>Heat Rate em breve</div>
         </div>
         <div class="hr-desvio-row">
           <span class="hr-desvio-label">Heat Rate</span>
-          <span class="hr-desvio-val hr-desvio-zero">Não aplic.</span>
+          <span class="hr-desvio-val hr-desvio-zero">—</span>
         </div>
         <div class="hr-bar-wrap">
-          <div class="hr-bar-fill" style="width:${Math.min(100,fcPct)}%;background:${u.color}88"></div>
+          <div class="hr-bar-fill" style="width:0%"></div>
         </div>
         <div class="hr-footnote">
-          <span>FC ${fcPct}%</span>
-          <span>${u.tipo === 'BAG' ? 'Motor BAG' : u.tipo}</span>
+          <span>Pot. nominal: ${u.nominal.toLocaleString('pt-BR')} MW</span>
+          <span>dados em breve</span>
         </div>`;
       subGrid.appendChild(card);
       return;
     }
 
-    const hrSeries = (hr && hr[u.id]) || [];
+    // ── Card HR completo (TG e TV) ────────────────────────────────────────
+    const hrSeries  = u.hrSeries;
+    const hrVals    = hrSeries.filter(v => v !== null && v > 0);
+    const avgHR     = hrVals.length ? Math.round(hrVals.reduce((s,v)=>s+v,0)/hrVals.length) : null;
+    const isOff     = (mwSeries[mwSeries.length-1] || 0) < 5;
+    const proj      = u.hr_proj;
+    const meta      = u.hr_meta || proj;
+    const desvio    = avgHR ? ((avgHR - meta) / meta * 100) : null;
 
-    // Média do HR apenas quando ligada
-    const hrVals = hrSeries.filter(v => v !== null && v > 0);
-    const avgHR  = hrVals.length ? Math.round(hrVals.reduce((s,v)=>s+v,0)/hrVals.length) : null;
-    const lastHR = [...hrSeries].reverse().find(v => v !== null && v > 0) || null;
-    const isOff  = mwSeries[mwSeries.length-1] < 5;
-
-    const proj   = u.hr_proj;
-    const desvio = avgHR ? ((avgHR - proj) / proj * 100) : null;
-
-    // limites de alerta: ±2% ok, ±2-5% atenção, >5% crítico
     let pill, pillClass, accentColor, barColor;
     if(isOff || avgHR === null) {
       pill='PARADA'; pillClass='hr-pill-off'; accentColor='#4a6080'; barColor='#4a6080';
@@ -1576,22 +1738,58 @@ function renderHR(labels, data, hr, visUnits) {
       pill='CRÍTICO'; pillClass='hr-pill-bad'; accentColor='#e05555'; barColor='#e05555';
     }
 
-    // largura da barra: 0% desvio = barra no meio, escala ±10%
-    const barPct = desvio !== null ? Math.min(100, Math.abs(desvio) / 10 * 100) : 0;
+    const barPct    = desvio !== null && desvio > 0 ? Math.min(100, desvio / 10 * 100) : 0;
     const desvClass = desvio === null ? 'hr-desvio-zero' : desvio > 0 ? 'hr-desvio-pos' : 'hr-desvio-neg';
-    const desvTxt = desvio === null ? '—' : (desvio > 0 ? '+' : '') + desvio.toFixed(1) + '%';
-
-    // "melhor hora" = menor HR do dia
-    const minHR = hrVals.length ? Math.min(...hrVals) : null;
-    const minHRIdx = hrSeries.indexOf(minHR);
+    const desvTxt   = desvio === null ? '—' : (desvio > 0 ? '+' : '') + desvio.toFixed(1) + '%';
+    const minHR     = hrVals.length ? Math.min(...hrVals) : null;
+    const minHRIdx  = hrSeries.indexOf(minHR);
     const minHRHora = minHRIdx >= 0 ? labels[minHRIdx] : '—';
+
+    // Bloco de eficiência: TG = gauge completo; TV = placeholder "em desenvolvimento"
+    let effBlock = '';
+    if (u.tipo === 'TG') {
+      const effReal  = avgHR ? parseFloat((3600 / avgHR * 100).toFixed(1)) : null;
+      const effGoal  = u.eff_meta || 36.2;
+      const effSvg   = buildEffGaugeSvg(isOff ? null : effReal, effGoal, 37.0, 41.0, u.id || u.label);
+      const effGap   = (effReal !== null && !isOff) ? effReal - effGoal : null;
+      const effGapSn = effGap !== null && effGap >= 0 ? '+' : '';
+      const effGapCl = effGap === null ? '' : effGap >= 0 ? 'eff-gap-above' : 'eff-gap-below';
+      const effValCl = isOff || effReal === null ? 'var(--muted)'
+                     : effGap >= 0 ? '#22c55e' : effGap >= -2 ? '#f59e0b' : '#ef4444';
+      effBlock = `
+        <div class="eff-gauge-block">
+          <div class="eff-gauge-title">
+            <span>Eficiência Térmica</span>
+            <span class="eff-gauge-title-sub">ciclo aberto · TG</span>
+          </div>
+          ${effSvg}
+          <div class="eff-gauge-bottom">
+            <div class="eff-val-block">
+              <div class="eff-val-big" style="color:${effValCl}">${effReal !== null && !isOff ? effReal.toFixed(1) : '—'}<span class="eff-val-unit">%</span></div>
+              <div class="eff-val-meta">meta ${effGoal.toFixed(1)}%</div>
+            </div>
+            <div class="eff-gap-badge ${effGap !== null ? effGapCl : 'eff-gap-below'}" style="visibility:${effGap !== null ? 'visible' : 'hidden'}">Gap vs meta<br><span class="eff-gap-val">${effGap !== null ? effGapSn + effGap.toFixed(1) + '%' : '—'}</span></div>
+          </div>
+        </div>`;
+    } else {
+      effBlock = `
+        <div class="eff-gauge-block">
+          <div class="eff-gauge-title">
+            <span>Eficiência Térmica</span>
+            <span class="eff-gauge-title-sub">ciclo a vapor · TV</span>
+          </div>
+          <div class="hr-placeholder-block" style="margin:4px 0 0">
+            <div class="hr-placeholder-text">Gauge de eficiência<br>em desenvolvimento</div>
+          </div>
+        </div>`;
+    }
 
     const card = document.createElement('div');
     card.className = 'hr-card';
     card.style.setProperty('--hr-accent', accentColor);
     card.innerHTML = `
       <div class="hr-card-top">
-        <span class="hr-unit-name" style="color:${u.color}">${u.id}</span>
+        <span class="hr-unit-name" style="color:${u.color}">${u.label || u.id}</span>
         <span class="hr-status-pill ${pillClass}">${pill}</span>
       </div>
       <div class="hr-values">
@@ -1602,12 +1800,13 @@ function renderHR(labels, data, hr, visUnits) {
           <span class="hr-real-unit">kJ/kWh</span>
         </div>
         <div class="hr-proj-block">
-          <span class="hr-proj-label">Projeto</span>
-          <span class="hr-proj-val">${proj.toLocaleString('pt-BR')}</span>
+          <span class="hr-proj-label">${u.hr_meta ? 'Meta HR' : 'Projeto'}</span>
+          <span class="hr-proj-val">${meta.toLocaleString('pt-BR')}</span>
         </div>
       </div>
+      ${effBlock}
       <div class="hr-desvio-row">
-        <span class="hr-desvio-label">Desvio vs. projeto</span>
+        <span class="hr-desvio-label">Desvio HR vs. meta</span>
         <span class="hr-desvio-val ${desvClass}">${desvTxt}</span>
       </div>
       <div class="hr-bar-wrap">
@@ -1658,14 +1857,36 @@ function renderDespacho(labels, data, pdp, visUnits) {
     hdr.innerHTML = `<span style="color:${meta.color}">▸</span> ${meta.label}`;
     group.appendChild(hdr);
 
+    // P1V: agrega por subgrupo (Maranhão IV, Maranhão V, Parnaíba V)
+    const DESP_SUBGROUPS_P1V = [
+      { id:'M4',   label:'Maranhão IV', color:'#3b9eff', ids:['TG31','TG32'] },
+      { id:'M5',   label:'Maranhão V',  color:'#1d9e75', ids:['TG21','TG22'] },
+      { id:'TV28', label:'Parnaíba V',  color:'#ff6b6b', ids:['TV28']        },
+    ];
+    const despItems = planta === 'P1V'
+      ? DESP_SUBGROUPS_P1V.map(sg => ({
+          id:    sg.id,
+          label: sg.label,
+          color: sg.color,
+          gerado: labels.map((_,i) => sg.ids.reduce((s,id) => s + (data[id]?.[i] || 0), 0)),
+          prog:   labels.map((_,i) => sg.ids.reduce((s,id) => s + (pdp?.[id]?.[i] || 0), 0)),
+        }))
+      : units.map(u => ({
+          id:    u.id,
+          label: u.id,
+          color: u.color,
+          gerado: data[u.id] || [],
+          prog:   (pdp && pdp[u.id]) || Array(labels.length).fill(0),
+        }));
+
     const subGrid = document.createElement('div');
     subGrid.className = 'fcfu-cards-row';
-    subGrid.style.gridTemplateColumns = `repeat(${units.length}, 1fr)`;
+    subGrid.style.gridTemplateColumns = `repeat(${despItems.length}, 1fr)`;
     group.appendChild(subGrid);
 
-    units.forEach(u => {
-    const gerado = data[u.id] || [];
-    const prog   = (pdp && pdp[u.id]) || Array(labels.length).fill(0);
+    despItems.forEach(u => {
+    const gerado = u.gerado;
+    const prog   = u.prog;
 
     // somar só intervalos onde havia programação > 0
     const mwhGerado = gerado.reduce((s,v,i)=> prog[i]>0 ? s+(v||0)*ih : s, 0);
@@ -1750,7 +1971,7 @@ function renderDespacho(labels, data, pdp, visUnits) {
 
     card.innerHTML = `
       <div class="fcfu-top">
-        <span class="fcfu-name" style="color:${u.color}">${u.id}</span>
+        <span class="fcfu-name" style="color:${u.color}">${u.label ?? u.id}</span>
         <span class="fcfu-status ${statusClass}">${statusTxt}</span>
       </div>
 
@@ -1770,8 +1991,8 @@ function renderDespacho(labels, data, pdp, visUnits) {
 
       <!-- barra de atendimento -->
       <div class="ad-gauge-wrap">
+        <div class="ad-gauge-track"></div>
         <div class="ad-gauge-fill" style="width:${atend!==null?Math.min(100,atend).toFixed(1):0}%;background:${accentColor}"></div>
-        <div class="ad-gauge-ref"></div>
       </div>
 
       <!-- mini gráfico gerado vs programado -->
@@ -1785,7 +2006,7 @@ function renderDespacho(labels, data, pdp, visUnits) {
       <hr class="fcfu-divider">
 
       <div class="fcfu-detail-row">
-        <span>Gerado (h programadas)</span>
+        <span>Total Gerado</span>
         <span class="fcfu-detail-val">${mwhGerado.toFixed(1)} MWh</span>
       </div>
       <div class="fcfu-detail-row">
