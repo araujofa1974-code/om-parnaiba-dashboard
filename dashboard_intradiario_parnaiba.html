@@ -583,9 +583,9 @@
 
 <div class="controls">
   <div class="ctrl-group">
-    <label>Data</label>
-    <input type="date" id="sel-date" onchange="carregarDados()">
-    <button class="btn btn-primary btn-sm" id="btn-carregar-pim" onclick="carregarDados()">Carregar Dados</button>
+    <button class="btn btn-primary btn-sm" id="btn-atualizar" onclick="carregarDados()">Atualizar</button>
+    <span id="janela-label" style="font-size:11px;color:var(--text2);letter-spacing:.04em"
+          title="Janela de dados: últimas 24 horas rolantes">—</span>
   </div>
   <div class="ctrl-group">
     <label>Planta</label>
@@ -619,7 +619,7 @@
     <div class="kpi" style="--kpi-color:var(--accent)">
       <div class="kpi-label">Total Bruto</div>
       <div class="kpi-value" id="kpi-total">—</div>
-      <div class="kpi-sub">GWh acumulado no dia</div>
+      <div class="kpi-sub">GWh acumuladas · últimas 24h</div>
       <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:6px" id="kpi-total-pdp">
         <span style="font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:2px">Total Programado</span>
         <span style="font-size:15px;font-weight:700;color:var(--text);font-family:var(--font-head)">— GWh</span>
@@ -642,7 +642,7 @@
       <div class="kpi-sub" id="kpi-fc-sub">vs. capacidade nominal</div>
     </div>
     <div class="kpi" style="--kpi-color:var(--c31)">
-      <div class="kpi-label">Pico · Mínimo do dia</div>
+      <div class="kpi-label">Pico · Mínimo · 24h</div>
       <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
         <span style="font-size:10px;color:var(--c31);letter-spacing:.05em">↑</span>
         <span class="kpi-value" id="kpi-pico" style="color:var(--c31)">—</span>
@@ -765,6 +765,16 @@ const UNITS = [
 const NOMINAL_TOTAL   = UNITS.reduce((a,u)=>a+u.nominal,   0);
 const INSTALADA_TOTAL = UNITS.reduce((a,u)=>a+u.instalada, 0);
 
+// Eixo temporal completo de um dia (48 slots de 30 min, 00:30 → 00:00)
+const FULL48 = [
+  "00:30","01:00","01:30","02:00","02:30","03:00","03:30","04:00",
+  "04:30","05:00","05:30","06:00","06:30","07:00","07:30","08:00",
+  "08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00",
+  "12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00",
+  "16:30","17:00","17:30","18:00","18:30","19:00","19:30","20:00",
+  "20:30","21:00","21:30","22:00","22:30","23:00","23:30","00:00"
+];
+
 const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
 // URL do Google Apps Script proxy (pim_dashboard_proxy.gs) para uso em produção
@@ -772,7 +782,8 @@ const IS_LOCAL = location.hostname === 'localhost' || location.hostname === '127
 const GAS_PROXY_URL = 'https://script.google.com/macros/s/AKfycbzYNnutEn2k5eXn16a_8Pq1qKY21Ky8K5PEPGZMNUAcnWnGVqSR35LexvkZPC7O2i57/exec';
 
 // ── ESTADO GLOBAL ─────────────────────────────────────────────────────────
-let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null };
+let G = { labels:[], data:{}, events:[], resolution:30, sourceRaw: null,
+          dataHoje:null, dataOntem:null, kLast:0, midnightIdx:-1 };
 let _autoRefreshTimer = null;
 let _countdownTimer   = null;
 let _nextRefreshAt    = null;
@@ -796,16 +807,19 @@ function loadSitopData(resMin) {
 
   if (resMin <= 30) {
     // Upsample: cada slot de 30 min é subdividido em (30/resMin) sub-slots
-    // Os valores são mantidos constantes dentro de cada janela de 30 min
     const repeat = 30 / resMin;
     const slots  = n30 * repeat;
     for (let i = 0; i < n30; i++) {
       for (let j = 0; j < repeat; j++) {
-        // label = fim do sub-slot em minutos desde meia-noite
-        const minEnd = i * 30 + (j + 1) * resMin;
-        const h = Math.floor(minEnd / 60) % 24;
-        const m = minEnd % 60;
-        labels.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        if (repeat === 1) {
+          // resMin=30: usa os labels reais de base (preserva janela rolante stitchada D-1→D-0)
+          labels.push(base.labels[i]);
+        } else {
+          const minEnd = i * 30 + (j + 1) * resMin;
+          const h = Math.floor(minEnd / 60) % 24;
+          const m = minEnd % 60;
+          labels.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+        }
       }
     }
     UNITS.forEach(u => {
@@ -965,11 +979,7 @@ function renderAll() {
     ? UNITS
     : UNITS.filter(u=>u.planta===filtroPlanta);
 
-  const _brNow2  = new Date(Date.now() - 3 * 3600000);
-  const _hoje2   = _brNow2.getUTCFullYear() + '-' +
-    String(_brNow2.getUTCMonth() + 1).padStart(2,'0') + '-' +
-    String(_brNow2.getUTCDate()).padStart(2,'0');
-  const isToday  = (document.getElementById('sel-date').value || '') === _hoje2;
+  const isToday = true; // sempre janela rolante — último slot é sempre D-0
 
   G.events = detectEvents(labels, data, pdp, sensitivity, res, visUnits, isToday);
 
@@ -1071,7 +1081,7 @@ function renderMainChart(labels, data, visUnits) {
   const ctx = document.getElementById('main-chart').getContext('2d');
   mainChart = new Chart(ctx,{
     type:'line',
-    plugins: [makeTripPlugin(mainTripData)],
+    plugins: [makeTripPlugin(mainTripData), makeMidnightPlugin(G.midnightIdx)],
     data:{labels, datasets},
     options:{
       responsive:true, maintainAspectRatio:false,
@@ -1119,7 +1129,7 @@ function renderMainChart(labels, data, visUnits) {
   ).join('');
 
   document.getElementById('main-chart-sub').textContent =
-    `Resolução: ${G.resolution} min · ${document.getElementById('sel-date').value}`;
+    `Resolução: ${G.resolution} min · Janela: últimas 24h`;
 }
 
 // ── GRÁFICO EMPILHADO ──────────────────────────────────────────────────────
@@ -1166,7 +1176,7 @@ function renderStackChart(labels, data, pdp) {
   const ctx = document.getElementById('stack-chart').getContext('2d');
   stackChart = new Chart(ctx,{
     type:'line',
-    plugins: [makeTripPlugin(stackTripData)],
+    plugins: [makeTripPlugin(stackTripData), makeMidnightPlugin(G.midnightIdx)],
     data:{labels, datasets},
     options:{
       responsive:true, maintainAspectRatio:false,
@@ -1291,6 +1301,35 @@ function makeTripPlugin(trips) {
         ctx.fillText(`TRIP · ${label}`, 3, 0);
         ctx.restore();
       });
+    }
+  };
+}
+
+// Linha de meia-noite nos gráficos principais: marca visualmente a transição D-1→D-0
+function makeMidnightPlugin(midnightIdx) {
+  return {
+    id: 'midnightLine',
+    afterDraw(chart) {
+      if (midnightIdx < 1 || midnightIdx > 46) return;
+      const {ctx, chartArea} = chart;
+      if (!chartArea) return;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta?.data?.length || midnightIdx >= meta.data.length) return;
+      const x = meta.data[midnightIdx].x;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, chartArea.top);
+      ctx.lineTo(x, chartArea.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '8px DM Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('0h', x, chartArea.top + 10);
+      ctx.restore();
     }
   };
 }
@@ -1575,7 +1614,7 @@ function buildEffGaugeSvg(actual, goal, benchLo, benchHi, uid) {
     + '<text x="' + ((bx1+bx2)/2).toFixed(1) + '" y="' + (by2-3).toFixed(1) + '" text-anchor="middle" font-family="DM Mono,monospace" font-size="7" fill="#7c3aed" opacity="0.8">Benchmarking</text>'
     // linha META + "M" centralizado acima dela
     + '<line x1="' + gX.toFixed(1) + '" y1="' + (gY-5).toFixed(1) + '" x2="' + gX.toFixed(1) + '" y2="' + BY + '" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="5 3"/>'
-    + '<text x="' + gX.toFixed(1) + '" y="' + (gY-6).toFixed(1) + '" text-anchor="middle" font-family="DM Mono,monospace" font-size="8" fill="#f59e0b">M</text>'
+    + '<polygon points="' + gX.toFixed(1) + ',' + (gY-5).toFixed(1) + ' ' + (gX-5).toFixed(1) + ',' + (gY-12).toFixed(1) + ' ' + (gX+5).toFixed(1) + ',' + (gY-12).toFixed(1) + '" fill="#f59e0b" opacity="0.9"/>'
     // linha valor realizado + triângulo invertido centralizado acima
     + (actual !== null ? '<line x1="' + aX.toFixed(1) + '" y1="' + (aY-5).toFixed(1) + '" x2="' + aX.toFixed(1) + '" y2="' + BY + '" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5 3"/>' : '')
     + (actual !== null ? '<polygon points="' + aX.toFixed(1) + ',' + (aY-5).toFixed(1) + ' ' + (aX-5).toFixed(1) + ',' + (aY-12).toFixed(1) + ' ' + (aX+5).toFixed(1) + ',' + (aY-12).toFixed(1) + '" fill="#60a5fa" opacity="0.9"/>' : '')
@@ -2165,12 +2204,21 @@ function updateStatusBar(events) {
   const msg = trips>0 ? `${trips} TRIP(S) DETECTADO(S)` :
               reducoes>0 ? `${reducoes} REDUÇÃO(ÕES) DE CARGA` : 'OPERAÇÃO NORMAL';
 
+  const _winLabel = (G.dataOntem && G.dataHoje)
+    ? (() => {
+        const [,mO,dO] = G.dataOntem.split('-');
+        const [,mH,dH] = G.dataHoje.split('-');
+        const slotStart = G.kLast >= 0 ? FULL48[G.kLast + 1] || FULL48[0] : FULL48[0];
+        const slotEnd   = G.kLast >= 0 ? FULL48[G.kLast] : FULL48[47];
+        return `${dO}/${mO} ${slotStart} → ${dH}/${mH} ${slotEnd}`;
+      })()
+    : 'últimas 24h';
   statusBar.innerHTML = `
     <span><span class="status-dot ${dotColor}"></span>${msg}</span>
     <span>·</span>
     <span>${partidas} partida(s) · ${desls} desligamento(s) programado(s)</span>
     <span>·</span>
-    <span>Fonte: ${IS_LOCAL ? 'Tempo Real' : 'Demo'} · ${document.getElementById('sel-date').value} · Resolução ${G.resolution} min</span>
+    <span>Fonte: ${IS_LOCAL ? 'Tempo Real' : 'Demo'} · Janela 24h: ${_winLabel}</span>
     <span>·</span>
     <span>Atualizado: ${new Date().toLocaleTimeString('pt-BR',{hour12:false})}</span>
   `;
@@ -2184,65 +2232,127 @@ function mostrarErro(msg) {
   document.getElementById('data-source-badge').textContent = 'SEM DADOS';
 }
 
-// ── CARREGAR DADOS ─────────────────────────────────────────────────────────
+// ── CARREGAR DADOS · JANELA ROLANTE 24H ───────────────────────────────────
+// Sempre monta a janela D-1[kLast+1..47] + D-0[0..kLast] = 48 slots = 24h exatas.
+// Não há mais seleção de data histórica.
 async function carregarDados(_retry = false) {
-  const data = document.getElementById('sel-date').value;
-  const btn  = document.getElementById('btn-carregar-pim');
+  const btn = document.getElementById('btn-atualizar');
   if (btn) { btn.disabled = true; btn.textContent = 'Carregando...'; }
-  const _brNowCD = new Date(Date.now() - 3 * 3600000);
-  const isToday  = data === (_brNowCD.getUTCFullYear() + '-' +
-    String(_brNowCD.getUTCMonth() + 1).padStart(2,'0') + '-' +
-    String(_brNowCD.getUTCDate()).padStart(2,'0'));
+
+  // Horário do Brasil (UTC-3, sem DST desde 2019)
+  const brNow  = new Date(Date.now() - 3 * 3600000);
+  const tMin   = brNow.getUTCHours() * 60 + brNow.getUTCMinutes();
+  const kLast  = Math.floor(tMin / 30) - 1; // índice último slot de 30 min completo (-1 se nenhum)
+
+  function brDateStr(d) {
+    return d.getUTCFullYear() + '-' +
+      String(d.getUTCMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getUTCDate()).padStart(2, '0');
+  }
+  const dataHoje  = brDateStr(brNow);
+  const dataOntem = brDateStr(new Date(brNow.getTime() - 24 * 3600000));
+
+  G.dataHoje    = dataHoje;
+  G.dataOntem   = dataOntem;
+  G.kLast       = kLast;
+  G.midnightIdx = 47 - kLast; // posição no array stitchado onde D-0 começa
+
+  // Atualiza label de janela no controle
+  const janEl = document.getElementById('janela-label');
+  if (janEl) {
+    const [,mO,dO] = dataOntem.split('-');
+    const [,mH,dH] = dataHoje.split('-');
+    const slotStart = FULL48[Math.max(0, kLast + 1)];
+    const slotEnd   = kLast >= 0 ? FULL48[kLast] : FULL48[47];
+    janEl.textContent = `${dO}/${mO} ${slotStart} → ${dH}/${mH} ${slotEnd}`;
+  }
+
+  // ── Normaliza Way2 + PDP para array de 48 slots (FULL48) ──────────────────
+  function buildPdp30(w30Labels, pdpMap) {
+    const result = {};
+    UNITS.forEach(u => {
+      result[u.id] = (w30Labels || []).map(lbl => {
+        const [h, m] = lbl.split(':').map(Number);
+        const tot = h * 60 + m + 30;
+        const pk  = `${String(Math.floor(tot / 60) % 24).padStart(2, '0')}:${String(tot % 60).padStart(2, '0')}`;
+        return (pdpMap[pk] || {})[u.id] || 0;
+      });
+    });
+    return result;
+  }
+
+  function toFull48(w30, pdp30) {
+    const idxM = {};
+    (w30.labels || []).forEach((lbl, i) => { if (lbl !== '00:00') idxM[lbl] = i; });
+    const d = {}, p = {};
+    UNITS.forEach(u => {
+      d[u.id] = FULL48.map(lbl => idxM[lbl] !== undefined ? (w30.data?.[u.id]?.[idxM[lbl]] ?? null) : null);
+      p[u.id] = FULL48.map(lbl => idxM[lbl] !== undefined ? (pdp30[u.id]?.[idxM[lbl]] ?? 0) : 0);
+    });
+    return { data: d, pdp: p };
+  }
+
+  // ── Monta janela rolante ────────────────────────────────────────────────────
+  // D-1: slots [kLast+1..47] → stitched início
+  // D-0: slots [0..kLast]    → stitched fim
+  function stitch(ontem48, hoje48) {
+    const d = {}, p = {};
+    UNITS.forEach(u => {
+      d[u.id] = [...ontem48.data[u.id].slice(kLast + 1), ...hoje48.data[u.id].slice(0, kLast + 1)];
+      p[u.id] = [...ontem48.pdp[u.id].slice(kLast + 1),  ...hoje48.pdp[u.id].slice(0, kLast + 1)];
+    });
+    return { data: d, pdp: p };
+  }
 
   try {
-    let w30, pdp30, pdpTotal30, w5 = null;
-    let pdpMap = {};
+    let hoje48, ontem48;
+    let w5H = null, w5O = null;
+    let hoje48raw, ontem48raw; // para expand do PDP no 5-min
 
     if (IS_LOCAL) {
       // ── Local: Way2 CSV + PDP CSV via abrir_dashboard.py ──────────────
-      const [rPdp, r30, r5] = await Promise.all([
-        fetch(`http://localhost:8765/api/pdp?data=${data}`),
-        fetch(`http://localhost:8765/api/way2?data=${data}&res=30`),
-        fetch(`http://localhost:8765/api/way2?data=${data}&res=5`),
+      const [rPdpH, r30H, rPdpO, r30O, r5H, r5O] = await Promise.all([
+        fetch(`http://localhost:8765/api/pdp?data=${dataHoje}`),
+        fetch(`http://localhost:8765/api/way2?data=${dataHoje}&res=30`),
+        fetch(`http://localhost:8765/api/pdp?data=${dataOntem}`),
+        fetch(`http://localhost:8765/api/way2?data=${dataOntem}&res=30`),
+        fetch(`http://localhost:8765/api/way2?data=${dataHoje}&res=5`),
+        fetch(`http://localhost:8765/api/way2?data=${dataOntem}&res=5`),
       ]);
-      pdpMap = await rPdp.json();
-      w30 = await r30.json();
-      w5  = await r5.json();
+      const pdpMapH = await rPdpH.json();
+      const w30H    = await r30H.json();
+      const pdpMapO = await rPdpO.json();
+      const w30O    = await r30O.json();
+      w5H = await r5H.json();
+      w5O = await r5O.json();
 
-      if (!w30.labels || !w30.labels.length) {
+      // Auto-coleta D-0 se ausente
+      if (!w30H.labels || !w30H.labels.length) {
         if (!_retry) {
           const banner = document.getElementById('demo-banner');
-          banner.textContent = '⏳ Coletando dados Way2 para ' + data + '... aguarde.';
+          banner.textContent = '⏳ Coletando dados Way2 para ' + dataHoje + '... aguarde.';
           banner.style.display = 'flex';
           try {
-            const rc = await fetch(`http://localhost:8765/api/coletar?data=${data}`,
+            const rc = await fetch(`http://localhost:8765/api/coletar?data=${dataHoje}`,
               { signal: AbortSignal.timeout(90000) });
             const rj = await rc.json();
             banner.style.display = 'none';
-            if (rj.ok) {
-              await carregarDados(true);
-              return;
-            }
-            mostrarErro('Coleta Way2 falhou para ' + data + (rj.erro ? ': ' + rj.erro : ''));
+            if (rj.ok) { await carregarDados(true); return; }
+            mostrarErro('Coleta Way2 falhou para ' + dataHoje + (rj.erro ? ': ' + rj.erro : ''));
           } catch(e) {
-            mostrarErro('Erro ao coletar Way2 para ' + data + ': ' + e.message);
+            mostrarErro('Erro ao coletar Way2 para ' + dataHoje + ': ' + e.message);
           }
+          return;
         } else {
-          mostrarErro('Sem dados Way2 para ' + data + '. Verifique a conexão com a API Way2.');
+          mostrarErro('Sem dados Way2 para ' + dataHoje + '. Verifique a conexão com a API Way2.');
+          return;
         }
-        return;
       }
 
-      // Alinha PDP (fim-de-slot +30 min) com Way2 (início-de-slot)
-      pdp30 = {};
-      UNITS.forEach(u => {
-        pdp30[u.id] = w30.labels.map(lbl => {
-          const [h, m] = lbl.split(':').map(Number);
-          const tot = h * 60 + m + 30;
-          const pk  = `${String(Math.floor(tot/60)%24).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`;
-          return (pdpMap[pk] || {})[u.id] || 0;
-        });
-      });
+      const pdp30H = buildPdp30(w30H.labels, pdpMapH);
+      const pdp30O = buildPdp30(w30O.labels || [], pdpMapO);
+      hoje48  = toFull48(w30H, pdp30H);
+      ontem48 = toFull48(w30O.labels?.length ? w30O : { labels: [], data: {} }, pdp30O);
 
     } else {
       // ── Produção: Google Apps Script proxy ────────────────────────────
@@ -2250,99 +2360,102 @@ async function carregarDados(_retry = false) {
         mostrarErro('Preencha GAS_PROXY_URL no HTML com a URL do deploy do Apps Script.');
         return;
       }
-      const r   = await fetch(GAS_PROXY_URL, {
-        method:  'POST',
+      const fetchGas = dt => fetch(GAS_PROXY_URL, {
+        method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body:    JSON.stringify({ data: data, intervalo: 'TrintaMinutos' }),
-      })
-      const gas = await r.json();
+        body:    JSON.stringify({ data: dt, intervalo: 'TrintaMinutos' }),
+      }).then(r => r.json());
 
-      if (gas.error || !gas.labels || !gas.labels.length) {
-        mostrarErro('Sem dados para ' + data + (gas.error ? ': ' + gas.error : ''));
+      const [gasH, gasO] = await Promise.all([fetchGas(dataHoje), fetchGas(dataOntem)]);
+
+      if (gasH.error || !gasH.labels || !gasH.labels.length) {
+        mostrarErro('Sem dados para ' + dataHoje + (gasH.error ? ': ' + gasH.error : ''));
         return;
       }
 
-      w30   = { labels: gas.labels, data: gas.data };
-      pdp30 = gas.pdp || {};
+      hoje48  = toFull48({ labels: gasH.labels, data: gasH.data }, gasH.pdp  || {});
+      ontem48 = toFull48(
+        gasO.labels?.length ? { labels: gasO.labels, data: gasO.data } : { labels: [], data: {} },
+        gasO.pdp || {}
+      );
     }
 
-    // Dia passado: garantir eixo X com 48 slots (dia completo 00:30–00:00)
-    const _brNow = new Date(Date.now() - 3 * 3600000);
-    const _hoje  = _brNow.getUTCFullYear() + '-' +
-      String(_brNow.getUTCMonth() + 1).padStart(2,'0') + '-' +
-      String(_brNow.getUTCDate()).padStart(2,'0');
-    if (data < _hoje && w30.labels.length < 48) {
-      const FULL48 = ["00:30","01:00","01:30","02:00","02:30","03:00","03:30","04:00",
-        "04:30","05:00","05:30","06:00","06:30","07:00","07:30","08:00","08:30","09:00",
-        "09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00",
-        "14:30","15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30","19:00",
-        "19:30","20:00","20:30","21:00","21:30","22:00","22:30","23:00","23:30","00:00"];
-      const idxMap = {};
-      w30.labels.forEach((lbl, i) => { if (lbl !== '00:00') idxMap[lbl] = i; });
-      const paddedData = {}, paddedPdp = {};
-      UNITS.forEach(u => {
-        paddedData[u.id] = FULL48.map(lbl =>
-          idxMap[lbl] !== undefined ? (w30.data[u.id]?.[idxMap[lbl]] ?? null) : null);
-        paddedPdp[u.id] = FULL48.map(lbl => {
-          if (idxMap[lbl] !== undefined) return pdp30[u.id]?.[idxMap[lbl]] ?? 0;
-          return (pdpMap[lbl] || {})[u.id] || 0;
-        });
-      });
-      w30   = { labels: FULL48, data: paddedData };
-      pdp30 = paddedPdp;
-    }
+    // ── Mescla janela rolante ───────────────────────────────────────────────
+    const stitchedLabels = [
+      ...FULL48.slice(kLast + 1),
+      ...FULL48.slice(0, kLast + 1),
+    ];
+    const stitched = stitch(ontem48, hoje48);
+    const pdpTotal = stitchedLabels.map((_, i) =>
+      UNITS.reduce((s, u) => s + (stitched.pdp[u.id][i] || 0), 0));
 
-    pdpTotal30 = w30.labels.map((_,i) =>
-      UNITS.reduce((s,u) => s + ((pdp30[u.id] || [])[i] || 0), 0)
-    );
-
-    G.sourceRaw = { date: data, labels: w30.labels, data: w30.data, pdp: pdp30, pdpTotal: pdpTotal30 };
+    G.sourceRaw = {
+      date: dataHoje,
+      labels: stitchedLabels,
+      data: stitched.data,
+      pdp: stitched.pdp,
+      pdpTotal,
+    };
     document.getElementById('demo-banner').style.display = 'none';
     renderAll();
 
-    // Auto-refresh + countdown apenas para D-0
+    // ── Auto-refresh a cada 5 min (sempre ativo — janela é sempre ao vivo) ──
     if (_autoRefreshTimer) { clearInterval(_autoRefreshTimer); _autoRefreshTimer = null; }
     if (_countdownTimer)   { clearInterval(_countdownTimer);   _countdownTimer   = null; }
-    const cdEl = document.getElementById('refresh-countdown');
-    if (isToday) {
-      document.getElementById('data-source-badge').textContent =
-        IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO';
-      _nextRefreshAt = Date.now() + 5 * 60 * 1000;
-      // Anima arco SVG e ponteiro a cada segundo
-      const CIRCUM = 75.40; // 2π × r=12
-      const arc    = document.getElementById('refresh-arc');
-      const hand   = document.getElementById('refresh-hand');
-      const tickCountdown = () => {
-        const remMs  = Math.max(0, _nextRefreshAt - Date.now());
-        const frac   = remMs / (5 * 60 * 1000); // 1 → 0
-        if (arc)  arc.setAttribute('stroke-dashoffset', CIRCUM * (1 - frac));
-        if (hand) hand.setAttribute('transform', `rotate(${(1 - frac) * 360} 18 18)`);
-      };
-      if (cdEl) { cdEl.style.display = 'inline'; tickCountdown(); }
-      _countdownTimer   = setInterval(tickCountdown, 1000);
-      _autoRefreshTimer = setInterval(carregarDados, 5 * 60 * 1000);
-    } else {
-      document.getElementById('data-source-badge').textContent =
-        IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · GAS PROXY · 30MIN';
-      if (cdEl) cdEl.style.display = 'none';
-    }
+    document.getElementById('data-source-badge').textContent =
+      IS_LOCAL ? 'WAY2 · 30MIN GER · 5MIN EVT' : 'WAY2 · AO VIVO';
 
-    // Redetecta eventos com 5 min (apenas local — GAS proxy retorna 30 min)
-    if (IS_LOCAL && w5 && w5.labels && w5.labels.length) {
+    _nextRefreshAt = Date.now() + 5 * 60 * 1000;
+    const CIRCUM = 75.40;
+    const arc  = document.getElementById('refresh-arc');
+    const hand = document.getElementById('refresh-hand');
+    const tickCountdown = () => {
+      const remMs = Math.max(0, _nextRefreshAt - Date.now());
+      const frac  = remMs / (5 * 60 * 1000);
+      if (arc)  arc.setAttribute('stroke-dashoffset', CIRCUM * (1 - frac));
+      if (hand) hand.setAttribute('transform', `rotate(${(1 - frac) * 360} 18 18)`);
+    };
+    const cdEl = document.getElementById('refresh-countdown');
+    if (cdEl) { cdEl.style.display = 'inline'; tickCountdown(); }
+    _countdownTimer   = setInterval(tickCountdown, 1000);
+    _autoRefreshTimer = setInterval(carregarDados, 5 * 60 * 1000);
+
+    // ── Redetecta eventos com resolução 5 min (apenas local) ──────────────
+    if (IS_LOCAL && w5H && w5H.labels && w5H.labels.length) {
+      const FULL288 = [];
+      for (let i = 1; i <= 288; i++) {
+        const m = i * 5;
+        FULL288.push(`${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`);
+      }
+      const kLast5 = Math.floor(tMin / 5) - 1;
+      const idxM5H = {}, idxM5O = {};
+      (w5H.labels || []).forEach((lbl, i) => { if (lbl !== '00:00') idxM5H[lbl] = i; });
+      (w5O?.labels || []).forEach((lbl, i) => { if (lbl !== '00:00') idxM5O[lbl] = i; });
+
+      const stitched5Data = {};
+      UNITS.forEach(u => {
+        const sH = FULL288.map(lbl => idxM5H[lbl] !== undefined ? (w5H.data[u.id]?.[idxM5H[lbl]] ?? null) : null);
+        const sO = FULL288.map(lbl => idxM5O[lbl] !== undefined ? (w5O?.data[u.id]?.[idxM5O[lbl]] ?? null) : null);
+        stitched5Data[u.id] = [...sO.slice(kLast5 + 1), ...sH.slice(0, kLast5 + 1)];
+      });
+      const stitched5Labels = [...FULL288.slice(kLast5 + 1), ...FULL288.slice(0, kLast5 + 1)];
+
+      // Expande PDP stitchado de 30 min → 5 min (cada slot 30 min = 6 sub-slots de 5 min)
       const pdp5 = {};
       UNITS.forEach(u => {
         pdp5[u.id] = [];
-        (pdp30[u.id] || []).forEach(v => { for(let j=0;j<6;j++) pdp5[u.id].push(v); });
+        stitched.pdp[u.id].forEach(v => { for (let j = 0; j < 6; j++) pdp5[u.id].push(v); });
       });
+
       const sens     = parseInt(document.getElementById('sel-trip-sens').value) || 50;
       const filtroP  = document.getElementById('sel-planta').value;
       const visUnits = filtroP === 'all' ? UNITS : UNITS.filter(u => u.planta === filtroP);
-      G.events = detectEvents(w5.labels, w5.data, pdp5, sens, 5, visUnits, isToday);
+      G.events = detectEvents(stitched5Labels, stitched5Data, pdp5, sens, 5, visUnits, true);
       renderEventsTable(G.events);
       updateStatusBar(G.events);
-      const trips = G.events.filter(e=>e.type==='TRIP').length;
-      const reds  = G.events.filter(e=>e.type==='REDUÇÃO').length;
-      const desls = G.events.filter(e=>e.type==='DESLIGAMENTO').length;
+      const trips = G.events.filter(e => e.type === 'TRIP').length;
+      const reds  = G.events.filter(e => e.type === 'REDUÇÃO').length;
+      const desls = G.events.filter(e => e.type === 'DESLIGAMENTO').length;
       document.getElementById('kpi-trips').textContent     = trips + reds;
       document.getElementById('kpi-trips-sub').textContent = `${trips} trips · ${reds} reduções · ${desls} deslig.`;
       document.getElementById('badge-trips').textContent   = trips + reds;
@@ -2352,7 +2465,7 @@ async function carregarDados(_retry = false) {
     console.error('[carregarDados] erro:', err);
     mostrarErro('Erro ao carregar dados: ' + err.message);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Carregar Dados'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Atualizar'; }
   }
 }
 
@@ -2363,24 +2476,24 @@ async function verificarStatusCSVs() {
     const res  = await fetch('http://localhost:8765/api/status');
     const json = await res.json();
     if (!json.faltando || !json.faltando.length) return;
-    const datas = json.faltando.map(d => {
-      const [y,m,dia] = d.split('-');
-      return `${dia}/${m}`;
-    }).join(', ');
+    // Janela 24h só precisa de D-0 e D-1 — apenas esses são relevantes
+    const brNow     = new Date(Date.now() - 3 * 3600000);
+    function brDS(d) {
+      return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+    }
+    const needed    = new Set([brDS(brNow), brDS(new Date(brNow.getTime() - 24*3600000))]);
+    const relevante = json.faltando.filter(d => needed.has(d));
+    if (!relevante.length) return;
+    const datas = relevante.map(d => { const [,m,dia] = d.split('-'); return `${dia}/${m}`; }).join(', ');
     const el = document.getElementById('missing-banner');
     document.getElementById('missing-banner-text').textContent =
-      `⚠ Dados Way2 ausentes nos últimos 7 dias: ${datas} — ligue o notebook antes de meia-noite para coleta automática.`;
+      `⚠ Dados Way2 ausentes para a janela 24h: ${datas} — auto-coleta ativada ao carregar.`;
     el.style.display = 'flex';
   } catch (_) {}
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', ()=>{
-  const brNow  = new Date(Date.now() - 3 * 3600000); // UTC-3 fixo (Brasil sem DST desde 2019)
-  const hojeStr = brNow.getUTCFullYear() + '-' +
-    String(brNow.getUTCMonth() + 1).padStart(2,'0') + '-' +
-    String(brNow.getUTCDate()).padStart(2,'0');
-  document.getElementById('sel-date').value = hojeStr;
+window.addEventListener('DOMContentLoaded', () => {
   carregarDados();
   verificarStatusCSVs();
 });
