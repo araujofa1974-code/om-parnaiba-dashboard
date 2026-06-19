@@ -136,6 +136,10 @@ label.btn-reload{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,2
 .leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text-secondary)}
 .leg-dot{width:7px;height:7px;border-radius:50%}
 
+/* ── JSON SELECTOR ── */
+#json-selector option{background:#0b1e3d;color:#fff}
+#json-selector:focus{border-color:rgba(244,160,36,.6);box-shadow:0 0 0 2px rgba(244,160,36,.15)}
+
 /* ── CHART ── */
 canvas.bar-chart{
   width:100%;
@@ -262,6 +266,14 @@ canvas.bar-chart{
     <div class="date-item"><div class="label">Dados em</div><div class="value" id="db-ts">—</div></div>
   </div>
 
+  <!-- SELECTOR BAR -->
+  <div id="selector-bar" style="display:none;background:#0a1b38;padding:6px 14px;border-top:1px solid rgba(255,255,255,.07)">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,.35);font-weight:600;white-space:nowrap;flex-shrink:0">📅 Data:</span>
+      <select id="json-selector" onchange="trocarJson(this.value)" style="flex:1;min-width:0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:4px 8px;font-size:12px;font-weight:600;outline:none;cursor:pointer;width:100%"></select>
+    </div>
+  </div>
+
   <!-- TABS -->
   <div class="tabs-bar" id="tabsBar">
     <button class="tab-btn active" onclick="showTab('visao',this)"><span class="ico">📊</span> Visão Geral</button>
@@ -342,7 +354,7 @@ const pCls=p=>p>=95?'good':p>=80?'warn':'bad';
 const pClsGN=p=>p>=95&&p<=105?'good':p>=85&&p<=115?'warn':'bad';
 
 /* ── STATE ── */
-let D=null, chartDone=false;
+let D=null, chartDone=false, listaArquivos=[];
 
 /* ── EXTRACT ── */
 // Chaves posicionais de fallback para JSONs salvos por versões antigas do formulário (sem id nos campos)
@@ -739,6 +751,33 @@ function initChart(){
   });
 }
 
+/* ── JSON SELECTOR ── */
+function nomeParaData(nome){
+  const m=nome.match(/OM_estado_(\d{2})(\d{2})(\d{4})_(\d{2})(\d{2})/);
+  if(m) return `${m[1]}/${m[2]}/${m[3]}  ${m[4]}:${m[5]}`;
+  const m2=nome.match(/Dados_(\d{2})(\d{2})(\d{4})/);
+  if(m2) return `${m2[1]}/${m2[2]}/${m2[3]}`;
+  return nome;
+}
+
+function popularSeletor(arquivos, selecionado){
+  listaArquivos=arquivos;
+  const sel=document.getElementById('json-selector');
+  const bar=document.getElementById('selector-bar');
+  if(!sel||!arquivos.length) return;
+  sel.innerHTML=arquivos.map(a=>`<option value="${a}"${a===selecionado?' selected':''}>${nomeParaData(a)}</option>`).join('');
+  if(bar) bar.style.display='block';
+}
+
+async function trocarJson(nome){
+  const url=nome.startsWith('OM_estado_')?`${GITHUB_BASE}/dados/${nome}`:`${GITHUB_BASE}/${nome}`;
+  try{
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    render(extract(await r.json()));
+  }catch(e){alert('Erro ao carregar '+nome+':\n'+e.message);}
+}
+
 /* ── TABS ── */
 function showTab(id,tabBtn,navBtn){
   document.querySelectorAll('.section-page').forEach(p=>p.classList.remove('active'));
@@ -825,6 +864,7 @@ function carregarDoDrive() {
     .then(idx => {
       const lista = idx && Array.isArray(idx.arquivos) && idx.arquivos.length ? idx.arquivos : null;
       if (!lista) return Promise.reject();
+      popularSeletor(lista, lista[0]);
       if(msg) msg.textContent = 'Carregando dados…';
       return fetch(`${GITHUB_BASE}/dados/${lista[0]}`, { cache: 'no-store' })
         .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
