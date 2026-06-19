@@ -2353,6 +2353,13 @@ async function carregarDados(_retry = false) {
       const pdp30O = buildPdp30(w30O.labels || [], pdpMapO);
       hoje48  = toFull48(w30H, pdp30H);
       ontem48 = toFull48(w30O.labels?.length ? w30O : { labels: [], data: {} }, pdp30O);
+      // slot 47 de ontem (23:30→00:00) está no índice 0 do arquivo de hoje
+      if (w30H.labels?.[0] === '00:00') {
+        UNITS.forEach(u => {
+          ontem48.data[u.id][47] = w30H.data?.[u.id]?.[0] ?? null;
+          ontem48.pdp[u.id][47]  = pdp30H?.[u.id]?.[0]   ?? 0;
+        });
+      }
 
     } else {
       // ── Produção: Google Apps Script proxy ────────────────────────────
@@ -2378,6 +2385,13 @@ async function carregarDados(_retry = false) {
         gasO.labels?.length ? { labels: gasO.labels, data: gasO.data } : { labels: [], data: {} },
         gasO.pdp || {}
       );
+      // slot 47 de ontem (23:30→00:00) está no índice 0 do arquivo de hoje
+      if (gasH.labels?.[0] === '00:00') {
+        UNITS.forEach(u => {
+          ontem48.data[u.id][47] = gasH.data?.[u.id]?.[0] ?? null;
+          ontem48.pdp[u.id][47]  = (gasH.pdp || {})[u.id]?.[0] ?? 0;
+        });
+      }
     }
 
     // ── Mescla janela rolante ───────────────────────────────────────────────
