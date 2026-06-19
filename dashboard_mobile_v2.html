@@ -780,6 +780,13 @@ function carregarDoDrive() {
   if(errEl)   errEl.style.display='none';
   if(btnRetry) btnRetry.style.display='none';
 
+  function mostrarErro() {
+    if(spinner) spinner.style.display='none';
+    if(msg)     msg.style.display='none';
+    if(errEl)   errEl.style.display='block';
+    if(btnRetry) btnRetry.style.display='block';
+  }
+
   // Tenta D-1, D-2, … até 7 dias atrás — carrega o mais recente disponível
   function tentarDia(offset) {
     const d = new Date();
@@ -808,16 +815,22 @@ function carregarDoDrive() {
       })
       .catch(() => {
         if(offset < 6) tentarDia(offset + 1);
-        else {
-          if(spinner) spinner.style.display='none';
-          if(msg)     msg.style.display='none';
-          if(errEl)   errEl.style.display='block';
-          if(btnRetry) btnRetry.style.display='block';
-        }
+        else mostrarErro();
       });
   }
 
-  tentarDia(0);
+  // Prioridade 1: índice de dados históricos em dados/index.json
+  fetch(`${GITHUB_BASE}/dados/index.json`, { cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(idx => {
+      const lista = idx && Array.isArray(idx.arquivos) && idx.arquivos.length ? idx.arquivos : null;
+      if (!lista) return Promise.reject();
+      if(msg) msg.textContent = 'Carregando dados…';
+      return fetch(`${GITHUB_BASE}/dados/${lista[0]}`, { cache: 'no-store' })
+        .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+        .then(json => render(extract(json)));
+    })
+    .catch(() => tentarDia(0));  // Prioridade 2: busca por data D-1..D-7
 }
 
 function loadFile(f){
