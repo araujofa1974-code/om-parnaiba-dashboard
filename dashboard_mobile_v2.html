@@ -672,6 +672,13 @@ function render(d){
   document.getElementById('main-ocorrencias').innerHTML=buildOcorrencias(d);
   document.getElementById('main-agua').innerHTML=buildAgua(d);
   document.getElementById('main-dts').innerHTML=buildDTs(d);
+  // Popula seletor de datas (independente do caminho de carga)
+  if(!listaArquivos.length){
+    fetch(`${GITHUB_BASE}/dados/index.json`,{cache:'no-store'})
+      .then(r=>r.ok?r.json():null)
+      .then(idx=>{if(idx&&idx.arquivos)popularSeletor(idx.arquivos,idx.arquivos[0]);})
+      .catch(()=>{});
+  }
 }
 
 /* ── CHART (canvas puro) ── */
